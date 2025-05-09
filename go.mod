@@ -13,4 +13,5 @@ require (
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
+	github.com/JulioKobayashiEbury/BankingAPI/ports v0.0.0-20231009182314-4f3a2b1c5d7e // indirect
 )
