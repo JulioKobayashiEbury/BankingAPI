@@ -1,3 +1,5 @@
-func main(){
-	
+package main
+
+func main() {
+	server()
 }
