@@ -1,5 +1,9 @@
 package main
 
+import (
+	"BankingAPI/ports"
+)
+
 func main() {
-	server()
+	ports.server()
 }
