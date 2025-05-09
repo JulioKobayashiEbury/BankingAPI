@@ -2,12 +2,9 @@ module github.com/JulioKobayashiEbury/BankingAPI
 
 go 1.24.1
 
-replace (
-	github.com/JulioKobayashiEbury/BankingAPI/pkg/ports v0.0.0-00010101000000-000000000000 => ../pkg/ports
-)
+require github.com/labstack/echo/v4 v4.13.3
 
 require (
-	github.com/labstack/echo/v4 v4.13.3 // direct
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	ports.server()
+	ports.Server()
 }
