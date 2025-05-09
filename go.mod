@@ -3,11 +3,11 @@ module github.com/JulioKobayashiEbury/BankingAPI
 go 1.24.1
 
 replace (
-	github.com/JulioKobayashiEbury/BankingAPI/pkg/ports v0.0.0 => ../pkg/ports
+	github.com/JulioKobayashiEbury/BankingAPI/pkg/ports v0.0.0-00010101000000-000000000000 => ../pkg/ports
 )
 
 require (
-	github.com/labstack/echo/v4 v4.13.3 // indirect
+	github.com/labstack/echo/v4 v4.13.3 // direct
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -17,5 +17,4 @@ require (
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	github.com/JulioKobayashiEbury/BankingAPI/pkg/ports v0.0.0-00010101000000-000000000000 // indirect
 )

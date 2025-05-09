@@ -1,4 +1,4 @@
-package BankingAPI
+package ports
 
 import (
 	"net/http"
