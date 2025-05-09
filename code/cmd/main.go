@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/JulioKobayashiEbury/BankingAPI/pkg/ports"
+	"github.com/JulioKobayashiEbury/BankingAPI/code/pkg/ports"
 )
 
 func main() {
