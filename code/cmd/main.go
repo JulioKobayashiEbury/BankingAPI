@@ -1,9 +1,7 @@
 package main
 
-import (
-	"BankingAPI/ports"
-)
+import "BankingAPI.com/ports"
 
 func main() {
-	ports.server()
+	BankingAPI_test.server()
 }

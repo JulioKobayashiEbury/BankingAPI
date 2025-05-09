@@ -1,4 +1,4 @@
-module BankingAPI
+module github.com/JulioKobayashiEbury/BankingAPI
 
 go 1.18
 
