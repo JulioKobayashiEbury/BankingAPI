@@ -1,4 +1,4 @@
-package BankingAPI_test
+package BankingAPI
 
 import (
 	"net/http"
