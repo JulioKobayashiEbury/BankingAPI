@@ -6,19 +6,21 @@ import (
 )
 
 type User struct {
-	Name  string `json:"name" xml:"name"`
-	Email string `json:"email" xml:"email"`
+	Id  int32 `json:"id" xml:"id"`
+	Name string `json:"name" xml:"name"`
+	RegisterDate string `json:"register_date" xml:"register_date"`
 }
 
 func Server() {
-	http.HandleFunc("/user", userResponse)
+	http.HandleFunc("/user/{userID}", userResponse)
 	http.ListenAndServe(":8080", nil)
 }
 
 func userResponse(w http.ResponseWriter, r *http.Request) {
 	user := User{
-		Name:  "Julio",
-		Email: "julio@gmail.com",
+		Id:  (int32(1)),
+		Name: "julio",
+		RegisterDate: "2016-08-29T09:12:33.001Z",
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

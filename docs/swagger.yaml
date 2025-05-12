@@ -1,0 +1,456 @@
+openapi: 3.0.0
+servers: 
+  - url: localhost:8080
+info:
+  description: An API used to do banking operations such as user register, withdrawl, deposit, access control, internal and external accounts transfers, account blocking and more.
+  version: "1.0.0"
+  title: "Simple Banking API"
+  contact:
+    email: julio.kobayashi@ebury.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: users
+    description: User related functions
+  - name: clients
+    description: Client related functions
+  - name: accounts
+    description: Account related functions
+  
+paths:
+  /users/create:
+    post:
+      tags:
+        - users
+      summary: creates user with info passed
+      operationId: searchInventory
+      description: |
+        By passing in the appropriate options, you can search for
+        available inventory in the system
+      parameters:
+        - in: query
+          name: Name
+          description: name of the user
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: Document
+          description: document number
+          schema:
+            type: string
+        - in: query
+          name: Password
+          description: user password
+          schema:
+            type: string
+      responses:
+        '200':
+          description: user created sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                  - Error
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User created succesfully!"
+                  Error:
+                    type: boolean
+                    example: false
+        '400':
+          description: bad input parameter
+  /users/{UserID}:
+    get:
+      tags:
+        - users
+      summary: return data of user with ID userID
+      operationId: getUser(userID)
+      description: |
+        Passing the user ID you get the user description as return
+      parameters:
+        - in: path
+          name: UserID
+          description: ID of the user requested
+          required: true
+          schema:  
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: user returned succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Id
+                  - Name
+                  - RegisterDate
+                properties:
+                  Id:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  Name:
+                    type: string
+                    example: Carlos
+                  RegisterDate:
+                    type: string
+                    format: date-time
+                    example: '2016-08-29T09:12:33.001Z'
+        '400':
+          description: Bad input parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "ID not found"
+  /users/update:
+    put:
+      tags:
+        - users
+      summary: update a given piece of information of a certain user
+      operationId: updateUser
+      description: |
+        Updates user profile based on the arguments passed
+      parameters:
+        - in: query
+          name: UserID
+          description: ID of the user to be updated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: UserName
+          description: name of the user
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: Document
+          description: Document number of the user to be updated
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: UserPassword
+          description: User's password to be updated
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User updated sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Id
+                  - Name
+                  - Document
+                  - RegisterDate
+                properties:
+                  Id:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  Name:
+                    type: string
+                    example: Carlos
+                  RegisterDate:
+                    type: string
+                    format: date-time
+                    example: '2016-08-29T09:12:33.001Z'
+        '400':
+          description: Bad input parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Messageatrelado
+                properties:
+                  message:
+                    type: string
+                    format: uuid
+                    example: "ID not passed"
+  /users/delete/{UserID}:
+    delete:
+      tags:
+        - users
+      summary: delete user of userID
+      description: |
+        Deletes an user with userID, if not found return error: "ID not found"
+      parameters:
+        - in: path
+          name: UserID
+          description: ID of user to be deleted
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: User deleted succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Id
+                  - Message
+                properties:
+                  Id:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User deleted"
+        '400':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User to be deleted not found"
+                  
+  /accounts/create:
+    post:
+      tags:
+        - accounts
+      summary: creates a account which is coupled up with an user and a client
+      description: |
+        Creates an account coupled with and user and a client
+      parameters:
+        - in: query
+          name: UserID
+          description: user ID to be vinculated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: ClientID
+          description: client ID to be vinculated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: AccountPassword
+          description: password for the account to be created
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account created succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - UserID
+                  - ClientID
+                  - AccountID
+                  - AgencyID
+                properties:
+                  UserID:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  ClientID:
+                    type: integer
+                    format: int32
+                    example: 12741
+                  AccountID:
+                    type: integer
+                    format: int32
+                    example: 98751
+                  AgencyID:
+                    type: integer
+                    format: int32
+                    example: 17194
+        '400':
+          description: An error ocurred during creation, Account not created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account not created, user do not exists"
+  /accounts/{AccountID}:
+    get:
+      tags:
+        - accounts
+      summary: return details of an account
+      description: |
+        Returns details of the account specified by thge AccountID
+      operationId: getAccount
+      parameters:
+        - in: path
+          name: AccountID
+          description: ID of the account to be returned
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Account details that are returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - UserID
+                  - ClientID
+                  - AccountID
+                  - AgencyID
+                  - Balance
+                properties:
+                  UserID:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  ClientID:
+                    type: integer
+                    format: int32
+                    example: 12741
+                  AccountID:
+                    type: integer
+                    format: int32
+                    example: 98751
+                  AgencyID:
+                    type: integer
+                    format: int32
+                    example: 17194
+                  Balance:
+                    type: number
+                    format: float64
+                    example: 10500.50
+                    
+        '400':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account not found with ID: {AccountID}"
+  /accounts/update/details:
+    put:
+      tags:
+        - accounts
+      summary: update informations of a certain account
+      description: |
+        Using the ID provided search for an update (with information provided), an accounts data
+      operationId: updateAccount
+      parameters:
+        - in: query
+          name: AccountID
+          description: ID of the account to be updated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: UserID
+          description: ID of user vinculated with account
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: ClientID
+          description: ID of client vinculated with account
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: AgencyID
+          description: ID of agency vinculated with account
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Account details that are returned if update is succesful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - UserID
+                  - ClientID
+                  - AccountID
+                  - AgencyID
+                  - Balance
+                properties:
+                  UserID:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  ClientID:
+                    type: integer
+                    format: int32
+                    example: 12741
+                  AccountID:
+                    type: integer
+                    format: int32
+                    example: 98751
+                  AgencyID:
+                    type: integer
+                    format: int32
+                    example: 17194
+        '400':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account not found with ID: {AccountID}"
