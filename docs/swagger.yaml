@@ -1,5 +1,5 @@
 openapi: 3.0.0
-servers: 
+servers:
   - url: localhost:8080
 info:
   description: An API used to do banking operations such as user register, withdrawl, deposit, access control, internal and external accounts transfers, account blocking and more.
@@ -9,7 +9,7 @@ info:
     email: julio.kobayashi@ebury.com
   license:
     name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
 tags:
   - name: users
     description: User related functions
@@ -17,9 +17,9 @@ tags:
     description: Client related functions
   - name: accounts
     description: Account related functions
-  
+
 paths:
-  /users/:
+  /users:
     post:
       tags:
         - users
@@ -35,18 +35,23 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
         - in: query
           name: Document
           description: document number
+          required: true
           schema:
             type: string
+            format: uuid
         - in: query
           name: Password
           description: user password
+          required: true
           schema:
             type: string
+            format: uuid
       responses:
-        '200':
+        "201":
           description: user created sucessfully
           content:
             application/json:
@@ -63,7 +68,7 @@ paths:
                   Error:
                     type: boolean
                     example: false
-        '400':
+        "400":
           description: bad input parameter
   /users/{UserID}:
     get:
@@ -78,11 +83,11 @@ paths:
           name: UserID
           description: ID of the user requested
           required: true
-          schema:  
+          schema:
             type: integer
             format: int32
       responses:
-        '200':
+        "202":
           description: user returned succesfully
           content:
             application/json:
@@ -103,8 +108,12 @@ paths:
                   RegisterDate:
                     type: string
                     format: date-time
-                    example: '2016-08-29T09:12:33.001Z'
-        '400':
+                    example: "2016-08-29T09:12:33.001Z"
+                  Status:
+                    type: boolean
+                    format: boolean
+                    example: true
+        "400":
           description: Bad input parameter
           content:
             application/json:
@@ -117,7 +126,52 @@ paths:
                     type: string
                     format: uuid
                     example: "ID not found"
-  /users:
+    delete:
+      tags:
+        - users
+      summary: delete user of userID
+      description: |
+        Deletes a user with userID, if not found return error: "ID not found"
+      parameters:
+        - in: path
+          name: UserID
+          description: ID of user to be deleted
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Id
+                  - Message
+                properties:
+                  Id:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User deleted"
+        "400":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User to be deleted not found"
     put:
       tags:
         - users
@@ -126,7 +180,7 @@ paths:
       description: |
         Updates user profile based on the arguments passed
       parameters:
-        - in: query
+        - in: path
           name: UserID
           description: ID of the user to be updated
           required: true
@@ -155,7 +209,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "202":
           description: User updated sucessfully
           content:
             application/json:
@@ -177,8 +231,8 @@ paths:
                   RegisterDate:
                     type: string
                     format: date-time
-                    example: '2016-08-29T09:12:33.001Z'
-        '400':
+                    example: "2016-08-29T09:12:33.001Z"
+        "400":
           description: Bad input parameter
           content:
             application/json:
@@ -191,55 +245,7 @@ paths:
                     type: string
                     format: uuid
                     example: "ID not passed"
-  /user/{UserID}:
-    delete:
-      tags:
-        - users
-      summary: delete user of userID
-      description: |
-        Deletes an user with userID, if not found return error: "ID not found"
-      parameters:
-        - in: path
-          name: UserID
-          description: ID of user to be deleted
-          required: true
-          schema:
-            type: integer
-            format: int32
-      responses:
-        '200':
-          description: User deleted succesfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Id
-                  - Message
-                properties:
-                  Id:
-                    type: integer
-                    format: int32
-                    example: 20128
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "User deleted"
-        '400':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "User to be deleted not found"
-                  
-  /accounts/create:
+  /accounts:
     post:
       tags:
         - accounts
@@ -269,7 +275,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "201":
           description: Account created succesfully
           content:
             application/json:
@@ -280,6 +286,7 @@ paths:
                   - ClientID
                   - AccountID
                   - AgencyID
+                  - AccountStatus
                 properties:
                   UserID:
                     type: integer
@@ -297,7 +304,11 @@ paths:
                     type: integer
                     format: int32
                     example: 17194
-        '400':
+                  AccountStatus:
+                    type: boolean
+                    format: boolean
+                    example: true
+        "400":
           description: An error ocurred during creation, Account not created
           content:
             application/json:
@@ -327,7 +338,7 @@ paths:
             type: integer
             format: int32
       responses:
-        '200':
+        "200":
           description: Account details that are returned
           content:
             application/json:
@@ -360,8 +371,7 @@ paths:
                     type: number
                     format: float64
                     example: 10500.50
-                    
-        '400':
+        "400":
           description: Account not found
           content:
             application/json:
@@ -374,7 +384,6 @@ paths:
                     type: string
                     format: uuid
                     example: "Account not found with ID: {AccountID}"
-  /accounts/update/details:
     put:
       tags:
         - accounts
@@ -383,7 +392,7 @@ paths:
         Using the ID provided search for an update (with information provided), an accounts data
       operationId: updateAccount
       parameters:
-        - in: query
+        - in: path
           name: AccountID
           description: ID of the account to be updated
           required: true
@@ -411,8 +420,15 @@ paths:
           schema:
             type: integer
             format: int32
+        - in: query
+          name: AccountPassword
+          description: password for the account to be updated
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
-        '200':
+        "202":
           description: Account details that are returned if update is succesful
           content:
             application/json:
@@ -441,7 +457,7 @@ paths:
                     type: integer
                     format: int32
                     example: 17194
-        '400':
+        "400":
           description: Account not found
           content:
             application/json:
@@ -454,3 +470,859 @@ paths:
                     type: string
                     format: uuid
                     example: "Account not found with ID: {AccountID}"
+    delete:
+      tags:
+        - accounts
+      summary: delete account of AccountID
+      description: |
+        Deletes an account with AccountID, if not found return error: "Account not found"
+      parameters:
+        - in: path
+          name: AccountID
+          description: ID of account to be deleted
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Account deleted succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account deleted"
+        "400":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account to be deleted not found"
+  /accounts/?filter={filter}&order={order}:
+    get:
+      tags:
+        - accounts
+      summary: return array of accounts ordered by scpecified order and filtered with specified filter
+      description: |
+        Returns an array of accounts ordered by AccountID
+      operationId: getAccountsByID
+      parameters:
+        - in: query
+          name: filter
+          description: filter to be applied to the accounts
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: order
+          description: order to be applied to the accounts
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Account details that are returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - listOfAccounts
+                properties:
+                  listOfAccounts:
+                    type: array
+                    format: Account
+                    example:
+                      {
+                        {
+                          AccountID: 1,
+                          UserID: 1,
+                          ClientID: 1,
+                          AgencyID: 1,
+                          Balance: 1000.00,
+                        },
+                        {
+                          AccountID: 2,
+                          UserID: 2,
+                          ClientID: 2,
+                          AgencyID: 2,
+                          Balance: 2000.00,
+                        },
+                      }
+  /clients:
+    post:
+      tags:
+        - clients
+      summary: creates a client with info passed
+      operationId: createClient
+      description: |
+        By passing in the appropriate options, you can create a client
+        available in the system
+      parameters:
+        - in: query
+          name: UserID
+          description: user ID to be vinculated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: Name
+          description: name of the client
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: Document
+          description: document number
+          schema:
+            type: string
+        - in: query
+          name: Password
+          description: client password
+          schema:
+            type: string
+      responses:
+        "201":
+          description: client created sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ClientID
+                  - Name
+                  - Document
+                  - RegisterDate
+                properties:
+                  ClientID:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  Name:
+                    type: string
+                    format: uuid
+                    example: "Carlos"
+                  Document:
+                    type: string
+                    format: uuid
+                    example: "123456789"
+                  RegisterDate:
+                    type: string
+                    format: date-time
+                    example: "2016-08-29T09:12:33.001Z"
+        "400":
+          description: bad input parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Client not created, user do not exists"
+  /clients/{ClientID}:
+    get:
+      tags:
+        - clients
+      summary: return data of client with ID clientID
+      operationId: getClient(clientID)
+      description: |
+        Passing the client ID you get the client description as return
+      parameters:
+        - in: path
+          name: ClientID
+          description: ID of the client requested
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: client returned sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ClientId
+                  - UserID
+                  - Name
+                  - RegisterDate
+                properties:
+                  ClientId:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  UserID:
+                    type: integer
+                    format: int32
+                    example: 12741
+                  Name:
+                    type: string
+                    example: "Carlos"
+                  Document:
+                    type: string
+                    format: uuid
+                    example: "123456789"
+                  RegisterDate:
+                    type: string
+                    format: date-time
+                    example: "2016-08-29T09:12:33.001Z"
+                  Status:
+                    type: boolean
+                    format: boolean
+                    example: true
+        "400":
+          description: Bad input parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "ID not found"
+    delete:
+      tags:
+        - clients
+      summary: delete client of clientID
+      description: |
+        Deletes a client with clientID, if not found return error: "ID not found"
+      parameters:
+        - in: path
+          name: ClientID
+          description: ID of client to be deleted
+          required: true
+          schema:
+            type: integer
+            format: int32
+      operationId: deleteClient
+      responses:
+        "200":
+          description: Client deleted sucessfully
+        "400":
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Client to be deleted not found"
+    put:
+      tags:
+        - clients
+      summary: update a given piece of information of a certain client
+      operationId: updateClient
+      description: |
+        Updates client profile based on the arguments passed
+      parameters:
+        - in: path
+          name: ClientID
+          description: ID of the client to be updated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: ClientName
+          description: name of the client to be updated
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: Document
+          description: Document number of the client to be updated
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: ClientPassword
+          description: Client's password to be updated
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "202":
+          description: Client updated sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Id
+                  - Name
+                  - Document
+                  - RegisterDate
+                properties:
+                  Id:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  Name:
+                    type: string
+                    example: "Carlos"
+                  RegisterDate:
+                    type: string
+                    format: date-time
+                    example: "2016-08-29T09:12:33.001Z"
+        "400":
+          description: Bad input parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  message:
+                    type: string
+                    format: uuid
+                    example: "ID not passed"    
+  /accounts/{AccountID}/balance/deposit:
+    put:
+      tags:
+        - accounts
+      summary: deposit money in a certain account
+      description: |
+        Using the ID provided deposit money in the account
+      operationId: depositAccount
+      parameters:
+        - in: path
+          name: AccountID
+          description: ID of the account to be updated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: BalanceUpdate
+          description: The value to be updated in the account (negative means withdrawl, positive means deposit)
+          required: true
+          schema:
+            type: number
+            format: float64
+      responses:
+        "202":
+          description: New balance is returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Balance
+                properties:
+                  Balance:
+                    type: number
+                    format: float64
+                    example: 10500.50
+        "400":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account not found with ID: {AccountID}"
+  /accounts/{AccountID}/balance/withdrawl:
+    put:
+      tags:
+        - accounts
+      summary: withdrawl money from a certain account
+      description: |
+        Using the ID provided withdrawl money from the account
+      operationId: withdrawlAccount
+      parameters:
+        - in: path
+          name: AccountID
+          description: ID of the account to be updated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: BalanceUpdate
+          description: The value to be updated in the account
+          required: true
+          schema:
+            type: number
+            format: float64
+        - in: query
+          name: AccountPassword
+          description: The password of the account to be updated, only necessary if the BalanceUpdate is negative
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "202":
+          description: New balance is returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Balance
+                properties:
+                  Balance:
+                    type: number
+                    format: float64
+                    example: 10500.50
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Unauthorized: bad password"
+  /accounts/{AccountID}/newTransfer:
+    post:
+      tags:
+        - accounts
+      summary: transfer money from one account to another
+      description: |
+        Transfer money from one account to another
+      operationId: transferMoney
+      parameters:
+        - in: path
+          name: AccountIDFrom
+          description: ID of the account to be updated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: AccountIDTo
+          description: ID of the account to be updated
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: TransferValue
+          description: The value to be transferred between accounts (negative means withdrawl, positive means deposit)
+          required: true
+          schema:
+            type: number
+            format: float64
+        - in: query
+          name: fromAccountPassword
+          description: The password of the account to be updated
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: New balance is returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - BalanceFrom
+                  - BalanceTo
+                properties:
+                  BalanceFrom:
+                    type: number
+                    format: float64
+                    example: 10500.50
+                  BalanceTo:
+                    type: number
+                    format: float64
+                    example: 10500.50
+        "400":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account not found with ID: {AccountID}"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Unauthorized"
+  /accounts/{AccountID}/block:
+    put:
+      tags:
+        - accounts
+      summary: block an account
+      description: |
+        Block an account with AccountID, if not found return error: "Account not found"
+      operationId: blockAccount
+      parameters:
+        - in: path
+          name: AccountID
+          description: ID of the account to be blocked
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "202":
+          description: Account blocked sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account blocked"
+        "400":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account to be blocked not found"
+  /accounts/{AccountID}/automaticDebit:
+    put:
+      tags:
+        - accounts
+      summary: register an automatic debit
+      description: |
+        Register an automatic debit with AccountID, if not found return error: "Account not found"
+      operationId: registerAutomaticDebit
+      parameters:
+        - in: path
+          name: AccountID
+          description: ID of the account to be registered
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: AutomaticDebitValue
+          description: The value to be registered in the account 
+          required: true
+          schema:
+            type: number
+            format: float64
+        - in: query
+          name: AutomaticDebitDate
+          description: The date to be registered in the account
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: AutomaticDebitDescription
+          description: description of the automatic debit
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: AutomaticDebitStatus
+          description: If the status passed is true, it is active, false is not active
+          schema:
+            type: boolean
+            format: boolean
+      responses:
+        "202":
+          description: Automatic debit registered sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Automatic debit registered"
+        "400":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account to be registered not found"
+
+  /clients/{ClientID}/block:
+    put:
+      tags:
+        - clients
+      summary: block a client
+      description: |
+        Block a client with ClientID, if not found return error: "Client not found"
+      operationId: blockClient
+      parameters:
+        - in: path
+          name: ClientID
+          description: ID of the client to be blocked
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "202":
+          description: Client blocked sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Client blocked"
+        "400":
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Client to be blocked not found"
+  /users/{UserID}/block:
+    put:
+      tags:
+        - users
+      summary: block a user
+      description: |
+        Block a user with UserID, if not found return error: "User not found"
+      operationId: blockUser
+      parameters:
+        - in: path
+          name: UserID
+          description: ID of the user to be blocked
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "202":
+          description: User blocked sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User blocked"
+        "400":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User to be blocked not found"
+  /users/{UserID}/unblock:
+    put:
+      tags:
+        - users
+      summary: unblock a user
+      description: |
+        Unblock a user with UserID, if not found return error: "User not found"
+      operationId: unblockUser
+      parameters:
+        - in: path
+          name: UserID
+          description: ID of the user to be unblocked
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "202":
+          description: User unblocked sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User unblocked"
+        "400":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "User to be unblocked not found"
+  /clients/{ClientID}/unblock:
+    put:
+      tags:
+        - clients
+      summary: unblock a client
+      description: |
+        Unblock a client with ClientID, if not found return error: "Client not found"
+      operationId: unblockClient
+      parameters:
+        - in: path
+          name: ClientID
+          description: ID of the client to be unblocked
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "202":
+          description: Client unblocked sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Client unblocked"
+        "400":
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Client to be unblocked not found"
+  /accounts/{AccountID}/unblock:
+    put:
+      tags:
+        - accounts
+      summary: unblock an account
+      description: |
+        Unblock an account with AccountID, if not found return error: "Account not found"
+      operationId: unblockAccount
+      parameters:
+        - in: path
+          name: AccountID
+          description: ID of the account to be unblocked
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "202":
+          description: Account unblocked sucessfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account unblocked"
+        "400":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - Message
+                properties:
+                  Message:
+                    type: string
+                    format: uuid
+                    example: "Account to be unblocked not found"
