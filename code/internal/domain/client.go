@@ -1,22 +1,24 @@
 package domain
 
 type Client struct {
-	Id           int32  `json:"id" xml:"id"`
-	UserId       int32  `json:"user_id" xml:"user_id"`
-	Name         string `json:"name" xml:"name"`
-	Document     string `json:"document" xml:"document"`
-	Password     string `json:"password" xml:"password"`
-	RegisterDate string `json:"register_date" xml:"register_date"`
-	Status       bool   `json:"status" xml:"status"`
+	ClientId     int32  `json:"ClientID" xml:"ClientID"`
+	UserId       int32  `json:"UserID" xml:"UserID" validate:"required"`
+	Name         string `json:"Name" xml:"Name" validate:"required"`
+	Document     string `json:"Document" xml:"Document" validate:"required"`
+	Password     string `json:"Password" xml:"Password" validate:"required"`
+	RegisterDate string `json:"RegisterDate" xml:"RegisterDate"`
+	Status       bool   `json:"Status" xml:"Status"`
 }
 
-func (c *Client) GetId() int32                        { return c.Id }
+func (c *Client) GetClientId() int32                  { return c.ClientId }
+func (c *Client) GetUserID() int32                    { return c.UserId }
 func (c *Client) GetName() string                     { return c.Name }
 func (c *Client) GetDocument() string                 { return c.Document }
 func (c *Client) GetPassword() string                 { return c.Password }
 func (c *Client) GetRegisterDate() string             { return c.RegisterDate }
 func (c *Client) GetStatus() bool                     { return c.Status }
-func (c *Client) SetId(id int32)                      { c.Id = id }
+func (c *Client) SetClientId(id int32)                { c.ClientId = id }
+func (c *Client) SetUserId(id int32)                  { c.UserId = id }
 func (c *Client) SetName(name string)                 { c.Name = name }
 func (c *Client) SetDocument(document string)         { c.Document = document }
 func (c *Client) SetPassword(password string)         { c.Password = password }

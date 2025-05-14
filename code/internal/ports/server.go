@@ -19,13 +19,22 @@ import (
 
 func Server() {
 	server := echo.New()
+
 	// User
 	server.POST("/user", UserPostHandler)
 	server.GET("/user/:UserID", UserGetHandler)
 	server.DELETE("/user/:UserID", UserDeleteHandler)
 	server.PUT("/user/:UserID", UserPutHandler)
+	server.PUT("/user/:UserID/block", UserPutBlockHandler)
+	server.PUT("/user/:UserID/unblock", UserPutUnBlockHandler)
 
 	// Client
+	server.POST("/clients", ClientPostHandler)
+	server.GET("/clients/:ClientID", ClientGetHandler)
+	server.DELETE("/clients/:ClientID", ClientDeleteHandler)
+	server.PUT("/clients/:ClientID", ClientPutHandler)
+	server.PUT("/clients/:ClientID/block", ClientPutBlockHandler)
+	server.PUT("/clients/:ClientID/unblock", ClientPutUnBlockHandler)
 
 	// Account
 

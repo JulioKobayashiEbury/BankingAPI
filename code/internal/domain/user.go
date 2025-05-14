@@ -15,7 +15,7 @@ func (u *User) GetDocument() string                 { return u.Document }
 func (u *User) GetPassword() string                 { return u.Password }
 func (u *User) GetRegisterDate() string             { return u.RegisterDate }
 func (u *User) GetStatus() bool                     { return u.Status }
-func (u *User) SetId(id int32)                      { u.Id = id }
+func (u *User) SetId(id int32)                      { (*u).Id = id }
 func (u *User) SetName(name string)                 { u.Name = name }
 func (u *User) SetDocument(document string)         { u.Document = document }
 func (u *User) SetPassword(password string)         { u.Password = password }
