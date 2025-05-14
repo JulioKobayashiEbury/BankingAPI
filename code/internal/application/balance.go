@@ -3,7 +3,7 @@ package application
 import (
 	"errors"
 
-	"BankingAPI/code/pkg/domain"
+	"BankingAPI/code/internal/domain"
 
 	"github.com/rs/zerolog/log"
 )

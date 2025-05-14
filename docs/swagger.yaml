@@ -58,16 +58,27 @@ paths:
               schema:
                 type: object
                 required:
-                  - Message
-                  - Error
+                  - UserID
+                  - Name
+                  - Document
+                  - RegisterDate
                 properties:
-                  Message:
+                  UserID:
+                    type: integer
+                    format: int32
+                    example: 20128
+                  Name:
                     type: string
                     format: uuid
-                    example: "User created succesfully!"
-                  Error:
-                    type: boolean
-                    example: false
+                    example: "Julio Kobayashi"
+                  Document:
+                    type: string
+                    format: uuid
+                    example: "1234567890"
+                  RegisterDate:
+                    type: string
+                    format: date-time
+                    example: "2016-08-29T09:12:33.001Z"
         "400":
           description: bad input parameter
   /users/{UserID}:
@@ -188,7 +199,7 @@ paths:
             type: integer
             format: int32
         - in: query
-          name: UserName
+          name: Name
           description: name of the user
           required: false
           schema:
@@ -202,7 +213,7 @@ paths:
             type: string
             format: uuid
         - in: query
-          name: UserPassword
+          name: Password
           description: User's password to be updated
           required: false
           schema:
@@ -216,12 +227,12 @@ paths:
               schema:
                 type: object
                 required:
-                  - Id
+                  - UserID
                   - Name
                   - Document
                   - RegisterDate
                 properties:
-                  Id:
+                  UserID:
                     type: integer
                     format: int32
                     example: 20128

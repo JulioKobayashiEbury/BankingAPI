@@ -1,12 +1,12 @@
 package domain
 
 type User struct {
-	Id           int32  `json:"id" xml:"id"`
-	Name         string `json:"name" xml:"name"`
-	Document     string `json:"document" xml:"document"`
-	Password     string `json:"password" xml:"password"`
-	RegisterDate string `json:"register_date" xml:"register_date"`
-	Status       bool   `json:"status" xml:"status"`
+	Id           int32  `json:"UserID" xml:"UserID"`
+	Name         string `json:"Name" xml:"Name" validate:"required"`
+	Document     string `json:"Document" xml:"Document" validate:"required"`
+	Password     string `json:"Password" xml:"Password" validate:"required"`
+	RegisterDate string `json:"RegisterDate" xml:"RegisterDate"`
+	Status       bool   `json:"Status" xml:"Status"`
 }
 
 func (u *User) GetId() int32                        { return u.Id }

@@ -1,10 +1,14 @@
 package application
 
 import (
-	"BankingAPI/code/pkg/domain"
+	"BankingAPI/code/internal/domain"
 
 	"github.com/rs/zerolog/log"
 )
+
+func CreateUser(user *domain.User) string {
+	return "Sucess on creating account"
+}
 
 func UpdatePassword(account *domain.Account, newPassword string) {
 	account.UpdatePassword(newPassword)
