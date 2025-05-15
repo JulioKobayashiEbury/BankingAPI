@@ -14,12 +14,12 @@ import (
 
 func ClientPostAdapter(c *echo.Context) (int, interface{}) {
 	var clientInfo domain.Client
-	UserID, err := strconv.Atoi((*c).FormValue("UserID"))
+	UserID, err := strconv.ParseUint((*c).FormValue("UserID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
-	clientInfo.SetUserId(int32(UserID))
+	clientInfo.SetUserId(uint32(UserID))
 	clientInfo.SetName((*c).FormValue("Name"))
 	clientInfo.SetDocument((*c).FormValue("Document"))
 	clientInfo.SetPassword((*c).FormValue("Password"))
@@ -42,13 +42,13 @@ func ClientPostAdapter(c *echo.Context) (int, interface{}) {
 func ClientGetAdapter(c *echo.Context) (int, interface{}) {
 	var clientInfo domain.Client
 
-	clientID, err := strconv.Atoi((*c).Param("ClientID"))
+	clientID, err := strconv.ParseUint((*c).Param("ClientID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 
-	clientInfo.SetClientId(int32(clientID))
+	clientInfo.SetClientId(uint32(clientID))
 
 	err = adapter.GetClientDB(&clientInfo)
 
@@ -56,30 +56,30 @@ func ClientGetAdapter(c *echo.Context) (int, interface{}) {
 }
 
 func ClientDeleteAdapter(c *echo.Context) (int, interface{}) {
-	clientID, err := strconv.Atoi((*c).Param("ClientID"))
+	clientID, err := strconv.ParseUint((*c).Param("ClientID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 
-	deletedID, err := adapter.DeleteClientDB(int32(clientID))
+	err = adapter.DeleteClientDB(uint32(clientID))
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 
-	return http.StatusOK, domain.Client{ClientId: deletedID}
+	return http.StatusOK, domain.Client{ClientId: uint32(clientID)}
 }
 
 func ClientPutAdapter(c *echo.Context) (int, interface{}) {
 	var clientInfo domain.Client
-	clientID, err := strconv.Atoi((*c).Param("ClientID"))
+	clientID, err := strconv.ParseUint((*c).Param("ClientID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 
-	clientInfo.SetClientId(int32(clientID))
+	clientInfo.SetClientId(uint32(clientID))
 	clientInfo.SetName((*c).FormValue("Name"))
 	clientInfo.SetDocument((*c).FormValue("Document"))
 	clientInfo.SetPassword((*c).FormValue("Password"))
@@ -94,13 +94,13 @@ func ClientPutAdapter(c *echo.Context) (int, interface{}) {
 
 func ClientPutBlockAdapter(c *echo.Context) (int, interface{}) {
 	var clientInfo domain.Client
-	clientID, err := strconv.Atoi((*c).Param("ClientID"))
+	clientID, err := strconv.ParseUint((*c).Param("ClientID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 
-	clientInfo.SetClientId(int32(clientID))
+	clientInfo.SetClientId(uint32(clientID))
 	clientInfo.SetStatus(false)
 
 	err = adapter.UpdateClientDB(&clientInfo)
@@ -114,13 +114,13 @@ func ClientPutBlockAdapter(c *echo.Context) (int, interface{}) {
 
 func ClientPutUnBlockAdapter(c *echo.Context) (int, interface{}) {
 	var clientInfo domain.Client
-	clientID, err := strconv.Atoi((*c).Param("ClientID"))
+	clientID, err := strconv.ParseUint((*c).Param("ClientID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 
-	clientInfo.SetClientId(int32(clientID))
+	clientInfo.SetClientId(uint32(clientID))
 	clientInfo.SetStatus(true)
 
 	err = adapter.UpdateClientDB(&clientInfo)

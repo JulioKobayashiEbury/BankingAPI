@@ -4,9 +4,8 @@ import (
 	"BankingAPI/code/internal/domain"
 )
 
-func DeleteUserDB(userID int32) (int32, error) {
-	id := int32(0)
-	return id, nil
+func DeleteUserDB(userID uint32) error {
+	return nil
 }
 
 func CreateUserDB(user *domain.User) error {
@@ -28,10 +27,30 @@ func GetClientDB(client *domain.Client) error {
 	return nil
 }
 
-func DeleteClientDB(clientID int32) (int32, error) {
-	return clientID, nil
+func DeleteClientDB(clientID uint32) error {
+	return nil
 }
 
 func UpdateClientDB(client *domain.Client) error {
+	return nil
+}
+
+func CreateAccountDB(account *domain.Account) error {
+	return nil
+}
+
+func GetAccountDB(account *domain.Account) error {
+	return nil
+}
+
+func UpdateAccountDB(account *domain.Account) error {
+	return nil
+}
+
+func DeleteAccountDB(accountID uint32) error {
+	return nil
+}
+
+func SearchAccountByFilterOrder(filter string, order string, listOdAccounts *[]domain.Account) error {
 	return nil
 }

@@ -37,6 +37,11 @@ func Server() {
 	server.PUT("/clients/:ClientID/unblock", ClientPutUnBlockHandler)
 
 	// Account
+	server.GET("/accounts", AccountGetOrderFilterHandler)
+	server.GET("/accounts/:AccountID", AccountGetHandler)
+	server.POST("/accounts", AccountPostHandler)
+	server.DELETE("/accounts/:AccountID", AccountDeleteHandler)
+	server.PUT("/accounts/:AccountID/withdrawal", AccountPutWithDrawalHandler)
 
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)

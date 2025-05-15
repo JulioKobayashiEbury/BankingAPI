@@ -1,23 +1,26 @@
 package domain
 
 type Account struct {
-	AccountId       int32   `json:"id" xml:"id"`
-	ClientId        int32   `json:"client_id" xml:"client_id"`
-	UserId          int32   `json:"user_id" xml:"user_id"`
-	AccountPassword string  `json:"account_password" xml:"account_password"`
-	AccountBalance  float64 `json:"account_balance" xml:"account_balance"`
-	Status          bool    `json:"status" xml:"status"`
+	AccountId       uint32  `json:"AccountID" xml:"AccountID"`
+	ClientId        uint32  `json:"ClientID" xml:"ClientID" validate:"required"`
+	UserId          uint32  `json:"UserID" xml:"UserID" validate:"required"`
+	AgencyID        uint32  `json:"AgencyID" xml:"AgencyID" validate:"required"`
+	AccountPassword string  `json:"Password" xml:"Password" validate:"required"`
+	AccountBalance  float64 `json:"Balance" xml:"Balance"`
+	Status          bool    `json:"Status" xml:"Status"`
 }
 
-func (a *Account) GetAccountId() int32                { return a.AccountId }
-func (a *Account) GetClientId() int32                 { return a.ClientId }
-func (a *Account) GetUserId() int32                   { return a.UserId }
+func (a *Account) GetAgencyID() uint32                { return a.AgencyID }
+func (a *Account) GetAccountId() uint32               { return a.AccountId }
+func (a *Account) GetAccountClientId() uint32         { return a.ClientId }
+func (a *Account) GetAccountUserId() uint32           { return a.UserId }
 func (a *Account) GetAccountPassword() string         { return a.AccountPassword }
 func (a *Account) GetAccountBalance() float64         { return a.AccountBalance }
 func (a *Account) GetStatus() bool                    { return a.Status }
-func (a *Account) SetAccountId(id int32)              { a.AccountId = id }
-func (a *Account) SetClientId(id int32)               { a.ClientId = id }
-func (a *Account) SetUserId(id int32)                 { a.UserId = id }
+func (a *Account) SetAgencyID(id uint32)              { a.AgencyID = id }
+func (a *Account) SetAccountId(id uint32)             { a.AccountId = id }
+func (a *Account) SetAccountClientId(id uint32)       { a.ClientId = id }
+func (a *Account) SetAccountUserId(id uint32)         { a.UserId = id }
 func (a *Account) SetAccountPassword(password string) { a.AccountPassword = password }
 func (a *Account) SetAccountBalance(balance float64)  { a.AccountBalance = balance }
 func (a *Account) SetStatus(status bool)              { a.Status = status }

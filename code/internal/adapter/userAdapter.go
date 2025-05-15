@@ -42,28 +42,28 @@ func UserGetAdapter(c *echo.Context) (int, interface{}) {
 }
 
 func UserDeleteAdapter(c *echo.Context) (int, interface{}) {
-	userID, err := strconv.Atoi((*c).ParamValues()[0])
+	userID, err := strconv.ParseUint((*c).Param("UserID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 	// func to access db and delete user
-	deletedID, err := adapter.DeleteUserDB(int32(userID))
+	err = adapter.DeleteUserDB(uint32(userID))
 	if err != nil {
 		log.Warn().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
-	return http.StatusOK, domain.User{Id: deletedID}
+	return http.StatusOK, domain.User{Id: uint32(userID)}
 }
 
 func UserPutAdapter(c *echo.Context) (int, interface{}) {
 	var userInfo domain.User
-	userID, err := strconv.Atoi((*c).Param("UserID"))
+	userID, err := strconv.ParseUint((*c).Param("UserID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, err.Error()
 	}
-	userInfo.SetId(int32(userID))
+	userInfo.SetId(uint32(userID))
 	userInfo.SetName((*c).FormValue("Name"))
 	userInfo.SetPassword((*c).FormValue("Password"))
 	userInfo.SetDocument((*c).FormValue("Document"))
@@ -78,13 +78,13 @@ func UserPutAdapter(c *echo.Context) (int, interface{}) {
 }
 
 func UserPutBlock(c *echo.Context) (int, interface{}) {
-	userID, err := strconv.Atoi((*c).Param("UserID"))
+	userID, err := strconv.ParseUint((*c).Param("UserID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 	var userInfo domain.User
-	userInfo.SetId(int32(userID))
+	userInfo.SetId(uint32(userID))
 	userInfo.SetStatus(false)
 
 	err = adapter.UpdateUserDB(&userInfo)
@@ -96,13 +96,13 @@ func UserPutBlock(c *echo.Context) (int, interface{}) {
 }
 
 func UserPutUnblock(c *echo.Context) (int, interface{}) {
-	userID, err := strconv.Atoi((*c).Param("UserID"))
+	userID, err := strconv.ParseUint((*c).Param("UserID"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()}
 	}
 	var userInfo domain.User
-	userInfo.SetId(int32(userID))
+	userInfo.SetId(uint32(userID))
 	userInfo.SetStatus(true)
 
 	err = adapter.UpdateUserDB(&userInfo)
