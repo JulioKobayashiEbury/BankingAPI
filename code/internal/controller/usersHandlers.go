@@ -1,13 +1,11 @@
 package controller
 
 import (
+	controller "BankingAPI/code/internal/controller/objects"
 	"net/http"
-
-	"BankingAPI/code/internal/domain"
 
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 func AddUsersEndPoints(server *echo.Echo) {
@@ -20,19 +18,17 @@ func AddUsersEndPoints(server *echo.Echo) {
 }
 
 func UserPostHandler(c echo.Context) error {
-	var userInfo domain.UserRequest
+	var userInfo controller.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
-	}
-	valid := validator.New()
-	if err := valid.Struct(userInfo); err != nil {
-		return c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Invalid parameter"})
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	// talk to service
 	return c.JSON(http.StatusOK, userInfo)
 }
 
 func UserPutBlockHandler(c echo.Context) error {
-	var userInfo domain.UserRequest
+	var userInfo controller.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -42,7 +38,7 @@ func UserPutBlockHandler(c echo.Context) error {
 }
 
 func UserPutUnBlockHandler(c echo.Context) error {
-	var userInfo domain.UserRequest
+	var userInfo controller.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -52,7 +48,7 @@ func UserPutUnBlockHandler(c echo.Context) error {
 }
 
 func UserPutHandler(c echo.Context) error {
-	var userInfo domain.UserRequest
+	var userInfo controller.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -62,7 +58,7 @@ func UserPutHandler(c echo.Context) error {
 }
 
 func UserGetHandler(c echo.Context) error {
-	var userInfo domain.UserRequest
+	var userInfo controller.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -73,7 +69,7 @@ func UserGetHandler(c echo.Context) error {
 }
 
 func UserDeleteHandler(c echo.Context) error {
-	var userInfo domain.UserRequest
+	var userInfo controller.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)

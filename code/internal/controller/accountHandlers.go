@@ -1,9 +1,8 @@
 package controller
 
 import (
+	controller "BankingAPI/code/internal/controller/objects"
 	"net/http"
-
-	"BankingAPI/code/internal/domain"
 
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
@@ -19,7 +18,7 @@ func AddAccountEndPoints(server *echo.Echo) {
 }
 
 func AccountPostHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -30,7 +29,7 @@ func AccountPostHandler(c echo.Context) error {
 }
 
 func AccountGetHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -41,7 +40,7 @@ func AccountGetHandler(c echo.Context) error {
 }
 
 func AccountGetOrderFilterHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -52,7 +51,7 @@ func AccountGetOrderFilterHandler(c echo.Context) error {
 }
 
 func AccountDeleteHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -63,7 +62,7 @@ func AccountDeleteHandler(c echo.Context) error {
 }
 
 func AccountPutHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -74,7 +73,7 @@ func AccountPutHandler(c echo.Context) error {
 }
 
 func AccountPutDepositHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -85,7 +84,7 @@ func AccountPutDepositHandler(c echo.Context) error {
 }
 
 func AccountPutWithDrawalHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -96,7 +95,7 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 }
 
 func AccountPutBlockHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -107,7 +106,7 @@ func AccountPutBlockHandler(c echo.Context) error {
 }
 
 func AccountPutUnBlockHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -118,7 +117,7 @@ func AccountPutUnBlockHandler(c echo.Context) error {
 }
 
 func AccountPutAutomaticDebit(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -129,7 +128,7 @@ func AccountPutAutomaticDebit(c echo.Context) error {
 }
 
 func AccountPostTranferHandler(c echo.Context) error {
-	var accountInfo domain.AccountRequest
+	var accountInfo controller.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
