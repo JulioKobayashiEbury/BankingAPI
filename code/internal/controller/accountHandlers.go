@@ -2,6 +2,7 @@ package controller
 
 import (
 	controller "BankingAPI/code/internal/controller/objects"
+	"BankingAPI/code/internal/service"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -73,25 +74,34 @@ func AccountPutHandler(c echo.Context) error {
 }
 
 func AccountPutDepositHandler(c echo.Context) error {
-	var accountInfo controller.AccountRequest
-	if err := c.Bind(&accountInfo); err != nil {
+	var depositRequest controller.DepositRequest
+	if err := c.Bind(&depositRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	// talk to service
+	newBalance, err := service.ProcessDeposit(&depositRequest)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-	return c.JSON(http.StatusOK, accountInfo)
+	return c.JSON(http.StatusOK, controller.DepositResponse{Account_id: depositRequest.Account_id, Balance: (*newBalance)})
 }
 
 func AccountPutWithDrawalHandler(c echo.Context) error {
-	var accountInfo controller.AccountRequest
-	if err := c.Bind(&accountInfo); err != nil {
+	var withdrawalRequest controller.WithdrawalRequest
+	if err := c.Bind(&withdrawalRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	// talk to service
+	newBalance, err := service.ProcessWithdrawal(&withdrawalRequest)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-	return c.JSON(http.StatusOK, accountInfo)
+	return c.JSON(http.StatusOK, controller.WithdrawalResponse{Account_id: withdrawalRequest.Account_id, Balance: (*newBalance)})
 }
 
 func AccountPutBlockHandler(c echo.Context) error {
@@ -100,9 +110,15 @@ func AccountPutBlockHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+
+	if err := service.AccountBlock(&accountInfo); err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
 	// talk to service
 
-	return c.JSON(http.StatusOK, accountInfo)
+	return c.JSON(http.StatusOK, controller.BlockUnBlockResponse{Message: "Account Blocked Sucesfully!"})
 }
 
 func AccountPutUnBlockHandler(c echo.Context) error {
