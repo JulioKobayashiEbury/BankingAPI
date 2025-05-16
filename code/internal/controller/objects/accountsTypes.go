@@ -61,6 +61,11 @@ type AutomaticDebitRequest struct {
 	Debit_date string  `json:"dabit_date" xml:"debit_date"`
 }
 
+type ListRequest struct {
+	Filter string `json:"filter" xml:"filter"`
+	Order  string `json:"order" xml:"order"`
+}
+
 type StandartResponse struct {
 	Message string `json:"message" xml:"message"`
 }

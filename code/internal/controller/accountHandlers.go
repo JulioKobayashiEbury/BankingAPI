@@ -54,14 +54,18 @@ func AccountGetHandler(c echo.Context) error {
 }
 
 func AccountGetOrderFilterHandler(c echo.Context) error {
-	var accountInfo controller.AccountRequest
-	if err := c.Bind(&accountInfo); err != nil {
+	var listRequest controller.ListRequest
+	if err := c.Bind(&listRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	// talk to service
+	listOfAccounts, err := service.GetAccountByFilterAndOrder(&listRequest)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-	return c.JSON(http.StatusOK, accountInfo)
+	return c.JSON(http.StatusOK, (*listOfAccounts))
 }
 
 func AccountDeleteHandler(c echo.Context) error {
