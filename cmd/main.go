@@ -1,6 +1,6 @@
 package main
 
-import "BankingAPI/code/internal/controller"
+import "BankingAPI/internal/controller"
 
 func main() {
 	controller.Server()

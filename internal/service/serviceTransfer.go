@@ -1,20 +1,20 @@
 package service
 
-import controller "BankingAPI/code/internal/controller/objects"
+import model "BankingAPI/internal/model"
 
-func ProcessNewTransfer(transfer *controller.TransferRequest) error {
+func ProcessNewTransfer(transfer *model.TransferRequest) error {
 	return nil
 }
 
 // user
-//		controller.go
+//		model.go
 //		service.go
-//		view.go
+//		model.go
 // OU
 
-//controller
+// model
 //		userHandler.go
-//servic
+// service
 //		(divisão por caso de uso)
 //		serviceTransfer.go
 //		serviceBlockUnBlock.go

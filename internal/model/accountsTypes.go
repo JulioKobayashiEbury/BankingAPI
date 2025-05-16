@@ -1,4 +1,4 @@
-package controller
+package model
 
 type AccountRequest struct {
 	Account_id uint32 `json:"account_id" xml:"account_id"`
@@ -64,8 +64,4 @@ type AutomaticDebitRequest struct {
 type ListRequest struct {
 	Filter string `json:"filter" xml:"filter"`
 	Order  string `json:"order" xml:"order"`
-}
-
-type StandartResponse struct {
-	Message string `json:"message" xml:"message"`
 }

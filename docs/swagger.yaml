@@ -30,21 +30,21 @@ paths:
         available inventory in the system
       parameters:
         - in: query
-          name: Name
+          name: name
           description: name of the user
           required: true
           schema:
             type: string
             format: uuid
         - in: query
-          name: Document
+          name: document
           description: document number
           required: true
           schema:
             type: string
             format: uuid
         - in: query
-          name: Password
+          name: password
           description: user password
           required: true
           schema:
@@ -58,30 +58,30 @@ paths:
               schema:
                 type: object
                 required:
-                  - UserID
-                  - Name
-                  - Document
-                  - RegisterDate
+                  - user_id
+                  - name
+                  - document
+                  - register_date
                 properties:
-                  UserID:
+                  user_id:
                     type: integer
                     format: uint32
                     example: 20128
-                  Name:
+                  name:
                     type: string
                     format: uuid
                     example: "Julio Kobayashi"
-                  Document:
+                  document:
                     type: string
                     format: uuid
                     example: "1234567890"
-                  RegisterDate:
+                  register_date:
                     type: string
                     format: date-time
                     example: "2016-08-29T09:12:33.001Z"
         "400":
           description: bad input parameter
-  /users/{UserID}:
+  /users/{user_id}:
     get:
       tags:
         - users
@@ -91,7 +91,7 @@ paths:
         Passing the user ID you get the user description as return
       parameters:
         - in: path
-          name: UserID
+          name: user_id
           description: ID of the user requested
           required: true
           schema:
@@ -106,21 +106,21 @@ paths:
                 type: object
                 required:
                   - Id
-                  - Name
-                  - RegisterDate
+                  - name
+                  - register_date
                 properties:
                   Id:
                     type: integer
                     format: uint32
                     example: 20128
-                  Name:
+                  name:
                     type: string
                     example: Carlos
-                  RegisterDate:
+                  register_date:
                     type: string
                     format: date-time
                     example: "2016-08-29T09:12:33.001Z"
-                  Status:
+                  status:
                     type: boolean
                     format: boolean
                     example: true
@@ -145,7 +145,7 @@ paths:
         Deletes a user with userID, if not found return error: "ID not found"
       parameters:
         - in: path
-          name: UserID
+          name: user_id
           description: ID of user to be deleted
           required: true
           schema:
@@ -187,28 +187,28 @@ paths:
         Updates user profile based on the arguments passed
       parameters:
         - in: path
-          name: UserID
+          name: user_id
           description: ID of the user to be updated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: Name
+          name: name
           description: name of the user
           required: false
           schema:
             type: string
             format: uuid
         - in: query
-          name: Document
-          description: Document number of the user to be updated
+          name: document
+          description: document number of the user to be updated
           required: false
           schema:
             type: string
             format: uuid
         - in: query
-          name: Password
+          name: password
           description: User's password to be updated
           required: false
           schema:
@@ -222,19 +222,19 @@ paths:
               schema:
                 type: object
                 required:
-                  - UserID
-                  - Name
-                  - Document
-                  - RegisterDate
+                  - user_id
+                  - name
+                  - document
+                  - register_date
                 properties:
-                  UserID:
+                  user_id:
                     type: integer
                     format: uint32
                     example: 20128
-                  Name:
+                  name:
                     type: string
                     example: Carlos
-                  RegisterDate:
+                  register_date:
                     type: string
                     format: date-time
                     example: "2016-08-29T09:12:33.001Z"
@@ -260,28 +260,28 @@ paths:
         Creates an account coupled with and user and a client
       parameters:
         - in: query
-          name: UserID
+          name: user_id
           description: user ID to be vinculated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: ClientID
+          name: client_id
           description: client ID to be vinculated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: AgencyID
+          name: agency_id
           description: ID of the cliets agency of the account
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: Password
+          name: password
           description: password for the account to be created
           required: true
           schema:
@@ -295,34 +295,34 @@ paths:
               schema:
                 type: object
                 required:
-                  - AccountID
-                  - UserID
-                  - ClientID
-                  - AgencyID
-                  - Status
-                  - Balance
+                  - account_id
+                  - user_id
+                  - client_id
+                  - agency_id
+                  - status
+                  - balance
                 properties:
-                  AccountID:
+                  account_id:
                     type: integer
                     format: uint32
                     example: 98751
-                  UserID:
+                  user_id:
                     type: integer
                     format: uint32
                     example: 20128
-                  ClientID:
+                  client_id:
                     type: integer
                     format: uint32
                     example: 1274
-                  AgencyID:
+                  agency_id:
                     type: integer
                     format: uint32
                     example: 17194
-                  AccountStatus:
+                  status:
                     type: boolean
                     format: boolean
                     example: true
-                  Balance:
+                  balance:
                     type: number
                     format: float64
                     example: 1282.34
@@ -339,17 +339,17 @@ paths:
                     type: string
                     format: uuid
                     example: "Account not created, user do not exists"
-  /accounts/{AccountID}:
+  /accounts/{account_id}:
     get:
       tags:
         - accounts
       summary: return details of an account
       description: |
-        Returns details of the account specified by thge AccountID
+        Returns details of the account specified by thge account_id
       operationId: getAccount
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of the account to be returned
           required: true
           schema:
@@ -363,29 +363,29 @@ paths:
               schema:
                 type: object
                 required:
-                  - UserID
-                  - ClientID
-                  - AccountID
-                  - AgencyID
-                  - Balance
+                  - user_id
+                  - client_id
+                  - account_id
+                  - agency_id
+                  - balance
                 properties:
-                  UserID:
+                  user_id:
                     type: integer
                     format: uint32
                     example: 20128
-                  ClientID:
+                  client_id:
                     type: integer
                     format: uint32
                     example: 12741
-                  AccountID:
+                  account_id:
                     type: integer
                     format: uint32
                     example: 98751
-                  AgencyID:
+                  agency_id:
                     type: integer
                     format: uint32
                     example: 17194
-                  Balance:
+                  balance:
                     type: number
                     format: float64
                     example: 10500.50
@@ -401,7 +401,7 @@ paths:
                   Message:
                     type: string
                     format: uuid
-                    example: "Account not found with ID: {AccountID}"
+                    example: "Account not found with ID: {account_id}"
     put:
       tags:
         - accounts
@@ -411,35 +411,35 @@ paths:
       operationId: updateAccount
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of the account to be updated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: UserID
+          name: user_id
           description: ID of user vinculated with account
           required: false
           schema:
             type: integer
             format: uint32
         - in: query
-          name: ClientID
+          name: client_id
           description: ID of client vinculated with account
           required: false
           schema:
             type: integer
             format: uint32
         - in: query
-          name: AgencyID
+          name: agency_id
           description: ID of agency vinculated with account
           required: false
           schema:
             type: integer
             format: uint32
         - in: query
-          name: AccountPassword
+          name: password
           description: password for the account to be updated
           required: false
           schema:
@@ -453,25 +453,25 @@ paths:
               schema:
                 type: object
                 required:
-                  - UserID
-                  - ClientID
-                  - AccountID
-                  - AgencyID
-                  - Balance
+                  - user_id
+                  - client_id
+                  - account_id
+                  - agency_id
+                  - balance
                 properties:
-                  UserID:
+                  user_id:
                     type: integer
                     format: uint32
                     example: 20128
-                  ClientID:
+                  client_id:
                     type: integer
                     format: uint32
                     example: 12741
-                  AccountID:
+                  account_id:
                     type: integer
                     format: uint32
                     example: 98751
-                  AgencyID:
+                  agency_id:
                     type: integer
                     format: uint32
                     example: 17194
@@ -487,16 +487,16 @@ paths:
                   Message:
                     type: string
                     format: uuid
-                    example: "Account not found with ID: {AccountID}"
+                    example: "Account not found with ID: {account_id}"
     delete:
       tags:
         - accounts
-      summary: delete account of AccountID
+      summary: delete account of account_id
       description: |
-        Deletes an account with AccountID, if not found return error: "Account not found"
+        Deletes an account with account_id, if not found return error: "Account not found"
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of account to be deleted
           required: true
           schema:
@@ -510,9 +510,9 @@ paths:
               schema:
                 type: object
                 required:
-                  - AccountID
+                  - account_id
                 properties:
-                  AccountID:
+                  account_id:
                     type: integer
                     format: uint32
                     example: 1234
@@ -535,7 +535,7 @@ paths:
         - accounts
       summary: return array of accounts ordered by scpecified order and filtered with specified filter
       description: |
-        Returns an array of accounts ordered by AccountID
+        Returns an array of accounts ordered by account_id
       operationId: getAccountsByID
       parameters:
         - in: query
@@ -568,18 +568,18 @@ paths:
                     example:
                       {
                         {
-                          AccountID: 1,
-                          UserID: 1,
-                          ClientID: 1,
-                          AgencyID: 1,
-                          Balance: 1000.00,
+                          account_id: 1,
+                          user_id: 1,
+                          client_id: 1,
+                          agency_id: 1,
+                          balance: 1000.00,
                         },
                         {
-                          AccountID: 2,
-                          UserID: 2,
-                          ClientID: 2,
-                          AgencyID: 2,
-                          Balance: 2000.00,
+                          account_id: 2,
+                          user_id: 2,
+                          client_id: 2,
+                          agency_id: 2,
+                          balance: 2000.00,
                         },
                       }
   /clients:
@@ -593,26 +593,26 @@ paths:
         available in the system
       parameters:
         - in: query
-          name: UserID
+          name: user_id
           description: user ID to be vinculated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: Name
+          name: name
           description: name of the client
           required: true
           schema:
             type: string
         - in: query
-          name: Document
+          name: document
           description: document number
           required: true
           schema:
             type: string
         - in: query
-          name: Password
+          name: password
           description: client password
           required: true
           schema:
@@ -625,24 +625,24 @@ paths:
               schema:
                 type: object
                 required:
-                  - ClientID
-                  - Name
-                  - Document
-                  - RegisterDate
+                  - client_id
+                  - name
+                  - document
+                  - register_date
                 properties:
-                  ClientID:
+                  client_id:
                     type: integer
                     format: uint32
                     example: 20128
-                  Name:
+                  name:
                     type: string
                     format: uuid
                     example: "Carlos"
-                  Document:
+                  document:
                     type: string
                     format: uuid
                     example: "123456789"
-                  RegisterDate:
+                  register_date:
                     type: string
                     format: date-time
                     example: "2016-08-29T09:12:33.001Z"
@@ -659,7 +659,7 @@ paths:
                     type: string
                     format: uuid
                     example: "Client not created, user do not exists"
-  /clients/{ClientID}:
+  /clients/{client_id}:
     get:
       tags:
         - clients
@@ -669,7 +669,7 @@ paths:
         Passing the client ID you get the client description as return
       parameters:
         - in: path
-          name: ClientID
+          name: client_id
           description: ID of the client requested
           required: true
           schema:
@@ -683,31 +683,31 @@ paths:
               schema:
                 type: object
                 required:
-                  - ClientID
-                  - UserID
-                  - Name
-                  - RegisterDate
+                  - client_id
+                  - user_id
+                  - name
+                  - register_date
                 properties:
-                  ClientID:
+                  client_id:
                     type: integer
                     format: uint32
                     example: 20128
-                  UserID:
+                  user_id:
                     type: integer
                     format: uint32
                     example: 12741
-                  Name:
+                  name:
                     type: string
                     example: "Carlos"
-                  Document:
+                  document:
                     type: string
                     format: uuid
                     example: "123456789"
-                  RegisterDate:
+                  register_date:
                     type: string
                     format: date-time
                     example: "2016-08-29T09:12:33.001Z"
-                  Status:
+                  status:
                     type: boolean
                     format: boolean
                     example: true
@@ -732,7 +732,7 @@ paths:
         Deletes a client with clientID, if not found return error: "ID not found"
       parameters:
         - in: path
-          name: ClientID
+          name: client_id
           description: ID of client to be deleted
           required: true
           schema:
@@ -747,9 +747,9 @@ paths:
               schema:
                 type: object
                 required:
-                  - ClientID
+                  - client_id
                 properties:
-                  ClientID:
+                  client_id:
                     type: integer
                     format: uint32
                     example: 12345
@@ -775,28 +775,28 @@ paths:
         Updates client profile based on the arguments passed
       parameters:
         - in: path
-          name: ClientID
+          name: client_id
           description: ID of the client to be updated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: Name
+          name: name
           description: name of the client to be updated
           required: false
           schema:
             type: string
             format: uuid
         - in: query
-          name: Document
-          description: Document number of the client to be updated
+          name: document
+          description: document number of the client to be updated
           required: false
           schema:
             type: string
             format: uuid
         - in: query
-          name: Password
+          name: password
           description: Client's password to be updated
           required: false
           schema:
@@ -811,23 +811,23 @@ paths:
                 type: object
                 required:
                   - Id
-                  - Name
-                  - Document
-                  - RegisterDate
-                  - Status
+                  - name
+                  - document
+                  - register_date
+                  - status
                 properties:
                   Id:
                     type: integer
                     format: uint32
                     example: 20128
-                  Name:
+                  name:
                     type: string
                     example: "Carlos"
-                  RegisterDate:
+                  register_date:
                     type: string
                     format: date-time
                     example: "2016-08-29T09:12:33.001Z"
-                  Status:
+                  status:
                     type: boolean
                     format: boolean
                     example: true
@@ -844,7 +844,7 @@ paths:
                     type: string
                     format: uuid
                     example: "ID not passed"    
-  /accounts/{AccountID}/balance/deposit:
+  /accounts/{account_id}/balance/deposit:
     put:
       tags:
         - accounts
@@ -854,14 +854,14 @@ paths:
       operationId: depositAccount
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of the account to be updated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: BalanceUpdate
+          name: balance
           description: The value to be updated in the account (negative means withdrawl, positive means deposit)
           required: true
           schema:
@@ -875,14 +875,14 @@ paths:
               schema:
                 type: object
                 required:
-                  - AccountID
-                  - Balance
+                  - account_id
+                  - balance
                 properties:
-                  AccountID:
+                  account_id:
                     type: integer
                     format: uint32
                     example: 1234
-                  Balance:
+                  balance:
                     type: number
                     format: float64
                     example: 10500.50
@@ -898,8 +898,8 @@ paths:
                   Message:
                     type: string
                     format: uuid
-                    example: "Account not found with ID: {AccountID}"
-  /accounts/{AccountID}/balance/withdrawl:
+                    example: "Account not found with ID: {account_id}"
+  /accounts/{account_id}/balance/withdrawl:
     put:
       tags:
         - accounts
@@ -909,22 +909,22 @@ paths:
       operationId: withdrawlAccount
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of the account to be updated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: BalanceUpdate
+          name: balance
           description: The value to be updated in the account
           required: true
           schema:
             type: number
             format: float64
         - in: query
-          name: AccountPassword
-          description: The password of the account to be updated, only necessary if the BalanceUpdate is negative
+          name: password
+          description: The password of the account to be updated, only necessary if the balance is negative
           required: false
           schema:
             type: string
@@ -937,14 +937,14 @@ paths:
               schema:
                 type: object
                 required:
-                  - AccountID
-                  - Balance
+                  - account_id
+                  - balance
                 properties:
-                  AccountID:
+                  account_id:
                     type: integer
                     format: uuint32
                     example: 14132
-                  Balance:
+                  balance:
                     type: number
                     format: float64
                     example: 10500.50
@@ -961,7 +961,7 @@ paths:
                     type: string
                     format: uuid
                     example: "Unauthorized: bad password"
-  /accounts/{AccountID}/newTransfer:
+  /accounts/{account_id}/newTransfer:
     post:
       tags:
         - accounts
@@ -971,14 +971,14 @@ paths:
       operationId: transferMoney
       parameters:
         - in: path
-          name: AccountIDFrom
+          name: account_idFrom
           description: ID of the account to be updated
           required: true
           schema:
             type: integer
             format: uint32
         - in: query
-          name: AccountIDTo
+          name: account_idTo
           description: ID of the account to be updated
           required: true
           schema:
@@ -992,7 +992,7 @@ paths:
             type: number
             format: float64
         - in: query
-          name: fromAccountPassword
+          name: frompassword
           description: The password of the account to be updated
           required: true
           schema:
@@ -1006,14 +1006,14 @@ paths:
               schema:
                 type: object
                 required:
-                  - BalanceFrom
-                  - BalanceTo
+                  - balanceFrom
+                  - balanceTo
                 properties:
-                  BalanceFrom:
+                  balanceFrom:
                     type: number
                     format: float64
                     example: 10500.50
-                  BalanceTo:
+                  balanceTo:
                     type: number
                     format: float64
                     example: 10500.50
@@ -1029,7 +1029,7 @@ paths:
                   Message:
                     type: string
                     format: uuid
-                    example: "Account not found with ID: {AccountID}"
+                    example: "Account not found with ID: {account_id}"
         "401":
           description: Unauthorized
           content:
@@ -1043,17 +1043,17 @@ paths:
                     type: string
                     format: uuid
                     example: "Unauthorized"
-  /accounts/{AccountID}/block:
+  /accounts/{account_id}/block:
     put:
       tags:
         - accounts
       summary: block an account
       description: |
-        Block an account with AccountID, if not found return error: "Account not found"
+        Block an account with account_id, if not found return error: "Account not found"
       operationId: blockAccount
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of the account to be blocked
           required: true
           schema:
@@ -1086,17 +1086,17 @@ paths:
                     type: string
                     format: uuid
                     example: "Account to be blocked not found"
-  /accounts/{AccountID}/automaticDebit:
+  /accounts/{account_id}/automaticDebit:
     put:
       tags:
         - accounts
       summary: register an automatic debit
       description: |
-        Register an automatic debit with AccountID, if not found return error: "Account not found"
+        Register an automatic debit with account_id, if not found return error: "Account not found"
       operationId: registerAutomaticDebit
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of the account to be registered
           required: true
           schema:
@@ -1124,7 +1124,7 @@ paths:
             type: string
             format: uuid
         - in: query
-          name: AutomaticDebitStatus
+          name: AutomaticDebitstatus
           description: If the status passed is true, it is active, false is not active
           schema:
             type: boolean
@@ -1157,17 +1157,17 @@ paths:
                     format: uuid
                     example: "Account to be registered not found"
 
-  /clients/{ClientID}/block:
+  /clients/{client_id}/block:
     put:
       tags:
         - clients
       summary: block a client
       description: |
-        Block a client with ClientID, if not found return error: "Client not found"
+        Block a client with client_id, if not found return error: "Client not found"
       operationId: blockClient
       parameters:
         - in: path
-          name: ClientID
+          name: client_id
           description: ID of the client to be blocked
           required: true
           schema:
@@ -1182,23 +1182,23 @@ paths:
                 type: object
                 required:
                   - Id
-                  - Name
-                  - Document
-                  - RegisterDate
-                  - Status
+                  - name
+                  - document
+                  - register_date
+                  - status
                 properties:
                   Id:
                     type: integer
                     format: uint32
                     example: 20128
-                  Name:
+                  name:
                     type: string
                     example: "Carlos"
-                  RegisterDate:
+                  register_date:
                     type: string
                     format: date-time
                     example: "2016-08-29T09:12:33.001Z"
-                  Status:
+                  status:
                     type: boolean
                     format: boolean
                     example: true
@@ -1215,17 +1215,17 @@ paths:
                     type: string
                     format: uuid
                     example: "Client to be blocked not found"
-  /users/{UserID}/block:
+  /users/{user_id}/block:
     put:
       tags:
         - users
       summary: block a user
       description: |
-        Block a user with UserID, if not found return error: "User not found"
+        Block a user with user_id, if not found return error: "User not found"
       operationId: blockUser
       parameters:
         - in: path
-          name: UserID
+          name: user_id
           description: ID of the user to be blocked
           required: true
           schema:
@@ -1258,17 +1258,17 @@ paths:
                     type: string
                     format: uuid
                     example: "User to be blocked not found"
-  /users/{UserID}/unblock:
+  /users/{user_id}/unblock:
     put:
       tags:
         - users
       summary: unblock a user
       description: |
-        Unblock a user with UserID, if not found return error: "User not found"
+        Unblock a user with user_id, if not found return error: "User not found"
       operationId: unblockUser
       parameters:
         - in: path
-          name: UserID
+          name: user_id
           description: ID of the user to be unblocked
           required: true
           schema:
@@ -1301,17 +1301,17 @@ paths:
                     type: string
                     format: uuid
                     example: "User to be unblocked not found"
-  /clients/{ClientID}/unblock:
+  /clients/{client_id}/unblock:
     put:
       tags:
         - clients
       summary: unblock a client
       description: |
-        Unblock a client with ClientID, if not found return error: "Client not found"
+        Unblock a client with client_id, if not found return error: "Client not found"
       operationId: unblockClient
       parameters:
         - in: path
-          name: ClientID
+          name: client_id
           description: ID of the client to be unblocked
           required: true
           schema:
@@ -1344,17 +1344,17 @@ paths:
                     type: string
                     format: uuid
                     example: "Client to be unblocked not found"
-  /accounts/{AccountID}/unblock:
+  /accounts/{account_id}/unblock:
     put:
       tags:
         - accounts
       summary: unblock an account
       description: |
-        Unblock an account with AccountID, if not found return error: "Account not found"
+        Unblock an account with account_id, if not found return error: "Account not found"
       operationId: unblockAccount
       parameters:
         - in: path
-          name: AccountID
+          name: account_id
           description: ID of the account to be unblocked
           required: true
           schema:

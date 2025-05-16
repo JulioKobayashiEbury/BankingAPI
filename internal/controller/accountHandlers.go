@@ -1,10 +1,11 @@
 package controller
 
 import (
-	controller "BankingAPI/code/internal/controller/objects"
-	service "BankingAPI/code/internal/service"
 	"net/http"
 	"strconv"
+
+	model "BankingAPI/internal/model"
+	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
@@ -15,6 +16,7 @@ func AddAccountEndPoints(server *echo.Echo) {
 	server.GET("/accounts/:account_id", AccountGetHandler)
 	server.POST("/accounts", AccountPostHandler)
 	server.DELETE("/accounts/:account_id", AccountDeleteHandler)
+	server.PUT("/accounts/:account_id", AccountPutHandler)
 	server.PUT("/accounts/:account_id/withdrawal", AccountPutWithDrawalHandler)
 	server.PUT("/accounts/:account_id/deposit", AccountPutDepositHandler)
 	server.PUT("/accounts/:account_id/newTransfer", AccountPostTranferHandler)
@@ -23,7 +25,7 @@ func AddAccountEndPoints(server *echo.Echo) {
 }
 
 func AccountPostHandler(c echo.Context) error {
-	var accountInfo controller.AccountRequest
+	var accountInfo model.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -54,7 +56,7 @@ func AccountGetHandler(c echo.Context) error {
 }
 
 func AccountGetOrderFilterHandler(c echo.Context) error {
-	var listRequest controller.ListRequest
+	var listRequest model.ListRequest
 	if err := c.Bind(&listRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -74,27 +76,32 @@ func AccountDeleteHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	if err := service.DeleteAccount(uint32(accountID)); err != nil {
+	if err := service.AccountDelete(uint32(accountID)); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, controller.StandartResponse{Message: "Account Deleted"})
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Deleted"})
 }
 
 func AccountPutHandler(c echo.Context) error {
-	var accountInfo controller.AccountRequest
+	var accountInfo model.AccountRequest
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	// talk to service
 
-	return c.JSON(http.StatusOK, accountInfo)
+	accountResponse, err := service.UpdateAccount(&accountInfo)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, accountResponse)
 }
 
 func AccountPutDepositHandler(c echo.Context) error {
-	var depositRequest controller.DepositRequest
+	var depositRequest model.DepositRequest
 	if err := c.Bind(&depositRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -105,11 +112,11 @@ func AccountPutDepositHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, controller.DepositResponse{Account_id: depositRequest.Account_id, Balance: (*newBalance)})
+	return c.JSON(http.StatusOK, model.DepositResponse{Account_id: depositRequest.Account_id, Balance: (*newBalance)})
 }
 
 func AccountPutWithDrawalHandler(c echo.Context) error {
-	var withdrawalRequest controller.WithdrawalRequest
+	var withdrawalRequest model.WithdrawalRequest
 	if err := c.Bind(&withdrawalRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -121,11 +128,10 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, controller.WithdrawalResponse{Account_id: withdrawalRequest.Account_id, Balance: (*newBalance)})
+	return c.JSON(http.StatusOK, model.WithdrawalResponse{Account_id: withdrawalRequest.Account_id, Balance: (*newBalance)})
 }
 
 func AccountPutBlockHandler(c echo.Context) error {
-
 	accountID, err := strconv.ParseUint(c.Param("account_id"), 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
@@ -137,7 +143,7 @@ func AccountPutBlockHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, controller.StandartResponse{Message: "Account Blocked Sucesfully!"})
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Blocked Sucesfully!"})
 }
 
 func AccountPutUnBlockHandler(c echo.Context) error {
@@ -151,11 +157,11 @@ func AccountPutUnBlockHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, controller.StandartResponse{Message: "Account Unblocked"})
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Unblocked"})
 }
 
 func AccountPutAutomaticDebit(c echo.Context) error {
-	var newAutoDebit controller.AutomaticDebitRequest
+	var newAutoDebit model.AutomaticDebitRequest
 	if err := c.Bind(&newAutoDebit); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -165,11 +171,11 @@ func AccountPutAutomaticDebit(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, controller.StandartResponse{Message: "New automatic debit is registered"})
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: "New automatic debit is registered"})
 }
 
 func AccountPostTranferHandler(c echo.Context) error {
-	var newTransferInfo controller.TransferRequest
+	var newTransferInfo model.TransferRequest
 	if err := c.Bind(&newTransferInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -179,6 +185,5 @@ func AccountPostTranferHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, controller.StandartResponse{Message: "Transfer was succesful"})
-
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Transfer was succesful"})
 }
