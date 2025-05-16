@@ -1,9 +1,10 @@
 package service
 
 import (
-	service "BankingAPI/code/internal/service/objects"
+	controller "BankingAPI/code/internal/controller/objects"
 )
 
-func GetAccount(account uint32) (*service.AccountResponse, error) {
+func GetAccount(account uint32) (*controller.AccountResponse, error) {
+	//test values
 	return nil, nil
 }

@@ -2,7 +2,7 @@ package controller
 
 import (
 	controller "BankingAPI/code/internal/controller/objects"
-	"BankingAPI/code/internal/service"
+	service "BankingAPI/code/internal/service"
 	"net/http"
 	"strconv"
 
@@ -28,9 +28,14 @@ func AccountPostHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	// talk to service
 
-	return c.JSON(http.StatusOK, accountInfo)
+	accountResponse, err := service.CreateAccount(&accountInfo)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusCreated, accountResponse)
 }
 
 func AccountGetHandler(c echo.Context) error {
@@ -60,14 +65,17 @@ func AccountGetOrderFilterHandler(c echo.Context) error {
 }
 
 func AccountDeleteHandler(c echo.Context) error {
-	var accountInfo controller.AccountRequest
-	if err := c.Bind(&accountInfo); err != nil {
+	accountID, err := strconv.ParseUint(c.Param("account_id"), 0, 32)
+	if err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	// talk to service
+	if err := service.DeleteAccount(uint32(accountID)); err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-	return c.JSON(http.StatusOK, accountInfo)
+	return c.JSON(http.StatusOK, controller.StandartResponse{Message: "Account Deleted"})
 }
 
 func AccountPutHandler(c echo.Context) error {
