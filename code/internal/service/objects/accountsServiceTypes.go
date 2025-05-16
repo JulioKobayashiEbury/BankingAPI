@@ -9,3 +9,9 @@ type Account struct {
 	balance    float64
 	status     bool
 }
+
+type Transfer struct {
+	account_id_from uint32
+	account_id_to   uint32
+	value           float64
+}
