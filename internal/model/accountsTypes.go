@@ -9,12 +9,13 @@ type AccountRequest struct {
 }
 
 type AccountResponse struct {
-	Account_id uint32  `json:"account_id" xml:"account_id"`
-	Client_id  uint32  `json:"client_id" xml:"client_id"`
-	User_id    uint32  `json:"user_id" xml:"user_id"`
-	Agency_id  uint32  `json:"agency_id" xml:"agency_id"`
-	Balance    float64 `json:"balance" xml:"balance"`
-	Status     bool    `json:"status" xml:"status"`
+	Account_id    uint32  `json:"account_id" xml:"account_id"`
+	Client_id     uint32  `json:"client_id" xml:"client_id"`
+	User_id       uint32  `json:"user_id" xml:"user_id"`
+	Agency_id     uint32  `json:"agency_id" xml:"agency_id"`
+	Register_date string  `json:"register_date" xml:"register_date"`
+	Balance       float64 `json:"balance" xml:"balance"`
+	Status        bool    `json:"status" xml:"status"`
 }
 
 type WithdrawalRequest struct {

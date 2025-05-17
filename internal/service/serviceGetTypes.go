@@ -8,7 +8,7 @@ import (
 )
 
 func GetAccount(accountID uint32) (*model.AccountResponse, error) {
-	docSnapshot, err := repository.GetTypeFromDB(&accountID, "accounts")
+	docSnapshot, err := repository.GetTypeFromDB(&accountID, repository.AccountsPath)
 	if err != nil {
 		log.Warn().Msg(err.Error())
 		return nil, err
@@ -33,7 +33,7 @@ func GetAccountByFilterAndOrder(listRequest *model.ListRequest) (*[]model.Accoun
 }
 
 func GetClient(clientID uint32) (*model.ClientResponse, error) {
-	docSnapshot, err := repository.GetTypeFromDB(&clientID, "clients")
+	docSnapshot, err := repository.GetTypeFromDB(&clientID, repository.ClientPath)
 	if err != nil {
 		log.Warn().Msg(err.Error())
 		return nil, err
@@ -53,7 +53,7 @@ func GetClient(clientID uint32) (*model.ClientResponse, error) {
 }
 
 func GetUser(userID uint32) (*model.UserResponse, error) {
-	docSnapshot, err := repository.GetTypeFromDB(&userID, "users")
+	docSnapshot, err := repository.GetTypeFromDB(&userID, repository.UsersPath)
 	if err != nil {
 		log.Warn().Msg(err.Error())
 		return nil, err
