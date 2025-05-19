@@ -1,9 +1,9 @@
 package service
 
 type AccountDB struct {
-	account_id    uint32
-	client_id     uint32
-	user_id       uint32
+	account_id    string
+	client_id     string
+	user_id       string
 	agency_id     uint32
 	password      string
 	register_date string
@@ -12,33 +12,34 @@ type AccountDB struct {
 }
 
 type TransferDB struct {
-	account_id_from uint32
-	account_id_to   uint32
+	account_id_from string
+	account_id_to   string
 	value           float64
+	password        string
 }
 
 type DepositDB struct {
-	account_id uint32
-	client_id  uint32
-	user_id    uint32
-	agency_iD  uint32
+	account_id string
+	client_id  string
+	user_id    string
+	agency_id  uint32
 	deposit    float64
 	balance    float64
 }
 
 type WithdrawalDB struct {
-	account_id uint32
-	client_id  uint32
-	user_id    uint32
-	agency_iD  uint32
+	account_id string
+	client_id  string
+	user_id    string
+	agency_id  uint32
 	password   string
 	withdrawal float64
 	balance    float64
 }
 
 type ClientDB struct {
-	client_id     uint32
-	user_id       uint32
+	client_id     string
+	user_id       string
 	name          string
 	document      string
 	password      string
@@ -47,7 +48,7 @@ type ClientDB struct {
 }
 
 type UserDB struct {
-	user_id       uint32
+	user_id       string
 	name          string
 	document      string
 	password      string

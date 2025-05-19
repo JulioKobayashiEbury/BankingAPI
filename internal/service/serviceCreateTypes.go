@@ -1,12 +1,21 @@
 package service
 
 import (
-	model "BankingAPI/internal/model"
-	"BankingAPI/internal/repository"
+	"fmt"
 	"time"
+
+	model "BankingAPI/internal/model"
 )
 
 func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, error) {
+	accountMap := map[string]interface{}{
+		"client_id": account.Client_id,
+		"user_id":   account.User_id,
+		"agency_id": account.Agency_id,
+		"password":  account.Password,
+		"balance":   0.0,
+		"status":    true,
+	}
 	accountDB := AccountDB{
 		client_id: account.Client_id,
 		user_id:   account.User_id,
@@ -15,7 +24,7 @@ func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, error
 		balance:   0.0,
 		status:    true,
 	}
-	if err := repository.CreateObject(accountDB, repository.AccountsPath, &accountDB.account_id); err != nil {
+	if err := model.CreateObject(&accountMap, model.AccountsPath, &accountDB.account_id); err != nil {
 		return nil, err
 	}
 	return &model.AccountResponse{
@@ -30,6 +39,15 @@ func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, error
 }
 
 func CreateClient(client *model.ClientRequest) (*model.ClientResponse, error) {
+	clientMap := map[string]interface{}{
+		"user_id":       client.User_id,
+		"name":          client.Name,
+		"document":      client.Document,
+		"password":      client.Password,
+		"register_date": time.Now().String(),
+		"status":        true,
+	}
+
 	clientDB := ClientDB{
 		user_id:       client.User_id,
 		name:          client.Name,
@@ -38,7 +56,7 @@ func CreateClient(client *model.ClientRequest) (*model.ClientResponse, error) {
 		register_date: time.Now().String(),
 		status:        true,
 	}
-	if err := repository.CreateObject(clientDB, repository.ClientPath, &clientDB.client_id); err != nil {
+	if err := model.CreateObject(&clientMap, model.ClientPath, &clientDB.client_id); err != nil {
 		return nil, err
 	}
 	return &model.ClientResponse{
@@ -52,6 +70,13 @@ func CreateClient(client *model.ClientRequest) (*model.ClientResponse, error) {
 }
 
 func CreateUser(user *model.UserRequest) (*model.UserResponse, error) {
+	userMap := map[string]interface{}{
+		"name":          user.Name,
+		"document":      user.Document,
+		"password":      user.Password,
+		"register_date": time.Now().String(),
+		"status":        true,
+	}
 	userDB := UserDB{
 		name:          user.Name,
 		document:      user.Document,
@@ -59,9 +84,10 @@ func CreateUser(user *model.UserRequest) (*model.UserResponse, error) {
 		register_date: time.Now().String(),
 		status:        true,
 	}
-	if err := repository.CreateObject(userDB, repository.UsersPath, &userDB.user_id); err != nil {
+	if err := model.CreateObject(&userMap, model.UsersPath, &userDB.user_id); err != nil {
 		return nil, err
 	}
+	fmt.Print(userMap["id"])
 	return &model.UserResponse{
 		User_id:       userDB.user_id,
 		Name:          userDB.name,

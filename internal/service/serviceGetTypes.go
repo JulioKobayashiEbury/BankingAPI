@@ -1,14 +1,15 @@
 package service
 
 import (
+	"errors"
+
 	model "BankingAPI/internal/model"
-	"BankingAPI/internal/repository"
 
 	"github.com/rs/zerolog/log"
 )
 
-func GetAccount(accountID uint32) (*model.AccountResponse, error) {
-	docSnapshot, err := repository.GetTypeFromDB(&accountID, repository.AccountsPath)
+func getAccount(accountID string) (*AccountDB, error) {
+	docSnapshot, err := model.GetTypeFromDB(&accountID, model.AccountsPath)
 	if err != nil {
 		log.Warn().Msg(err.Error())
 		return nil, err
@@ -17,7 +18,14 @@ func GetAccount(accountID uint32) (*model.AccountResponse, error) {
 	if err := docSnapshot.DataTo(&accountDB); err != nil {
 		return nil, err
 	}
+	return &accountDB, nil
+}
 
+func AccountResponse(accountID string) (*model.AccountResponse, error) {
+	accountDB, err := getAccount(accountID)
+	if err != nil {
+		return nil, err
+	}
 	return &model.AccountResponse{
 		Account_id: accountDB.account_id,
 		Client_id:  accountDB.client_id,
@@ -32,8 +40,8 @@ func GetAccountByFilterAndOrder(listRequest *model.ListRequest) (*[]model.Accoun
 	return nil, nil
 }
 
-func GetClient(clientID uint32) (*model.ClientResponse, error) {
-	docSnapshot, err := repository.GetTypeFromDB(&clientID, repository.ClientPath)
+func GetClient(clientID string) (*model.ClientResponse, error) {
+	docSnapshot, err := model.GetTypeFromDB(&clientID, model.ClientPath)
 	if err != nil {
 		log.Warn().Msg(err.Error())
 		return nil, err
@@ -52,13 +60,17 @@ func GetClient(clientID uint32) (*model.ClientResponse, error) {
 	}, nil
 }
 
-func GetUser(userID uint32) (*model.UserResponse, error) {
-	docSnapshot, err := repository.GetTypeFromDB(&userID, repository.UsersPath)
+func GetUser(userID string) (*model.UserResponse, error) {
+	docSnapshot, err := model.GetTypeFromDB(&userID, model.UsersPath)
 	if err != nil {
 		log.Warn().Msg(err.Error())
 		return nil, err
 	}
-	var UserDB UserDB
+	if (*docSnapshot).Exists() {
+		return nil, errors.New("Normal")
+	}
+	//WORK HERE
+	/* var UserDB UserDB
 	if err := docSnapshot.DataTo(&UserDB); err != nil {
 		return nil, err
 	}
@@ -68,5 +80,6 @@ func GetUser(userID uint32) (*model.UserResponse, error) {
 		Document:      UserDB.document,
 		Register_date: UserDB.register_date,
 		Status:        UserDB.status,
-	}, nil
+	}, nil */
+	return nil, nil
 }

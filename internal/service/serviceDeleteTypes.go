@@ -1,23 +1,23 @@
 package service
 
-import "BankingAPI/internal/repository"
+import "BankingAPI/internal/model"
 
-func AccountDelete(accountID uint32) error {
-	if err := repository.DeleteObject(accountID, repository.AccountsPath); err != nil {
+func AccountDelete(accountID string) error {
+	if err := model.DeleteObject(&accountID, model.AccountsPath); err != nil {
 		return err
 	}
 	return nil
 }
 
-func ClientDelete(clientID uint32) error {
-	if err := repository.DeleteObject(clientID, repository.ClientPath); err != nil {
+func ClientDelete(clientID string) error {
+	if err := model.DeleteObject(&clientID, model.ClientPath); err != nil {
 		return err
 	}
 	return nil
 }
 
-func UserDelete(userID uint32) error {
-	if err := repository.DeleteObject(userID, repository.UsersPath); err != nil {
+func UserDelete(userID string) error {
+	if err := model.DeleteObject(&userID, model.UsersPath); err != nil {
 		return err
 	}
 	return nil

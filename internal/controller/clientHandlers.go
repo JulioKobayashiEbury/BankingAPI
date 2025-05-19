@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/service"
@@ -36,13 +35,9 @@ func ClientPostHandler(c echo.Context) error {
 }
 
 func ClientGetHandler(c echo.Context) error {
-	clientID, err := strconv.ParseUint(c.Param("client_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
+	clientID := c.Param("client_id")
 
-	clientInfo, err := service.GetClient(uint32(clientID))
+	clientInfo, err := service.GetClient(clientID)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -52,12 +47,8 @@ func ClientGetHandler(c echo.Context) error {
 }
 
 func ClientDeleteHandler(c echo.Context) error {
-	clientID, err := strconv.ParseUint(c.Param("client_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	if err := service.ClientDelete(uint32(clientID)); err != nil {
+	clientID := c.Param("client_id")
+	if err := service.ClientDelete(clientID); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -82,12 +73,9 @@ func ClientPutHandler(c echo.Context) error {
 }
 
 func ClientPutBlockHandler(c echo.Context) error {
-	clientID, err := strconv.ParseUint(c.Param("client_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	if err := service.ClientBlock(uint32(clientID)); err != nil {
+	clientID := c.Param("client_id")
+
+	if err := service.ClientBlock(string(clientID)); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -96,12 +84,8 @@ func ClientPutBlockHandler(c echo.Context) error {
 }
 
 func ClientPutUnBlockHandler(c echo.Context) error {
-	clientID, err := strconv.ParseUint(c.Param("client_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	if err := service.ClientUnBlock(uint32(clientID)); err != nil {
+	clientID := c.Param("client_id")
+	if err := service.ClientUnBlock(clientID); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}

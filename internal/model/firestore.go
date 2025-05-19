@@ -1,11 +1,10 @@
-package repository
+package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"strconv"
-
-	"BankingAPI/internal/initializers"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
@@ -19,39 +18,54 @@ const (
 	ClientPath   = "clients"
 )
 
+var Ctx context.Context
+
 func GetFireStoreClient() (*firestore.Client, error) {
-	return initializers.FireBaseApp.Firestore(initializers.Ctx)
+	Ctx = context.Background()
+	os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:8080")
+	os.Setenv("GOOGLE_CLOUD_PROJECT", "banking")
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		log.Error().Msg("GOOGLE_CLOUD_PROJECT environment variable not set.")
+		return nil, errors.New("GOOGLE_CLOUD_PROJECT environment variable not set.")
+	}
+
+	client, err := firestore.NewClient(Ctx, projectID)
+	if err != nil {
+		log.Error().Msg("Failed to create client: %v")
+		return nil, err
+	}
+	return client, nil
 }
 
-func CreateObject(entity interface{}, collection string, createdID *uint32) error {
+func CreateObject(entity *map[string]interface{}, collection string, createdID *string) error {
 	clientDB, err := GetFireStoreClient()
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return err
 	}
 	defer clientDB.Close()
-	docRef, _, err := clientDB.Collection(collection).Add(initializers.Ctx, entity)
+	docRef, _, err := clientDB.Collection(collection).Add(Ctx, (*entity))
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return err
 	}
-	newID, err := strconv.ParseUint(docRef.ID, 0, 32)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return err
 	}
-	(*createdID) = uint32(newID)
+	(*createdID) = docRef.ID
 	return nil
 }
 
-func DeleteObject(objectID uint32, collection string) error {
+func DeleteObject(objectID *string, collection string) error {
 	clientDB, err := GetFireStoreClient()
 	if err != nil {
 		return err
 	}
 	defer clientDB.Close()
 	docRef := clientDB.Collection(collection).Doc(fmt.Sprintf("%v", objectID))
-	_, err = docRef.Delete(initializers.Ctx)
+	_, err = docRef.Delete(Ctx)
 	if err != nil {
 		return err
 	}
@@ -59,7 +73,7 @@ func DeleteObject(objectID uint32, collection string) error {
 	return nil
 }
 
-func GetTypeFromDB(typesID *uint32, collection string) (*firestore.DocumentSnapshot, error) {
+func GetTypeFromDB(typesID *string, collection string) (*firestore.DocumentSnapshot, error) {
 	clientDB, err := GetFireStoreClient()
 	if err != nil {
 		return nil, err
@@ -68,14 +82,14 @@ func GetTypeFromDB(typesID *uint32, collection string) (*firestore.DocumentSnaps
 
 	docRef := clientDB.Collection(collection).Doc(fmt.Sprintf("%v", *typesID))
 
-	docSnapshot, err := docRef.Get(initializers.Ctx)
+	docSnapshot, err := docRef.Get(Ctx)
 	if status.Code(err) == codes.NotFound {
 		return nil, errors.New("Account, User or Client with this ID do not exists")
 	}
 	return docSnapshot, nil
 }
 
-func UpdateTypesDB(document *[]firestore.Update, typesID *uint32, collection string) error {
+func UpdateTypesDB(document *[]firestore.Update, typesID *string, collection string) error {
 	clientDB, err := GetFireStoreClient()
 	if err != nil {
 		log.Error().Msg(err.Error())
@@ -85,7 +99,7 @@ func UpdateTypesDB(document *[]firestore.Update, typesID *uint32, collection str
 
 	docRef := clientDB.Collection((collection)).Doc(fmt.Sprintf("%v", *typesID))
 
-	_, err = docRef.Update(initializers.Ctx, *document)
+	_, err = docRef.Update(Ctx, *document)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return err

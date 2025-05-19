@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/service"
@@ -41,12 +40,8 @@ func AccountPostHandler(c echo.Context) error {
 }
 
 func AccountGetHandler(c echo.Context) error {
-	accountID, err := strconv.ParseUint(c.Param("account_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	accountResponse, err := service.GetAccount(uint32(accountID))
+	accountID := c.Param("account_id")
+	accountResponse, err := service.AccountResponse(accountID)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -71,12 +66,8 @@ func AccountGetOrderFilterHandler(c echo.Context) error {
 }
 
 func AccountDeleteHandler(c echo.Context) error {
-	accountID, err := strconv.ParseUint(c.Param("account_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	if err := service.AccountDelete(uint32(accountID)); err != nil {
+	accountID := c.Param("account_id")
+	if err := service.AccountDelete(accountID); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -132,13 +123,8 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 }
 
 func AccountPutBlockHandler(c echo.Context) error {
-	accountID, err := strconv.ParseUint(c.Param("account_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	if err := service.AccountBlock(uint32(accountID)); err != nil {
+	accountID := c.Param("account_id")
+	if err := service.AccountBlock(accountID); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -147,12 +133,8 @@ func AccountPutBlockHandler(c echo.Context) error {
 }
 
 func AccountPutUnBlockHandler(c echo.Context) error {
-	accountID, err := strconv.ParseUint(c.Param("account_id"), 0, 32)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	if err := service.AccountUnBlock(uint32(accountID)); err != nil {
+	accountID := c.Param("account_id")
+	if err := service.AccountUnBlock(accountID); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}

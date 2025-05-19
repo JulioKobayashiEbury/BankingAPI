@@ -26,6 +26,6 @@ func Server() {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
-	log.Info().Msg("Server started on port 8080")
-	server.Start("localhost:8080")
+	log.Info().Msg("Server started on port 25565")
+	server.Start("localhost:25565")
 }
