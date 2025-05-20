@@ -12,19 +12,19 @@ import (
 
 func UpdateAccount(account *model.AccountRequest) (*model.AccountResponse, error) {
 	// verifica valores que foram passados ou não
-	paramUpdates := make(map[string]string, 0)
+	paramUpdates := make(map[string]interface{}, 0)
 	if account.Account_id == "" {
 		log.Warn().Msg("No account with id: 0 allowed")
 		return nil, errors.New("Account id invalid")
 	}
 	if account.Agency_id != 0 {
-		paramUpdates["agency_id"] = fmt.Sprintf("%v", account.Agency_id)
+		paramUpdates["agency_id"] = account.Agency_id
 	}
 	if account.Client_id != "" {
-		paramUpdates["client_id"] = fmt.Sprintf("%v", account.Client_id)
+		paramUpdates["client_id"] = account.Client_id
 	}
 	if account.User_id != "" {
-		paramUpdates["user_id"] = fmt.Sprintf("%v", account.User_id)
+		paramUpdates["user_id"] = account.User_id
 	}
 	if account.Password != "" {
 		paramUpdates["password"] = account.Password
@@ -42,7 +42,7 @@ func UpdateAccount(account *model.AccountRequest) (*model.AccountResponse, error
 		return nil, err
 	}
 
-	return AccountResponse((*account).Account_id)
+	return Account((*account).Account_id)
 }
 
 func UpdateClient(client *model.ClientRequest) (*model.ClientResponse, error) {
@@ -76,7 +76,7 @@ func UpdateClient(client *model.ClientRequest) (*model.ClientResponse, error) {
 		return nil, err
 	}
 
-	return GetClient((*client).Client_id)
+	return Client((*client).Client_id)
 }
 
 func UpdateUser(user *model.UserRequest) (*model.UserResponse, error) {
@@ -107,5 +107,5 @@ func UpdateUser(user *model.UserRequest) (*model.UserResponse, error) {
 		return nil, err
 	}
 
-	return GetUser((*user).User_id)
+	return User((*user).User_id)
 }

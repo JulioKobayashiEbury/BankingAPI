@@ -34,7 +34,7 @@ func UserPostHandler(c echo.Context) error {
 }
 
 func UserPutBlockHandler(c echo.Context) error {
-	userID := c.Param("user_id")
+	userID := c.Param("users_id")
 	if err := service.UserBlock(userID); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -43,7 +43,7 @@ func UserPutBlockHandler(c echo.Context) error {
 }
 
 func UserPutUnBlockHandler(c echo.Context) error {
-	userID := c.Param("user_id")
+	userID := c.Param("users_id")
 
 	if err := service.UserUnBlock(userID); err != nil {
 		log.Error().Msg(err.Error())
@@ -58,6 +58,8 @@ func UserPutHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	userInfo.User_id = c.Param("users_id")
+
 	userResponse, err := service.UpdateUser(&userInfo)
 	if err != nil {
 		log.Error().Msg(err.Error())
@@ -67,9 +69,8 @@ func UserPutHandler(c echo.Context) error {
 }
 
 func UserGetHandler(c echo.Context) error {
-	userID := c.Param("user_id")
-
-	userResponse, err := service.GetUser(userID)
+	userID := c.Param("users_id")
+	userResponse, err := service.User(userID)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -79,7 +80,7 @@ func UserGetHandler(c echo.Context) error {
 }
 
 func UserDeleteHandler(c echo.Context) error {
-	userID := c.Param("user_id")
+	userID := c.Param("users_id")
 
 	if err := service.UserDelete(userID); err != nil {
 		log.Error().Msg(err.Error())

@@ -16,9 +16,9 @@ func AddAccountEndPoints(server *echo.Echo) {
 	server.POST("/accounts", AccountPostHandler)
 	server.DELETE("/accounts/:account_id", AccountDeleteHandler)
 	server.PUT("/accounts/:account_id", AccountPutHandler)
-	server.PUT("/accounts/:account_id/withdrawal", AccountPutWithDrawalHandler)
-	server.PUT("/accounts/:account_id/deposit", AccountPutDepositHandler)
-	server.PUT("/accounts/:account_id/newTransfer", AccountPostTranferHandler)
+	server.PUT("/accounts/:account_id/balance/withdrawal", AccountPutWithDrawalHandler)
+	server.PUT("/accounts/:account_id/balance/deposit", AccountPutDepositHandler)
+	server.PUT("/accounts/:account_id_from/newTransfer", AccountPostTranferHandler)
 	server.PUT("/accounts/:account_id/block", AccountPutBlockHandler)
 	server.PUT("/accounts/:account_id/unblock", AccountPutUnBlockHandler)
 }
@@ -41,7 +41,7 @@ func AccountPostHandler(c echo.Context) error {
 
 func AccountGetHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	accountResponse, err := service.AccountResponse(accountID)
+	accountResponse, err := service.Account(accountID)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -81,10 +81,11 @@ func AccountPutHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	accountInfo.Account_id = c.Param("account_id")
 
 	accountResponse, err := service.UpdateAccount(&accountInfo)
 	if err != nil {
-		log.Error().Msg(err.Error())
+		log.Error().Msg(err.Error() + "Account Put Handler")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -97,6 +98,8 @@ func AccountPutDepositHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	depositRequest.Account_id = c.Param("account_id")
+
 	newBalance, err := service.ProcessDeposit(&depositRequest)
 	if err != nil {
 		log.Error().Msg(err.Error())
@@ -112,6 +115,8 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	withdrawalRequest.Account_id = c.Param("account_id")
+
 	// talk to service
 	newBalance, err := service.ProcessWithdrawal(&withdrawalRequest)
 	if err != nil {
@@ -148,6 +153,8 @@ func AccountPutAutomaticDebit(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	newAutoDebit.Account_id = c.Param("account_id")
+
 	if err := service.ProcessNewAutomaticDebit(&newAutoDebit); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -162,6 +169,7 @@ func AccountPostTranferHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	newTransferInfo.Account_id_from = c.Param("account_id_from")
 	if err := service.ProcessNewTransfer(&newTransferInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)

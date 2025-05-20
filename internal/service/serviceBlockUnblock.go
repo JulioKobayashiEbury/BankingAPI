@@ -29,7 +29,7 @@ func ClientBlock(clientID string) error {
 	if err := toggleStatus(false, &clientID, model.ClientPath); err != nil {
 		return err
 	}
-	log.Info().Msg("Account Blocked")
+	log.Info().Msg("Client Blocked")
 	return nil
 }
 
@@ -37,7 +37,7 @@ func ClientUnBlock(clientID string) error {
 	if err := toggleStatus(true, &clientID, model.ClientPath); err != nil {
 		return err
 	}
-	log.Info().Msg("Account Blocked")
+	log.Info().Msg("Client UnBlocked")
 	return nil
 }
 
@@ -45,7 +45,7 @@ func UserBlock(userID string) error {
 	if err := toggleStatus(false, &userID, model.UsersPath); err != nil {
 		return err
 	}
-	log.Info().Msg("Account Blocked")
+	log.Info().Msg("User Blocked")
 	return nil
 }
 
@@ -53,7 +53,7 @@ func UserUnBlock(userID string) error {
 	if err := toggleStatus(true, &userID, model.UsersPath); err != nil {
 		return err
 	}
-	log.Info().Msg("Account Blocked")
+	log.Info().Msg("User UnBlocked")
 	return nil
 }
 

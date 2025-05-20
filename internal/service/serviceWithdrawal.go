@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 
 	model "BankingAPI/internal/model"
 
@@ -20,7 +19,7 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, er
 		withdrawal: withdrawalRequest.Withdrawal,
 		balance:    0.0,
 	}
-	account, err := AccountResponse(withdrawal.account_id)
+	account, err := Account(withdrawal.account_id)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +39,8 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, er
 	withdrawal.balance = (account.Balance - withdrawal.withdrawal)
 	updates := []firestore.Update{
 		{
-			Path:  "Balance",
-			Value: fmt.Sprintf("%v", withdrawal.balance),
+			Path:  "balance",
+			Value: withdrawal.balance,
 		},
 	}
 

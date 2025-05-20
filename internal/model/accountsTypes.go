@@ -46,7 +46,7 @@ type WithdrawalResponse struct {
 }
 type TransferRequest struct {
 	Account_id_from string  `json:"account_id_from" xml:"account_id_from"`
-	Account_id_to   string  `json:"account_id_to" xml:"account_id_to"`
+	Account_id_to   string  `json:"accou	nt_id_to" xml:"account_id_to"`
 	Password        string  `json:"password" xml:"password"`
 	Value           float64 `json:"value" xml:"value"`
 }

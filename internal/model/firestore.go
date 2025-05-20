@@ -50,10 +50,6 @@ func CreateObject(entity *map[string]interface{}, collection string, createdID *
 		log.Error().Msg(err.Error())
 		return err
 	}
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return err
-	}
 	(*createdID) = docRef.ID
 	return nil
 }
@@ -85,6 +81,9 @@ func GetTypeFromDB(typesID *string, collection string) (*firestore.DocumentSnaps
 	docSnapshot, err := docRef.Get(Ctx)
 	if status.Code(err) == codes.NotFound {
 		return nil, errors.New("Account, User or Client with this ID do not exists")
+	}
+	if docSnapshot == nil {
+		return nil, errors.New("Nil account")
 	}
 	return docSnapshot, nil
 }

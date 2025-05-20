@@ -37,7 +37,7 @@ func ClientPostHandler(c echo.Context) error {
 func ClientGetHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
 
-	clientInfo, err := service.GetClient(clientID)
+	clientInfo, err := service.Client(clientID)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
@@ -62,6 +62,8 @@ func ClientPutHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+
+	clientInfo.Client_id = c.Param("client_id")
 
 	clientResponse, err := service.UpdateClient(&clientInfo)
 	if err != nil {
