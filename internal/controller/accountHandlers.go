@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	model "BankingAPI/internal/model"
+	model "BankingAPI/internal/model/types"
 	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
@@ -32,7 +32,6 @@ func AccountPostHandler(c echo.Context) error {
 
 	accountResponse, err := service.CreateAccount(&accountInfo)
 	if err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -43,7 +42,6 @@ func AccountGetHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
 	accountResponse, err := service.Account(accountID)
 	if err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -58,7 +56,6 @@ func AccountGetOrderFilterHandler(c echo.Context) error {
 	}
 	listOfAccounts, err := service.GetAccountByFilterAndOrder(&listRequest)
 	if err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -68,7 +65,6 @@ func AccountGetOrderFilterHandler(c echo.Context) error {
 func AccountDeleteHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
 	if err := service.AccountDelete(accountID); err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -85,7 +81,6 @@ func AccountPutHandler(c echo.Context) error {
 
 	accountResponse, err := service.UpdateAccount(&accountInfo)
 	if err != nil {
-		log.Error().Msg(err.Error() + "Account Put Handler")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -102,7 +97,6 @@ func AccountPutDepositHandler(c echo.Context) error {
 
 	newBalance, err := service.ProcessDeposit(&depositRequest)
 	if err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -120,7 +114,6 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 	// talk to service
 	newBalance, err := service.ProcessWithdrawal(&withdrawalRequest)
 	if err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -130,7 +123,6 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 func AccountPutBlockHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
 	if err := service.AccountBlock(accountID); err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -140,7 +132,6 @@ func AccountPutBlockHandler(c echo.Context) error {
 func AccountPutUnBlockHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
 	if err := service.AccountUnBlock(accountID); err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -156,7 +147,6 @@ func AccountPutAutomaticDebit(c echo.Context) error {
 	newAutoDebit.Account_id = c.Param("account_id")
 
 	if err := service.ProcessNewAutomaticDebit(&newAutoDebit); err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -171,7 +161,6 @@ func AccountPostTranferHandler(c echo.Context) error {
 	}
 	newTransferInfo.Account_id_from = c.Param("account_id_from")
 	if err := service.ProcessNewTransfer(&newTransferInfo); err != nil {
-		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 

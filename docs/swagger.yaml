@@ -64,9 +64,9 @@ paths:
                   - register_date
                 properties:
                   user_id:
-                    type: integer
-                    format: uint32
-                    example: 20128
+                    type: string
+                    format: uuid
+                    example: "20128"
                   name:
                     type: string
                     format: uuid
@@ -95,8 +95,8 @@ paths:
           description: ID of the user requested
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
+            format: uuid
       responses:
         "202":
           description: user returned succesfully
@@ -105,14 +105,14 @@ paths:
               schema:
                 type: object
                 required:
-                  - Id
+                  - user_id
                   - name
                   - register_date
                 properties:
-                  Id:
-                    type: integer
-                    format: uint32
-                    example: 20128
+                  user_id:
+                    type: string
+                    format: uuid
+                    example: "20128"
                   name:
                     type: string
                     example: Carlos
@@ -136,7 +136,7 @@ paths:
                   Message:
                     type: string
                     format: uuid
-                    example: "ID not found"
+                    example: "ID in colelction: users not found"
     delete:
       tags:
         - users
@@ -149,8 +149,8 @@ paths:
           description: ID of user to be deleted
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
+            format: uuid
       responses:
         "200":
           description: User deleted successfully
@@ -159,25 +159,12 @@ paths:
               schema:
                 type: object
                 required:
-                  - Id
+                  - message
                 properties:
-                  Id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-        "400":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
+                  message:
                     type: string
                     format: uuid
-                    example: "User to be deleted not found"
+                    example: "User deleted"
     put:
       tags:
         - users
@@ -191,8 +178,8 @@ paths:
           description: ID of the user to be updated
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
+            format: uuid
         - in: query
           name: name
           description: name of the user
@@ -228,9 +215,9 @@ paths:
                   - register_date
                 properties:
                   user_id:
-                    type: integer
-                    format: uint32
-                    example: 20128
+                    type: string
+                    format: uuid
+                    example: "20128"
                   name:
                     type: string
                     example: Carlos
@@ -250,7 +237,7 @@ paths:
                   message:
                     type: string
                     format: uuid
-                    example: "ID not passed"
+                    example: "ID from colection: users not found"
   /accounts:
     post:
       tags:
@@ -971,19 +958,19 @@ paths:
       operationId: transferMoney
       parameters:
         - in: path
-          name: account_idFrom
+          name: account_id_from
           description: ID of the account to be updated
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
+            format: uuid
         - in: query
-          name: account_idTo
+          name: account_id_to
           description: ID of the account to be updated
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
+            format: uuid
         - in: query
           name: TransferValue
           description: The value to be transferred between accounts (negative means withdrawl, positive means deposit)

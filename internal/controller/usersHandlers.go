@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	model "BankingAPI/internal/model"
+	model "BankingAPI/internal/model/types"
 	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
@@ -27,17 +27,15 @@ func UserPostHandler(c echo.Context) error {
 	}
 	userResponse, err := service.CreateUser(&userInfo)
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(err.HttpCode, err.Err)
 	}
-	return c.JSON(http.StatusCreated, userResponse)
+	return c.JSON(http.StatusCreated, (*userResponse))
 }
 
 func UserPutBlockHandler(c echo.Context) error {
 	userID := c.Param("users_id")
 	if err := service.UserBlock(userID); err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(err.HttpCode, err.Err)
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Blocked"})
 }
@@ -46,8 +44,7 @@ func UserPutUnBlockHandler(c echo.Context) error {
 	userID := c.Param("users_id")
 
 	if err := service.UserUnBlock(userID); err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(err.HttpCode, err.Err)
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Unblocked"})
 }
@@ -58,33 +55,31 @@ func UserPutHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+
 	userInfo.User_id = c.Param("users_id")
 
 	userResponse, err := service.UpdateUser(&userInfo)
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	return c.JSON(http.StatusOK, userResponse)
+	return c.JSON(http.StatusOK, (*userResponse))
 }
 
 func UserGetHandler(c echo.Context) error {
 	userID := c.Param("users_id")
 	userResponse, err := service.User(userID)
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, userResponse)
+	return c.JSON(http.StatusOK, (*userResponse))
 }
 
 func UserDeleteHandler(c echo.Context) error {
 	userID := c.Param("users_id")
 
 	if err := service.UserDelete(userID); err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(err.HttpCode, err.Err)
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User deleted"})

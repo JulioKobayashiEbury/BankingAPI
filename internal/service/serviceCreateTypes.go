@@ -1,13 +1,15 @@
 package service
 
 import (
-	"fmt"
 	"time"
 
-	model "BankingAPI/internal/model"
+	repository "BankingAPI/internal/model/repository"
+	model "BankingAPI/internal/model/types"
+
+	"github.com/rs/zerolog/log"
 )
 
-func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, error) {
+func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, *model.Erro) {
 	accountMap := map[string]interface{}{
 		"client_id":     account.Client_id,
 		"user_id":       account.User_id,
@@ -17,13 +19,14 @@ func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, error
 		"register_date": time.Now().String(),
 		"status":        true,
 	}
-	if err := model.CreateObject(&accountMap, model.AccountsPath, &account.Account_id); err != nil {
+	if err := repository.CreateObject(&accountMap, repository.AccountsPath, &account.Account_id); err != nil {
 		return nil, err
 	}
+	log.Info().Msg("Account created: " + account.Account_id)
 	return Account(account.Account_id)
 }
 
-func CreateClient(client *model.ClientRequest) (*model.ClientResponse, error) {
+func CreateClient(client *model.ClientRequest) (*model.ClientResponse, *model.Erro) {
 	clientMap := map[string]interface{}{
 		"user_id":       client.User_id,
 		"name":          client.Name,
@@ -32,13 +35,14 @@ func CreateClient(client *model.ClientRequest) (*model.ClientResponse, error) {
 		"register_date": time.Now().String(),
 		"status":        true,
 	}
-	if err := model.CreateObject(&clientMap, model.ClientPath, &client.Client_id); err != nil {
+	if err := repository.CreateObject(&clientMap, repository.ClientPath, &client.Client_id); err != nil {
 		return nil, err
 	}
+	log.Info().Msg("Client created: " + client.Client_id)
 	return Client(client.Client_id)
 }
 
-func CreateUser(user *model.UserRequest) (*model.UserResponse, error) {
+func CreateUser(user *model.UserRequest) (*model.UserResponse, *model.Erro) {
 	userMap := map[string]interface{}{
 		"name":          user.Name,
 		"document":      user.Document,
@@ -46,9 +50,9 @@ func CreateUser(user *model.UserRequest) (*model.UserResponse, error) {
 		"register_date": time.Now().String(),
 		"status":        true,
 	}
-	if err := model.CreateObject(&userMap, model.UsersPath, &user.User_id); err != nil {
+	if err := repository.CreateObject(&userMap, repository.UsersPath, &user.User_id); err != nil {
 		return nil, err
 	}
-	fmt.Print(userMap["id"])
+	log.Info().Msg("User created: " + user.User_id)
 	return User(user.User_id)
 }

@@ -1,6 +1,6 @@
 package service
 
-import "BankingAPI/internal/model"
+import model "BankingAPI/internal/model/types"
 
 func ProcessNewAutomaticDebit(autoDebit *model.AutomaticDebitRequest) error {
 	return nil

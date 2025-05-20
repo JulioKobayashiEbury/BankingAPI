@@ -2,13 +2,16 @@ package service
 
 import (
 	"errors"
+	"net/http"
 
-	model "BankingAPI/internal/model"
+	repository "BankingAPI/internal/model/repository"
+	model "BankingAPI/internal/model/types"
 
 	"cloud.google.com/go/firestore"
+	"github.com/rs/zerolog/log"
 )
 
-func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, error) {
+func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, *model.Erro) {
 	// monta update
 	withdrawal := WithdrawalDB{
 		account_id: withdrawalRequest.Account_id,
@@ -24,13 +27,13 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, er
 		return nil, err
 	}
 	if account.Client_id != withdrawal.client_id {
-		return nil, errors.New("Client ID not valid")
+		return nil, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	if account.User_id != withdrawal.user_id {
-		return nil, errors.New("User ID not valid")
+		return nil, &model.Erro{Err: errors.New("User ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	if account.Agency_id != withdrawal.agency_id {
-		return nil, errors.New("Agency ID not valid")
+		return nil, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	/* if account.Password != withdrawal.password {
 
@@ -44,8 +47,10 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, er
 		},
 	}
 
-	if err := model.UpdateTypesDB(&updates, &withdrawal.account_id, model.AccountsPath); err != nil {
+	if err := repository.UpdateTypesDB(&updates, &withdrawal.account_id, repository.AccountsPath); err != nil {
 		return nil, err
 	}
+
+	log.Info().Msg("Succesful Withdrawal: " + withdrawal.account_id)
 	return &withdrawal.balance, nil
 }
