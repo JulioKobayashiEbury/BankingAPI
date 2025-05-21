@@ -14,6 +14,7 @@ func AddAccountEndPoints(server *echo.Echo) {
 	server.GET("/accounts", AccountGetOrderFilterHandler)
 	server.GET("/accounts/:account_id", AccountGetHandler)
 	server.POST("/accounts", AccountPostHandler)
+	server.POST("/accounts/auth", AccountAuthHandler)
 	server.DELETE("/accounts/:account_id", AccountDeleteHandler)
 	server.PUT("/accounts/:account_id", AccountPutHandler)
 	server.PUT("/accounts/:account_id/balance/withdrawal", AccountPutWithDrawalHandler)
@@ -36,6 +37,10 @@ func AccountPostHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, accountResponse)
+}
+
+func AccountAuthHandler(c echo.Context) error {
+	return c.JSON(http.StatusOK, nil)
 }
 
 func AccountGetHandler(c echo.Context) error {

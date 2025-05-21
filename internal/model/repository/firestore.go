@@ -84,11 +84,11 @@ func GetTypeFromDB(typesID *string, collection string) (*firestore.DocumentSnaps
 	docSnapshot, err := clientDB.Collection(collection).Doc((*typesID)).Get(Ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return nil, &model.Erro{Err: errors.New("ID in collection: " + collection + " not found"), HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: errors.New("ID in collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
 	}
 	if docSnapshot == nil {
 		log.Error().Msg("Nil account from snapshot")
-		return nil, &model.Erro{Err: errors.New("Nil account from snapshot"), HttpCode: http.StatusBadRequest}
+		return nil, &model.Erro{Err: errors.New("Nil account from snapshot"), HttpCode: http.StatusInternalServerError}
 	}
 	return docSnapshot, nil
 }

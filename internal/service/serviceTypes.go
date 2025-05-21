@@ -1,5 +1,11 @@
 package service
 
+const (
+	UserRole    = "user"
+	ClientRole  = "client"
+	AccountRole = "account"
+)
+
 type AccountDB struct {
 	account_id    string
 	client_id     string
@@ -54,4 +60,8 @@ type UserDB struct {
 	password      string
 	register_date string
 	status        bool
+}
+
+type Auth struct {
+	Password string `json:"password" xml:"passsword"`
 }

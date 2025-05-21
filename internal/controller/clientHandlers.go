@@ -13,6 +13,7 @@ import (
 
 func AddClientsEndPoints(server *echo.Echo) {
 	server.POST("/clients", ClientPostHandler)
+	server.POST("/clients/auth", ClientAuthHandler)
 	server.GET("/clients/:client_id", ClientGetHandler)
 	server.DELETE("/clients/:client_id", ClientDeleteHandler)
 	server.PUT("/clients/:client_id", ClientPutHandler)
@@ -32,6 +33,11 @@ func ClientPostHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, (*clientResponse))
+}
+
+func ClientAuthHandler(c echo.Context) error {
+	// work here
+	return nil
 }
 
 func ClientGetHandler(c echo.Context) error {
