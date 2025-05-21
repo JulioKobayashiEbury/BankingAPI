@@ -33,7 +33,7 @@ func AccountPostHandler(c echo.Context) error {
 
 	accountResponse, err := service.CreateAccount(&accountInfo)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, accountResponse)

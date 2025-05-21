@@ -24,15 +24,12 @@ var Ctx context.Context
 
 func GetFireStoreClient() (*firestore.Client, error) {
 	Ctx = context.Background()
-	// arrumar aqui
-	os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:8080")
-	os.Setenv("GOOGLE_CLOUD_PROJECT", "banking")
 
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 
 	if projectID == "" {
 		log.Error().Msg("GOOGLE_CLOUD_PROJECT environment variable not set.")
-		return nil, errors.New("GOOGLE_CLOUD_PROJECT environment variable not set.")
+		return nil, errors.New("GOOGLE_CLOUD_PROJECT environment variable not set")
 	}
 
 	client, err := firestore.NewClient(Ctx, projectID)
@@ -40,6 +37,7 @@ func GetFireStoreClient() (*firestore.Client, error) {
 		log.Error().Msg("Failed to create client: %v")
 		return nil, err
 	}
+	Ctx.Done()
 	return client, nil
 }
 
@@ -54,6 +52,7 @@ func CreateObject(entity *map[string]interface{}, collection string, createdID *
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+	Ctx.Done()
 	(*createdID) = docRef.ID
 	return nil
 }
@@ -70,7 +69,7 @@ func DeleteObject(objectID *string, collection string) *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-
+	Ctx.Done()
 	return nil
 }
 
@@ -88,8 +87,9 @@ func GetTypeFromDB(typesID *string, collection string) (*firestore.DocumentSnaps
 	}
 	if docSnapshot == nil {
 		log.Error().Msg("Nil account from snapshot")
-		return nil, &model.Erro{Err: errors.New("Nil account from snapshot"), HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: errors.New("nil account from snapshot"), HttpCode: http.StatusInternalServerError}
 	}
+	Ctx.Done()
 	return docSnapshot, nil
 }
 
@@ -112,6 +112,6 @@ func UpdateTypesDB(document *[]firestore.Update, typesID *string, collection str
 	if err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-
+	Ctx.Done()
 	return nil
 }
