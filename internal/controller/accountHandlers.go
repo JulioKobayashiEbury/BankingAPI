@@ -35,11 +35,7 @@ func AccountPostHandler(c echo.Context) error {
 
 	accountResponse, err := service.CreateAccount(&accountInfo)
 	if err != nil {
-<<<<<<< HEAD
-		return c.JSON(http.StatusInternalServerError, err.Err.Error())
-=======
 		return c.JSON(err.HttpCode, err.Err.Error())
->>>>>>> d6b0a58 ([BankingAPI])
 	}
 
 	return c.JSON(http.StatusCreated, accountResponse)
