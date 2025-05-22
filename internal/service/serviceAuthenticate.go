@@ -15,52 +15,19 @@ const expirationMin = 30
 
 var jwtKey = []byte("bankingapi-key")
 
-// validate user identity and generate token
-func AuthenticateUser(userInfo *model.UserRequest) (bool, *model.Erro) {
-	docSnapshot, err := repository.GetTypeFromDB(&(userInfo.User_id), repository.UsersPath)
+func Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro) {
+	docSnapshot, err := repository.GetTypeFromDB(typeID, collection)
 	if err != nil {
 		return false, err
 	}
-	var userAuth Auth
-	if err := docSnapshot.DataTo(&userAuth); err != nil {
+	var typeAuth Auth
+	if err := docSnapshot.DataTo(&typeAuth); err != nil {
 		return false, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	if (*userInfo).Password != userAuth.Password {
+	if *password != typeAuth.Password {
 		return false, nil
 	}
-	log.Info().Msg("Authenticated entrance: " + (*&userInfo.User_id))
-	return true, nil
-}
-
-func AuthenticateClient(clientInfo *model.ClientRequest) (bool, *model.Erro) {
-	docSnapshot, err := repository.GetTypeFromDB(&(clientInfo.Client_id), repository.ClientPath)
-	if err != nil {
-		return false, err
-	}
-	var clientAuth Auth
-	if err := docSnapshot.DataTo(&clientAuth); err != nil {
-		return false, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	if (*clientInfo).Password != clientAuth.Password {
-		return false, nil
-	}
-	log.Info().Msg("Authenticated entrance: " + (*&clientInfo.Client_id))
-	return true, nil
-}
-
-func AuthenticateAccount(accountInfo *model.AccountRequest) (bool, *model.Erro) {
-	docSnapshot, err := repository.GetTypeFromDB(&(accountInfo.Account_id), repository.AccountsPath)
-	if err != nil {
-		return false, err
-	}
-	var accountAuth Auth
-	if err := docSnapshot.DataTo(&accountAuth); err != nil {
-		return false, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	if (*accountInfo).Password != accountAuth.Password {
-		return false, nil
-	}
-	log.Info().Msg("Authenticated entrance: " + (*&accountInfo.Account_id))
+	log.Info().Msg("Authenticated entrance: " + *typeID)
 	return true, nil
 }
 

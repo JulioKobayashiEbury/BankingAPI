@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
+	repository "BankingAPI/internal/model/repository"
 	model "BankingAPI/internal/model/types"
 	"BankingAPI/internal/service"
 
@@ -28,7 +30,7 @@ func UserPostHandler(c echo.Context) error {
 	}
 	userResponse, err := service.CreateUser(&userInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err)
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusCreated, (*userResponse))
 }
@@ -39,11 +41,11 @@ func UserAuthHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	ok, err := service.AuthenticateUser(&userInfo)
+	ok, err := service.Authenticate(&(userInfo).User_id, &(userInfo).Password, repository.UsersPath)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	if ok != true {
+	if !ok {
 		return c.JSON(http.StatusUnauthorized, "Credentials not valid")
 	}
 	cookie, err := service.GenerateToken(&(userInfo.User_id), service.UserRole)
@@ -51,63 +53,43 @@ func UserAuthHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	c.SetCookie(cookie)
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Authorized"})
+	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "User Authorized"})
 }
 
 func UserPutBlockHandler(c echo.Context) error {
-	claims, err, cookie := service.Authorize(c.Cookie("Token"))
+	userID, err := userAuthorization(&c)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, err.Err.Error())
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	if cookie != nil {
-		c.SetCookie(cookie)
-	}
-	userID := c.Param("users_id")
-	if (*claims).Id != userID {
-		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Not authorized"})
-	}
-	if err := service.UserBlock(userID); err != nil {
-		return c.JSON(err.HttpCode, err.Err)
+	if err := service.UserBlock(*userID); err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Blocked"})
 }
 
 func UserPutUnBlockHandler(c echo.Context) error {
-	claims, err, cookie := service.Authorize(c.Cookie("Token"))
+	userID, err := userAuthorization(&c)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, err.Err.Error())
-	}
-	if cookie != nil {
-		c.SetCookie(cookie)
-	}
-	userID := c.Param("users_id")
-	if (*claims).Id != userID {
-		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Not authorized"})
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := service.UserUnBlock(userID); err != nil {
-		return c.JSON(err.HttpCode, err.Err)
+	if err := service.UserUnBlock(*userID); err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Unblocked"})
 }
 
 func UserPutHandler(c echo.Context) error {
-	claims, err, cookie := service.Authorize(c.Cookie("Token"))
+	userID, err := userAuthorization(&c)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, err.Err.Error())
-	}
-	if cookie != nil {
-		c.SetCookie(cookie)
-	}
-	userID := c.Param("users_id")
-	if (*claims).Id != userID {
-		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Not authorized"})
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	var userInfo model.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
+	userInfo.User_id = *userID
 	userResponse, err := service.UpdateUser(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -116,18 +98,11 @@ func UserPutHandler(c echo.Context) error {
 }
 
 func UserGetHandler(c echo.Context) error {
-	claims, err, cookie := service.Authorize(c.Cookie("Token"))
+	userID, err := userAuthorization(&c)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, err.Err.Error())
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	if cookie != nil {
-		c.SetCookie(cookie)
-	}
-	userID := c.Param("users_id")
-	if (*claims).Id != userID {
-		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Not authorized"})
-	}
-	userResponse, err := service.User(userID)
+	userResponse, err := service.User(*userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -136,20 +111,28 @@ func UserGetHandler(c echo.Context) error {
 }
 
 func UserDeleteHandler(c echo.Context) error {
-	claims, err, cookie := service.Authorize(c.Cookie("Token"))
+	userID, err := userAuthorization(&c)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, err.Err.Error())
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	if cookie != nil {
-		c.SetCookie(cookie)
-	}
-	userID := c.Param("users_id")
-	if (*claims).Id != userID {
-		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Not authorized"})
-	}
-	if err := service.UserDelete(userID); err != nil {
-		return c.JSON(err.HttpCode, err.Err)
+	if err := service.UserDelete(*userID); err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User deleted"})
+}
+
+func userAuthorization(c *echo.Context) (*string, *model.Erro) {
+	claims, err, cookie := service.Authorize((*c).Cookie("Token"))
+	if err != nil {
+		return nil, err
+	}
+	if cookie != nil {
+		(*c).SetCookie(cookie)
+	}
+	userID := (*c).Param("users_id")
+	if (*claims).Id != userID {
+		return nil, &model.Erro{Err: errors.New("Not authorized"), HttpCode: http.StatusBadRequest}
+	}
+	return &userID, nil
 }

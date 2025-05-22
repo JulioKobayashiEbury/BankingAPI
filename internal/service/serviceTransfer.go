@@ -10,8 +10,8 @@ import (
 
 func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
 	transferDBT := TransferDB{
-		account_id_from: transfer.Account_id_from,
-		account_id_to:   transfer.Account_id_to,
+		account_id_from: transfer.Account_id,
+		account_id_to:   transfer.Account_to,
 		value:           transfer.Value,
 		password:        transfer.Password,
 	}
@@ -47,6 +47,16 @@ func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
 	if err := repository.UpdateTypesDB(&updateOnTo, &transferDBT.account_id_to, repository.AccountsPath); err != nil {
 		return err
 	}
+	transferMap := map[string]interface{}{
+		"account_id": accountFrom.Account_id,
+		"account_to": accountTo.Account_id,
+		"value":      transferDBT.value,
+	}
+	var transferID string
+	if err := repository.CreateObject(&transferMap, repository.TransfersPath, &transferID); err != nil {
+		return err
+	}
+	(*transfer).Transfer_id = transferID
 
 	log.Info().Msg("Transfer was succesful: " + transferDBT.account_id_from + " to " + transferDBT.account_id_to)
 	return nil

@@ -45,10 +45,11 @@ type WithdrawalResponse struct {
 	Balance    float64 `json:"balance" xml:"balance"`
 }
 type TransferRequest struct {
-	Account_id_from string  `json:"account_id_from" xml:"account_id_from"`
-	Account_id_to   string  `json:"accou	nt_id_to" xml:"account_id_to"`
-	Password        string  `json:"password" xml:"password"`
-	Value           float64 `json:"value" xml:"value"`
+	Transfer_id string  `json:"transfer_id" xml:"transfer_id"`
+	Account_id  string  `json:"account_id" xml:"account_id"`
+	Account_to  string  `json:"account_to" xml:"account_to"`
+	Password    string  `json:"password" xml:"password"`
+	Value       float64 `json:"value" xml:"value"`
 }
 
 type AutomaticDebitRequest struct {

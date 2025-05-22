@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	repository "BankingAPI/internal/model/repository"
@@ -37,6 +38,7 @@ func ProcessDeposit(depositRequest *model.DepositRequest) (*float64, *model.Erro
 
 	}
 	*/
+	fmt.Println(deposit.deposit)
 	deposit.balance = ((*account).Balance + deposit.deposit)
 	updates := []firestore.Update{
 		{

@@ -40,6 +40,9 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, *m
 	}
 	*/
 	withdrawal.balance = (account.Balance - withdrawal.withdrawal)
+	if withdrawal.balance < 0.0 {
+		return nil, &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
+	}
 	updates := []firestore.Update{
 		{
 			Path:  "balance",
