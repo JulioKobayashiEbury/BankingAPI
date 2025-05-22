@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"net/http"
 	"time"
 
 	repository "BankingAPI/internal/model/repository"
@@ -10,13 +12,17 @@ import (
 )
 
 func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, *model.Erro) {
+	if account.Agency_id == 0 || account.User_id == "" || account.Client_id == "" || account.Password == "" {
+		log.Warn().Msg("Missing credentials on creating account")
+		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
+	}
 	accountMap := map[string]interface{}{
 		"client_id":     account.Client_id,
 		"user_id":       account.User_id,
 		"agency_id":     account.Agency_id,
 		"password":      account.Password,
 		"balance":       0.0,
-		"register_date": time.Now().String(),
+		"register_date": time.Now().UnixMicro(),
 		"status":        true,
 	}
 	if err := repository.CreateObject(&accountMap, repository.AccountsPath, &account.Account_id); err != nil {
@@ -27,12 +33,16 @@ func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, *mode
 }
 
 func CreateClient(client *model.ClientRequest) (*model.ClientResponse, *model.Erro) {
+	if client.User_id == "" || client.Document == "" || client.Password == "" || client.Name == "" {
+		log.Warn().Msg("Missing credentials on creating client")
+		return nil, &model.Erro{Err: errors.New("Missing credentials for creating client"), HttpCode: http.StatusBadRequest}
+	}
 	clientMap := map[string]interface{}{
 		"user_id":       client.User_id,
 		"name":          client.Name,
 		"document":      client.Document,
 		"password":      client.Password,
-		"register_date": time.Now().String(),
+		"register_date": time.Now().UnixMicro(),
 		"status":        true,
 	}
 	if err := repository.CreateObject(&clientMap, repository.ClientPath, &client.Client_id); err != nil {
@@ -43,11 +53,15 @@ func CreateClient(client *model.ClientRequest) (*model.ClientResponse, *model.Er
 }
 
 func CreateUser(user *model.UserRequest) (*model.UserResponse, *model.Erro) {
+	if user.Name == "" || user.Document == "" || user.Password == "" {
+		log.Warn().Msg("Missing credentials on creating user")
+		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
+	}
 	userMap := map[string]interface{}{
 		"name":          user.Name,
 		"document":      user.Document,
 		"password":      user.Password,
-		"register_date": time.Now().String(),
+		"register_date": time.Now().UnixMicro(),
 		"status":        true,
 	}
 	if err := repository.CreateObject(&userMap, repository.UsersPath, &user.User_id); err != nil {

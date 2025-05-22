@@ -27,7 +27,7 @@ func ClientPostHandler(c echo.Context) error {
 	var clientInfo model.ClientRequest
 	if err := c.Bind(&clientInfo); err != nil {
 		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	clientResponse, err := service.CreateClient(&clientInfo)
 	if err != nil {
@@ -38,7 +38,6 @@ func ClientPostHandler(c echo.Context) error {
 }
 
 func ClientAuthHandler(c echo.Context) error {
-	// work here
 	var clientInfo model.ClientRequest
 	if err := c.Bind(&clientInfo); err != nil {
 		log.Error().Msg(err.Error())
@@ -140,7 +139,7 @@ func clientAuthorization(c *echo.Context) (*string, *model.Erro) {
 	}
 	clientID := (*c).Param("client_id")
 	if (*claims).Id != clientID {
-		return nil, &model.Erro{Err: errors.New("Not authorized"), HttpCode: http.StatusBadRequest}
+		return nil, &model.Erro{Err: errors.New("Not authorized"), HttpCode: http.StatusUnauthorized}
 	}
 	return &clientID, nil
 }

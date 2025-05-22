@@ -15,11 +15,11 @@ import (
 func AddUsersEndPoints(server *echo.Echo) {
 	server.POST("/users", UserPostHandler)
 	server.POST("/users/auth", UserAuthHandler)
-	server.GET("/users/:users_id", UserGetHandler)
-	server.DELETE("/users/:users_id", UserDeleteHandler)
-	server.PUT("/users/:users_id", UserPutHandler)
-	server.PUT("/users/:users_id/block", UserPutBlockHandler)
-	server.PUT("/users/:users_id/unblock", UserPutUnBlockHandler)
+	server.GET("/users/:user_id", UserGetHandler)
+	server.DELETE("/users/:user_id", UserDeleteHandler)
+	server.PUT("/users/:user_id", UserPutHandler)
+	server.PUT("/users/:user_id/block", UserPutBlockHandler)
+	server.PUT("/users/:user_id/unblock", UserPutUnBlockHandler)
 }
 
 func UserPostHandler(c echo.Context) error {
@@ -130,7 +130,7 @@ func userAuthorization(c *echo.Context) (*string, *model.Erro) {
 	if cookie != nil {
 		(*c).SetCookie(cookie)
 	}
-	userID := (*c).Param("users_id")
+	userID := (*c).Param("user_id")
 	if (*claims).Id != userID {
 		return nil, &model.Erro{Err: errors.New("Not authorized"), HttpCode: http.StatusBadRequest}
 	}

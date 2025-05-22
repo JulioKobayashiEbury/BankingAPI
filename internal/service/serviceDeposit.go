@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	repository "BankingAPI/internal/model/repository"
@@ -34,11 +33,7 @@ func ProcessDeposit(depositRequest *model.DepositRequest) (*float64, *model.Erro
 	if account.Agency_id != deposit.agency_id {
 		return nil, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
-	/* if account.Password != deposit.password {
 
-	}
-	*/
-	fmt.Println(deposit.deposit)
 	deposit.balance = ((*account).Balance + deposit.deposit)
 	updates := []firestore.Update{
 		{

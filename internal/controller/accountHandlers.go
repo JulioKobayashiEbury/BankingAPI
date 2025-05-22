@@ -16,7 +16,7 @@ func AddAccountEndPoints(server *echo.Echo) {
 	server.GET("/accounts", AccountGetOrderFilterHandler)
 	server.GET("/accounts/:account_id", AccountGetHandler)
 	server.POST("/accounts", AccountPostHandler)
-	server.POST("/accounts/auth", AccountAuthHandler)
+	server.PUT("/accounts/auth", AccountAuthHandler)
 	server.DELETE("/accounts/:account_id", AccountDeleteHandler)
 	server.PUT("/accounts/:account_id", AccountPutHandler)
 	server.PUT("/accounts/:account_id/balance/withdrawal", AccountPutWithDrawalHandler)
@@ -24,6 +24,7 @@ func AddAccountEndPoints(server *echo.Echo) {
 	server.PUT("/accounts/:account_id/newTransfer", AccountPutTransferHandler)
 	server.PUT("/accounts/:account_id/block", AccountPutBlockHandler)
 	server.PUT("/accounts/:account_id/unblock", AccountPutUnBlockHandler)
+	server.PUT("/accounts/:account_id/debit", AccountPutAutomaticDebit)
 }
 
 func AccountPostHandler(c echo.Context) error {

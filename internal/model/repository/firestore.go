@@ -19,6 +19,7 @@ const (
 	UsersPath     = "users"
 	ClientPath    = "clients"
 	TransfersPath = "transfers"
+	AutoDebit     = "autodebit"
 )
 
 var Ctx context.Context
