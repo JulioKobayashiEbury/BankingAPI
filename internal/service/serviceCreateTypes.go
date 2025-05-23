@@ -18,7 +18,10 @@ func CreateAccount(account *model.AccountRequest) (*model.AccountResponse, *mode
 		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
 	}
 	// verify if client and user exists, PERMISSION MUST BE of user
-	if ok, err := verifyUserId(&account.User_id); !ok {
+	if ok, err := verifyTypeId(&account.User_id, repository.UsersPath); !ok {
+		return nil, err
+	}
+	if ok, err := verifyTypeId(&account.Client_id, repository.ClientPath); !ok {
 		return nil, err
 	}
 	accountMap := map[string]interface{}{
@@ -43,7 +46,7 @@ func CreateClient(client *model.ClientRequest) (*model.ClientResponse, *model.Er
 		return nil, &model.Erro{Err: errors.New("Missing credentials for creating client"), HttpCode: http.StatusBadRequest}
 	}
 	// verify user id exists, PERMISSION MUST BE of user to create
-	if ok, err := verifyUserId(&client.User_id); !ok {
+	if ok, err := verifyTypeId(&client.User_id, repository.UsersPath); !ok {
 		return nil, err
 	}
 	clientMap := map[string]interface{}{
@@ -82,16 +85,14 @@ func CreateUser(user *model.UserRequest) (*model.UserResponse, *model.Erro) {
 	return User(user.User_id)
 }
 
-func verifyUserId(userID *string) (bool, *model.Erro) {
-	userSnapshot, err := repository.GetTypeFromDB(userID, repository.UsersPath)
+func verifyTypeId(typeID *string, collection string) (bool, *model.Erro) {
+	typeSnapshot, err := repository.GetTypeFromDB(typeID, collection)
 	if err != nil {
 		return false, err
 	}
-	expectedID := userSnapshot.Ref.ID
-	fmt.Println(expectedID)
-	if expectedID != *userID {
-		log.Warn().Msg("No match for user id")
-		return false, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusBadRequest}
+	if !typeSnapshot.Exists() {
+		log.Warn().Msg("No match for type id")
+		return false, &model.Erro{Err: errors.New("No match for type id"), HttpCode: http.StatusBadRequest}
 	}
 	return true, nil
 }

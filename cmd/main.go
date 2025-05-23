@@ -54,6 +54,4 @@ func main() {
 		os.Exit(0)
 	}()
 	controller.Server()
-	for {
-	}
 }
