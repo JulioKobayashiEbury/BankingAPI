@@ -20,6 +20,7 @@ const (
 	ClientPath    = "clients"
 	TransfersPath = "transfers"
 	AutoDebit     = "autodebit"
+	AutoDebitLog  = "autodebitlog"
 )
 
 var Ctx context.Context
@@ -116,4 +117,23 @@ func UpdateTypesDB(document *[]firestore.Update, typesID *string, collection str
 	}
 	Ctx.Done()
 	return nil
+}
+
+func GetAllByTypeDB(collection string) ([]*firestore.DocumentSnapshot, *model.Erro) {
+	clientDB, err := GetFireStoreClient()
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	}
+	defer clientDB.Close()
+
+	iterator := clientDB.Collection(collection).Documents(Ctx)
+
+	all, err := iterator.GetAll()
+	if err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	}
+
+	Ctx.Done()
+	return all, nil
 }

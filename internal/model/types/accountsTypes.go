@@ -21,9 +21,7 @@ type AccountResponse struct {
 type WithdrawalRequest struct {
 	Account_id string  `json:"account_id" xml:"account_id"`
 	Client_id  string  `json:"client_id" xml:"client_id"`
-	User_id    string  `json:"user_id" xml:"user_id"`
 	Agency_iD  uint32  `json:"agency_id" xml:"agency_id"`
-	Password   string  `json:"password" xml:"password"`
 	Withdrawal float64 `json:"withdrawal" xml:"withdrawal"`
 }
 
@@ -53,21 +51,23 @@ type TransferRequest struct {
 }
 
 type AutomaticDebitRequest struct {
-	Account_id string  `json:"account_id" xml:"account_id"`
-	Client_id  string  `json:"client_id" xml:"client_id"`
-	Agency_id  uint32  `json:"agency_id" xml:"agency_id"`
-	Value      float64 `json:"value" xml:"value"`
-	Debit_date string  `json:"debit_date" xml:"debit_date"`
+	Account_id      string  `json:"account_id" xml:"account_id"`
+	Client_id       string  `json:"client_id" xml:"client_id"`
+	Agency_id       uint32  `json:"agency_id" xml:"agency_id"`
+	Value           float64 `json:"value" xml:"value"`
+	Debit_day       uint16  `json:"debit_day" xml:"debit_day"`
+	Expiration_date string  `json:"expiration_date" xml:"expiration_date"`
 }
 
 type AutomaticDebitResponse struct {
-	Debit_id      string  `json:"debit_id" xml:"debit_id"`
-	Account_id    string  `json:"account_id" xml:"account_id"`
-	Client_id     string  `json:"client_id" xml:"client_id"`
-	Agency_id     uint32  `json:"agency_id" xml:"agency_id"`
-	Value         float64 `json:"value" xml:"value"`
-	Debit_date    string  `json:"debit_date" xml:"debit_date"`
-	Register_date string  `json:"register_date" xml:"register_date"`
+	Debit_id        string  `json:"debit_id" xml:"debit_id"`
+	Account_id      string  `json:"account_id" xml:"account_id"`
+	Client_id       string  `json:"client_id" xml:"client_id"`
+	Agency_id       uint32  `json:"agency_id" xml:"agency_id"`
+	Value           float64 `json:"value" xml:"value"`
+	Debit_day       uint16  `json:"debit_day" xml:"debit_day"`
+	Expiration_date string  `json:"expiration_date" xml:"expiration_date"`
+	Register_date   string  `json:"register_date" xml:"register_date"`
 }
 
 type ListRequest struct {

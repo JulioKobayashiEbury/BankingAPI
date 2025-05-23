@@ -19,17 +19,15 @@ func init() {
 }
 
 func main() {
-	controller.Server()
-
 	scheduler, err := gocron.NewScheduler()
 	if err != nil {
 		return
 	}
 
 	job, err := scheduler.NewJob(
-		gocron.DailyJob(
-			1,
-			gocron.NewAtTimes(gocron.NewAtTime(10, 0o0, 0o0)),
+		gocron.CronJob(
+			"*/1 * * * *",
+			false,
 		),
 		gocron.NewTask(
 			service.CheckAutomaticDebits,
@@ -50,6 +48,7 @@ func main() {
 		scheduler.Shutdown()
 		os.Exit(0)
 	}()
+	controller.Server()
 	for {
 	}
 }

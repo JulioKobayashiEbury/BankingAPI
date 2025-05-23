@@ -16,9 +16,7 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, *m
 	withdrawal := WithdrawalDB{
 		account_id: withdrawalRequest.Account_id,
 		client_id:  withdrawalRequest.Client_id,
-		user_id:    withdrawalRequest.User_id,
 		agency_id:  withdrawalRequest.Agency_iD,
-		password:   withdrawalRequest.Password,
 		withdrawal: withdrawalRequest.Withdrawal,
 		balance:    0.0,
 	}
@@ -29,16 +27,10 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, *m
 	if account.Client_id != withdrawal.client_id {
 		return nil, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
 	}
-	if account.User_id != withdrawal.user_id {
-		return nil, &model.Erro{Err: errors.New("User ID not valid"), HttpCode: http.StatusBadRequest}
-	}
+
 	if account.Agency_id != withdrawal.agency_id {
 		return nil, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
-	/* if account.Password != withdrawal.password {
-
-	}
-	*/
 	withdrawal.balance = (account.Balance - withdrawal.withdrawal)
 	if withdrawal.balance < 0.0 {
 		return nil, &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
