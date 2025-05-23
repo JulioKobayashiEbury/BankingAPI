@@ -25,6 +25,11 @@ func main() {
 	}
 
 	job, err := scheduler.NewJob(
+		/*
+			gocron.DailyJob(1, gocron.NewAtTimes(
+				gocron.NewAtTime(10, 00, 00)
+			))
+		*/
 		gocron.CronJob(
 			"*/1 * * * *",
 			false,

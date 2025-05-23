@@ -63,6 +63,15 @@ func CheckAutomaticDebits() {
 			log.Warn().Msg(fmt.Sprintf("Failed to unmarshal document %s: %v", docSnap.Ref.ID, err))
 			return
 		}
+		expirationDate, err := time.Parse(timeLayout, autoDebit.Expiration_date)
+		if err != nil {
+			log.Error().Msg(err.Error())
+			return
+		}
+		if expirationDate.Unix() > time.Now().Unix() {
+			log.Warn().Msg("Debit is expired")
+			return
+		}
 		if autoDebit.Debit_day == uint16(time.Now().Day()) {
 			newBalance, err := ProcessWithdrawal(&model.WithdrawalRequest{
 				Account_id: autoDebit.Account_id,
@@ -92,4 +101,7 @@ func CheckAutomaticDebits() {
 			log.Info().Msg("Auto debit is logged: " + logDebitID)
 		}
 	}
+}
+
+func moveToExpiredDebits() {
 }
