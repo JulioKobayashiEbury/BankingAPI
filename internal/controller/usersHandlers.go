@@ -14,7 +14,7 @@ import (
 
 func AddUsersEndPoints(server *echo.Echo) {
 	server.POST("/users", UserPostHandler)
-	server.POST("/users/auth", UserAuthHandler)
+	server.PUT("/users/auth", UserAuthHandler)
 	server.GET("/users/:user_id", UserGetHandler)
 	server.DELETE("/users/:user_id", UserDeleteHandler)
 	server.PUT("/users/:user_id", UserPutHandler)

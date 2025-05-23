@@ -15,7 +15,7 @@ import (
 
 func AddClientsEndPoints(server *echo.Echo) {
 	server.POST("/clients", ClientPostHandler)
-	server.POST("/clients/auth", ClientAuthHandler)
+	server.PUT("/clients/auth", ClientAuthHandler)
 	server.GET("/clients/:client_id", ClientGetHandler)
 	server.DELETE("/clients/:client_id", ClientDeleteHandler)
 	server.PUT("/clients/:client_id", ClientPutHandler)
