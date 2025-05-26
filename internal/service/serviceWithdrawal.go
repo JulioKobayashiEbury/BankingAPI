@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, *model.Erro) {
+func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) *model.Erro {
 	// monta update
 	withdrawal := WithdrawalDB{
 		account_id: withdrawalRequest.Account_id,
@@ -22,18 +22,18 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, *m
 	}
 	account, err := Account(withdrawal.account_id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if account.Client_id != withdrawal.client_id {
-		return nil, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
+		return &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 
 	if account.Agency_id != withdrawal.agency_id {
-		return nil, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
+		return &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	withdrawal.balance = (account.Balance - withdrawal.withdrawal)
 	if withdrawal.balance < 0.0 {
-		return nil, &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
+		return &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
 	}
 	updates := []firestore.Update{
 		{
@@ -43,9 +43,9 @@ func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) (*float64, *m
 	}
 
 	if err := repository.UpdateTypesDB(&updates, &withdrawal.account_id, repository.AccountsPath); err != nil {
-		return nil, err
+		return err
 	}
 
 	log.Info().Msg("Succesful Withdrawal: " + withdrawal.account_id)
-	return &withdrawal.balance, nil
+	return nil
 }

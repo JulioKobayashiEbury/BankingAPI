@@ -1,0 +1,31 @@
+@startuml
+note top
+    Complete Authentication Sequence before following this diagram
+end note
+
+participant AccountOwner as AccountOwner
+boundary AccountHandler as AccountHandler
+control Service as Service
+control Repository as Repository
+database Firestore as Firestore
+
+AccountOwner -> AccountHandler : /accounts/account_id/balance/deposit
+AccountHandler -> Service : ProcessDeposit
+Service -> Repository : Account
+Repository -> Service : model.AccountResponse
+
+Service -> Repository : UpdateTypesDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Repository -> Repository : firestore.Client
+Repository -> Firestore : Get
+Repository -> Firestore : Update
+Repository -> Service : model.Erro
+
+Service -> AccountHandler : float64
+alt No errors
+AccountHandler -> AccountOwner : http.StatusAccepted
+else Error found
+AccountHandler -> AccountOwner : apropriate http code
+end
+@enduml

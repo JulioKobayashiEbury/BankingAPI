@@ -73,13 +73,12 @@ func CheckAutomaticDebits() {
 			return
 		}
 		if autoDebit.Debit_day == uint16(time.Now().Day()) {
-			newBalance, err := ProcessWithdrawal(&model.WithdrawalRequest{
+			if err := ProcessWithdrawal(&model.WithdrawalRequest{
 				Account_id: autoDebit.Account_id,
 				Client_id:  autoDebit.Client_id,
 				Agency_iD:  autoDebit.Agency_id,
 				Withdrawal: autoDebit.Value,
-			})
-			if err != nil {
+			}); err != nil {
 				log.Error().Msg(err.Err.Error())
 				return
 			}
@@ -91,7 +90,6 @@ func CheckAutomaticDebits() {
 				"value":           autoDebit.Value,
 				"debit_day":       time.Now().Format(timeLayout),
 				"expiration_date": autoDebit.Expiration_date,
-				"balance":         newBalance,
 			}
 			var logDebitID string
 			if err := repository.CreateObject(&logDebitWithdrawal, repository.AutoDebitLog, &logDebitID); err != nil {

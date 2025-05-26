@@ -15,12 +15,14 @@ import (
 )
 
 const (
-	AccountsPath  = "accounts"
-	UsersPath     = "users"
-	ClientPath    = "clients"
-	TransfersPath = "transfers"
-	AutoDebit     = "autodebit"
-	AutoDebitLog  = "autodebitlog"
+	AccountsPath    = "accounts"
+	UsersPath       = "users"
+	ClientPath      = "clients"
+	TransfersPath   = "transfers"
+	AutoDebit       = "autodebit"
+	AutoDebitLog    = "autodebitlog"
+	DepositPath     = "deposits"
+	WithdrawalsPath = "withdrawals"
 )
 
 var Ctx context.Context

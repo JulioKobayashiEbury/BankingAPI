@@ -1,0 +1,34 @@
+@startuml
+note top
+    Complete Authentication Sequence before following this diagram
+end note
+
+participant AccountOwner as AccountOwner
+boundary AccountHandler as AccountHandler
+control Service as Service
+control Repository as Repository
+database Firestore as Firestore
+
+AccountOwner -> AccountHandler : /accounts/account_id/debit
+AccountHandler -> AccountHandler : accountAuthorization
+AccountHandler -> Service : Authorize
+Service -> AccountHandler : model.Claims,model.Erro,http.Cookie
+AccountHandler ->  AccountHandler : string,model.Erro
+AccountHandler -> Service : ProcessNewAutomaticDebit
+Service -> Service : IsValidDate
+Service -> Repository : CreateObject
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Firestore -> Repository : firestore.Client
+Repository -> Repository : firestore.Client
+Repository -> Firestore : .Collection().Add()
+Firestore -> Repository : firestore.DocumentRef
+Repository -> Service : createdID string
+Service -> AccountHandler :  model.Erro
+alt Succesful
+AccountHandler -> AccountOwner : http.StatusAccepted
+else Not succesful
+AccountHandler -> AccountOwner : apropriated http code
+end
+
+@enduml

@@ -1,0 +1,69 @@
+@startuml
+note top
+    Complete Authentication Sequence before following this diagram
+end note
+
+participant AccountOwner as AccountOwner
+boundary AccountHandler as AccountHandler
+control Service as Service
+control Repository as Repository
+database Firestore as Firestore
+
+AccountOwner -> AccountHandler : /accounts/reports
+AccountHandler -> AccountHandler : GetReportHandler
+
+AccountHandler -> AccountHandler : accountAuthorization
+AccountHandler -> Service : Authorize
+Service -> AccountHandler : model.Claims,model.Erro,http.Cookie
+AccountHandler ->  AccountHandler : string,model.Erro
+
+AccountHandler -> Service : GenerateReportByAccount
+Service -> Service : Account
+Service -> Repository : GetTypeFromDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Firestore -> Repository : firestore.Client
+Repository -> Repository : firestore.Client
+Repository -> Firestore : .Collection().Doc().Get()
+Firestore -> Repository : firestore.DocumentSnapshot
+Repository -> Service : firestore.DocumentSnapshot
+Service -> Service : model.AccountReponse
+
+Service -> Service : GetAllTransfers
+Service -> Repository : GetTypeFromDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Firestore -> Repository : firestore.Client
+Repository -> Repository : firestore.Client
+Repository -> Firestore : .Collection().Doc().Get()
+Firestore -> Repository : firestore.DocumentSnapshot
+Repository -> Service : firestore.DocumentSnapshot
+Service -> Service : model.TransferResponse
+
+Service -> Service : GetAllAutoDebits
+Service -> Repository : GetTypeFromDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Firestore -> Repository : firestore.Client
+Repository -> Repository : firestore.Client
+Repository -> Firestore : .Collection().Doc().Get()
+Firestore -> Repository : firestore.DocumentSnapshot
+Repository -> Service : firestore.DocumentSnapshot
+Service -> Service : model.AutomaticDebitResponse
+
+Service -> Service : GetAllAutoDebitsLogs
+Service -> Repository : GetTypeFromDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Firestore -> Repository : firestore.Client
+Repository -> Repository : firestore.Client
+Repository -> Firestore : .Collection().Doc().Get()
+Firestore -> Repository : firestore.DocumentSnapshot
+Repository -> Service : firestore.DocumentSnapshot
+Service -> Service : model.AutomaticDebitLog
+
+Service -> AccountHandler : model.AccountReport
+AccountHandler -> AccountOwner : JSON(http.StatusOK,model.Report)
+
+
+@enduml

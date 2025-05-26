@@ -15,6 +15,7 @@ import (
 func AddAccountEndPoints(server *echo.Echo) {
 	server.GET("/accounts", AccountGetOrderFilterHandler)
 	server.GET("/accounts/:account_id", AccountGetHandler)
+	server.GET("/accounts/report/:account_id", AccountGetReportHandler)
 	server.POST("/accounts", AccountPostHandler)
 	server.PUT("/accounts/auth", AccountAuthHandler)
 	server.DELETE("/accounts/:account_id", AccountDeleteHandler)
@@ -130,12 +131,11 @@ func AccountPutDepositHandler(c echo.Context) error {
 	}
 	depositRequest.Account_id = c.Param("account_id")
 
-	newBalance, err := service.ProcessDeposit(&depositRequest)
-	if err != nil {
+	if err := service.ProcessDeposit(&depositRequest); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, model.DepositResponse{Account_id: depositRequest.Account_id, Balance: (*newBalance)})
+	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "Deposit Succesfull!"})
 }
 
 func AccountPutWithDrawalHandler(c echo.Context) error {
@@ -151,12 +151,11 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 	withdrawalRequest.Account_id = *accountID
 
 	// talk to service
-	newBalance, err := service.ProcessWithdrawal(&withdrawalRequest)
-	if err != nil {
+	if err := service.ProcessWithdrawal(&withdrawalRequest); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, model.WithdrawalResponse{Account_id: withdrawalRequest.Account_id, Balance: (*newBalance)})
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: "withdrawal Succesfull!"})
 }
 
 func AccountPutBlockHandler(c echo.Context) error {
@@ -199,7 +198,7 @@ func AccountPutAutomaticDebit(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "New automatic debit is registered"})
+	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "New automatic debit is registered"})
 }
 
 func AccountPutTransferHandler(c echo.Context) error {
@@ -218,6 +217,18 @@ func AccountPutTransferHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Transfer was succesful: TransferID:" + newTransferInfo.Transfer_id})
+}
+
+func AccountGetReportHandler(c echo.Context) error {
+	accountID, err := accountAuthorization(&c)
+	if err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+	report, err := service.GenerateReportByAccount(accountID)
+	if err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+	return c.JSON(http.StatusOK, report)
 }
 
 func accountAuthorization(c *echo.Context) (*string, *model.Erro) {

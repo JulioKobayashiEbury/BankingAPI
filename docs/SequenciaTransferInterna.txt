@@ -1,0 +1,55 @@
+@startuml
+note top
+    Complete Authentication Sequence before following this diagram
+end note
+
+participant AccountOwner as AccountOwner
+boundary AccountHandler as AccountHandler
+control Service as Service
+control Repository as Repository
+database Firestore as Firestore
+
+AccountOwner -> AccountHandler : /accounts/newTransfer
+AccountHandler -> AccountHandler : AccountPutTransferHandler
+AccountHandler -> AccountHandler : accountAuthorization
+AccountHandler -> Service : Authorize
+Service -> AccountHandler : http.Claims
+AccountHandler -> AccountHandler : string
+
+AccountHandler -> Service : ProcessNewTransfer
+Service -> Service : Account
+Service -> Service : model.AccountResponse
+Service -> Service : Account
+Service -> Service: model.AccountResponse
+
+Service -> Repository : UpdateTypesDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Repository -> Repository : firestore.Client
+Repository -> Firestore : Get
+Repository -> Firestore : Update
+Repository -> Service : model.Erro
+
+Service -> Repository : UpdateTypesDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Repository -> Repository : firestore.Client
+Repository -> Firestore : Get
+Repository -> Firestore : Update
+Repository -> Service : model.Erro
+
+Service -> Repository : CreateObject
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Repository -> Repository : firestore.Client
+Repository -> Firestore : .Collection().Add()
+Repository -> Service : string createdID
+
+Service -> AccountHandler : model.Erro
+alt No Error
+AccountHandler -> AccountOwner : http.StatusOK
+else Error
+AccountHandler -> AccountOwner : appropriate error code
+end
+
+@enduml

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	repository "BankingAPI/internal/model/repository"
 	model "BankingAPI/internal/model/types"
 
@@ -13,7 +15,6 @@ func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
 		account_id_from: transfer.Account_id,
 		account_id_to:   transfer.Account_to,
 		value:           transfer.Value,
-		password:        transfer.Password,
 	}
 	// get account from and authenticate
 	accountFrom, err := Account(transferDBT.account_id_from)
@@ -48,9 +49,10 @@ func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
 		return err
 	}
 	transferMap := map[string]interface{}{
-		"account_id": accountFrom.Account_id,
-		"account_to": accountTo.Account_id,
-		"value":      transferDBT.value,
+		"account_id":    accountFrom.Account_id,
+		"account_to":    accountTo.Account_id,
+		"value":         transferDBT.value,
+		"transfer_date": time.Now().Format(timeLayout),
 	}
 	var transferID string
 	if err := repository.CreateObject(&transferMap, repository.TransfersPath, &transferID); err != nil {
