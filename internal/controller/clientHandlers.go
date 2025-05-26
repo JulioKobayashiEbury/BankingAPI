@@ -17,6 +17,7 @@ func AddClientsEndPoints(server *echo.Echo) {
 	server.POST("/clients", ClientPostHandler)
 	server.PUT("/clients/auth", ClientAuthHandler)
 	server.GET("/clients/:client_id", ClientGetHandler)
+	server.GET("/clients/:client_id/report", ClientGetReportHandler)
 	server.DELETE("/clients/:client_id", ClientDeleteHandler)
 	server.PUT("/clients/:client_id", ClientPutHandler)
 	server.PUT("/clients/:client_id/block", ClientPutBlockHandler)
@@ -127,6 +128,19 @@ func ClientPutUnBlockHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Client Unblocked"})
+}
+
+func ClientGetReportHandler(c echo.Context) error {
+	clientID, err := clientAuthorization(&c)
+	if err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+	clientReport, err := service.GenerateReportByClient(clientID)
+	if err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+
+	return c.JSON(http.StatusOK, (*clientReport))
 }
 
 func clientAuthorization(c *echo.Context) (*string, *model.Erro) {

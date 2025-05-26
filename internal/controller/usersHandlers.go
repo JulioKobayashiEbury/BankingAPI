@@ -16,6 +16,7 @@ func AddUsersEndPoints(server *echo.Echo) {
 	server.POST("/users", UserPostHandler)
 	server.PUT("/users/auth", UserAuthHandler)
 	server.GET("/users/:user_id", UserGetHandler)
+	server.GET("/users/:user_id/report", UserGetReportHandler)
 	server.DELETE("/users/:user_id", UserDeleteHandler)
 	server.PUT("/users/:user_id", UserPutHandler)
 	server.PUT("/users/:user_id/block", UserPutBlockHandler)
@@ -52,6 +53,9 @@ func UserAuthHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
+	// usar isso ao invés de cookie?
+	// c.Response().Header().Set(echo.HeaderAuthorization, token)
+
 	c.SetCookie(cookie)
 	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "User Authorized"})
 }
@@ -120,6 +124,18 @@ func UserDeleteHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User deleted"})
+}
+
+func UserGetReportHandler(c echo.Context) error {
+	userID, err := userAuthorization(&c)
+	if err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+	userReport, err := service.GenerateReportByUser(userID)
+	if err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+	return c.JSON(http.StatusOK, (*userReport))
 }
 
 func userAuthorization(c *echo.Context) (*string, *model.Erro) {

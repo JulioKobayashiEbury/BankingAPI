@@ -12,17 +12,18 @@ import (
 
 func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
 	transferDBT := TransferDB{
-		account_id_from: transfer.Account_id,
-		account_id_to:   transfer.Account_to,
-		value:           transfer.Value,
+		account_id:    transfer.Account_id,
+		account_to:    transfer.Account_to,
+		value:         transfer.Value,
+		transfer_date: time.Now().Format(timeLayout),
 	}
 	// get account from and authenticate
-	accountFrom, err := Account(transferDBT.account_id_from)
+	accountFrom, err := Account(transferDBT.account_id)
 	if err != nil {
 		return err
 	}
 
-	accountTo, err := Account(transferDBT.account_id_to)
+	accountTo, err := Account(transferDBT.account_to)
 	if err != nil {
 		return err
 	}
@@ -42,10 +43,10 @@ func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
 			Value: accountTo.Balance,
 		},
 	}
-	if err := repository.UpdateTypesDB(&updateOnFrom, &transferDBT.account_id_from, repository.AccountsPath); err != nil {
+	if err := repository.UpdateTypesDB(&updateOnFrom, &transferDBT.account_id, repository.AccountsPath); err != nil {
 		return err
 	}
-	if err := repository.UpdateTypesDB(&updateOnTo, &transferDBT.account_id_to, repository.AccountsPath); err != nil {
+	if err := repository.UpdateTypesDB(&updateOnTo, &transferDBT.account_to, repository.AccountsPath); err != nil {
 		return err
 	}
 	transferMap := map[string]interface{}{
@@ -60,7 +61,7 @@ func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
 	}
 	(*transfer).Transfer_id = transferID
 
-	log.Info().Msg("Transfer was succesful: " + transferDBT.account_id_from + " to " + transferDBT.account_id_to)
+	log.Info().Msg("Transfer was succesful: " + transferDBT.account_id + " to " + transferDBT.account_to)
 	return nil
 }
 

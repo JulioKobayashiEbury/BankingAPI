@@ -66,7 +66,7 @@ func GetAllTransfers(accountID *string) (*[]model.TransferResponse, *model.Erro)
 	if err != nil {
 		return nil, err
 	}
-	tranfersReponseSlice := make([]model.TransferResponse, len(docSnapshots))
+	tranfersReponseSlice := make([]model.TransferResponse, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
 		transferResponse := model.TransferResponse{}
@@ -89,7 +89,7 @@ func GetAllAutoDebits(accountID *string) (*[]model.AutomaticDebitResponse, *mode
 	if err != nil {
 		return nil, err
 	}
-	autoDebitsResponseSlice := make([]model.AutomaticDebitResponse, len(docSnapshots))
+	autoDebitsResponseSlice := make([]model.AutomaticDebitResponse, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
 		autoDebitResponse := model.AutomaticDebitResponse{}
@@ -110,7 +110,7 @@ func GetAllWithdrawals(accountID *string) (*[]model.WithdrawalResponse, *model.E
 	if err != nil {
 		return nil, err
 	}
-	withdrawalsResponseSlice := make([]model.WithdrawalResponse, len(docSnapshots))
+	withdrawalsResponseSlice := make([]model.WithdrawalResponse, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
 		withdrawalsResponse := model.WithdrawalResponse{}
@@ -131,7 +131,7 @@ func GetAllDeposits(accountID *string) (*[]model.DepositResponse, *model.Erro) {
 	if err != nil {
 		return nil, err
 	}
-	depositsResponseSlice := make([]model.DepositResponse, len(docSnapshots))
+	depositsResponseSlice := make([]model.DepositResponse, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
 		depositResponse := model.DepositResponse{}
@@ -145,4 +145,46 @@ func GetAllDeposits(accountID *string) (*[]model.DepositResponse, *model.Erro) {
 		}
 	}
 	return &depositsResponseSlice, nil
+}
+
+func GetAccountsByClientID(clientID *string) (*[]model.AccountResponse, *model.Erro) {
+	docSnapshots, err := repository.GetAllByTypeDB(repository.AccountsPath)
+	if err != nil {
+		return nil, err
+	}
+	accountsByClientIDSlice := make([]model.AccountResponse, 0, len(docSnapshots))
+	for index := 0; index < len(docSnapshots); index++ {
+		docSnap := docSnapshots[index]
+		accountResponse := model.AccountResponse{}
+		if err := docSnap.DataTo(&accountResponse); err != nil {
+			log.Error().Msg(err.Error())
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		}
+		accountResponse.Account_id = docSnap.Ref.ID
+		if *clientID == accountResponse.Client_id {
+			accountsByClientIDSlice = append(accountsByClientIDSlice, accountResponse)
+		}
+	}
+	return &accountsByClientIDSlice, nil
+}
+
+func GetClientsByUserID(userID *string) (*[]model.ClientResponse, *model.Erro) {
+	docSnapshots, err := repository.GetAllByTypeDB(repository.ClientPath)
+	if err != nil {
+		return nil, err
+	}
+	clientsByUserIDSlice := make([]model.ClientResponse, 0, len(docSnapshots))
+	for index := 0; index < len(docSnapshots); index++ {
+		docSnap := docSnapshots[index]
+		clientResponse := model.ClientResponse{}
+		if err := docSnap.DataTo(&clientResponse); err != nil {
+			log.Error().Msg(err.Error())
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		}
+		clientResponse.Client_id = docSnap.Ref.ID
+		if *userID == clientResponse.User_id {
+			clientsByUserIDSlice = append(clientsByUserIDSlice, clientResponse)
+		}
+	}
+	return &clientsByUserIDSlice, nil
 }

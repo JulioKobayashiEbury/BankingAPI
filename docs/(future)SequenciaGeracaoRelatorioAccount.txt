@@ -10,7 +10,7 @@ control Repository as Repository
 database Firestore as Firestore
 
 AccountOwner -> AccountHandler : /accounts/reports
-AccountHandler -> AccountHandler : GetReportHandler
+AccountHandler -> AccountHandler : AccountGetReportHandler
 
 AccountHandler -> AccountHandler : accountAuthorization
 AccountHandler -> Service : Authorize
@@ -24,9 +24,9 @@ Repository -> Repository : GetFireStoreClient
 Repository -> Firestore : NewClient
 Firestore -> Repository : firestore.Client
 Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Doc().Get()
-Firestore -> Repository : firestore.DocumentSnapshot
-Repository -> Service : firestore.DocumentSnapshot
+Repository -> Firestore : .Collection().Documents()
+Firestore -> Repository : firestore.DocumentIterator
+Repository -> Service : []firestore.DocumentSnapshot
 Service -> Service : model.AccountReponse
 
 Service -> Service : GetAllTransfers
@@ -35,10 +35,10 @@ Repository -> Repository : GetFireStoreClient
 Repository -> Firestore : NewClient
 Firestore -> Repository : firestore.Client
 Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Doc().Get()
-Firestore -> Repository : firestore.DocumentSnapshot
-Repository -> Service : firestore.DocumentSnapshot
-Service -> Service : model.TransferResponse
+Repository -> Firestore : .Collection().Documents()
+Firestore -> Repository : firestore.DocumentIterator
+Repository -> Service : []firestore.DocumentSnapshot
+Service -> Service : []model.TransferRequest
 
 Service -> Service : GetAllAutoDebits
 Service -> Repository : GetTypeFromDB
@@ -46,21 +46,32 @@ Repository -> Repository : GetFireStoreClient
 Repository -> Firestore : NewClient
 Firestore -> Repository : firestore.Client
 Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Doc().Get()
-Firestore -> Repository : firestore.DocumentSnapshot
-Repository -> Service : firestore.DocumentSnapshot
-Service -> Service : model.AutomaticDebitResponse
+Repository -> Firestore : .Collection().Documents()
+Firestore -> Repository : firestore.DocumentIterator
+Repository -> Service : []firestore.DocumentSnapshot
+Service -> Service : []model.AutomaticDebitResponse
 
-Service -> Service : GetAllAutoDebitsLogs
+Service -> Service : GetAllWithdrawals
 Service -> Repository : GetTypeFromDB
 Repository -> Repository : GetFireStoreClient
 Repository -> Firestore : NewClient
 Firestore -> Repository : firestore.Client
 Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Doc().Get()
-Firestore -> Repository : firestore.DocumentSnapshot
-Repository -> Service : firestore.DocumentSnapshot
-Service -> Service : model.AutomaticDebitLog
+Repository -> Firestore : .Collection().Documents()
+Firestore -> Repository : firestore.DocumentIterator
+Repository -> Service : []firestore.DocumentSnapshot
+Service -> Service : []model.WithdrawalRequest
+
+Service -> Service : GetAllDeposits
+Service -> Repository : GetTypeFromDB
+Repository -> Repository : GetFireStoreClient
+Repository -> Firestore : NewClient
+Firestore -> Repository : firestore.Client
+Repository -> Repository : firestore.Client
+Repository -> Firestore : .Collection().Documents()
+Firestore -> Repository : firestore.DocumentIterator
+Repository -> Service : []firestore.DocumentSnapshot
+Service -> Service : []model.DepositRequest
 
 Service -> AccountHandler : model.AccountReport
 AccountHandler -> AccountOwner : JSON(http.StatusOK,model.Report)

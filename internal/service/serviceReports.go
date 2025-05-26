@@ -1,9 +1,11 @@
 package service
 
 import (
-	"fmt"
+	"time"
 
 	model "BankingAPI/internal/model/types"
+
+	"github.com/rs/zerolog/log"
 )
 
 func GenerateReportByAccount(accountID *string) (*model.AccountReport, *model.Erro) {
@@ -11,6 +13,76 @@ func GenerateReportByAccount(accountID *string) (*model.AccountReport, *model.Er
 	if err != nil {
 		return nil, err
 	}
-	fmt.Print(accountInfo)
-	return nil, nil
+	transfers, err := GetAllTransfers(accountID)
+	if err != nil {
+		return nil, err
+	}
+	deposits, err := GetAllDeposits(accountID)
+	if err != nil {
+		return nil, err
+	}
+	withdrawals, err := GetAllWithdrawals(accountID)
+	if err != nil {
+		return nil, err
+	}
+	automaticDebits, err := GetAllAutoDebits(accountID)
+	if err != nil {
+		return nil, err
+	}
+	accountReport := model.AccountReport{
+		Account_id:       accountInfo.Account_id,
+		Client_id:        accountInfo.Client_id,
+		Agency_id:        accountInfo.Agency_id,
+		Balance:          accountInfo.Balance,
+		Register_date:    accountInfo.Register_date,
+		Status:           accountInfo.Status,
+		Transfers:        *transfers,
+		Deposits:         *deposits,
+		Withdrawals:      *withdrawals,
+		Automatic_Debits: *automaticDebits,
+		Report_Date:      time.Now().Format(timeLayout),
+	}
+	log.Info().Msg("Report generated for account: " + *accountID)
+	return &accountReport, nil
+}
+
+func GenerateReportByClient(clientID *string) (*model.ClientReport, *model.Erro) {
+	clientInfo, err := Client(*clientID)
+	if err != nil {
+		return nil, err
+	}
+	accounts, err := GetAccountsByClientID(clientID)
+	if err != nil {
+		return nil, err
+	}
+	return &model.ClientReport{
+		Client_id:     clientInfo.Client_id,
+		User_id:       clientInfo.User_id,
+		Name:          clientInfo.Name,
+		Document:      clientInfo.Document,
+		Register_date: clientInfo.Register_date,
+		Status:        clientInfo.Status,
+		Accounts:      *accounts,
+		Report_date:   time.Now().Format(timeLayout),
+	}, nil
+}
+
+func GenerateReportByUser(userId *string) (*model.UserReport, *model.Erro) {
+	userInfo, err := User(*userId)
+	if err != nil {
+		return nil, err
+	}
+	clients, err := GetClientsByUserID(userId)
+	if err != nil {
+		return nil, err
+	}
+	return &model.UserReport{
+		User_id:       userInfo.User_id,
+		Name:          userInfo.Name,
+		Document:      userInfo.Document,
+		Register_date: userInfo.Register_date,
+		Status:        userInfo.Status,
+		Clients:       *clients,
+		Report_date:   time.Now().Format(timeLayout),
+	}, nil
 }

@@ -18,27 +18,31 @@ type AccountDB struct {
 }
 
 type TransferDB struct {
-	account_id_from string
-	account_id_to   string
-	value           float64
+	transfer_id   string
+	account_id    string
+	account_to    string
+	value         float64
+	transfer_date string
 }
 
 type DepositDB struct {
-	account_id string
-	client_id  string
-	user_id    string
-	agency_id  uint32
-	deposit    float64
-	balance    float64
+	deposit_id   string
+	account_id   string
+	client_id    string
+	user_id      string
+	agency_id    uint32
+	deposit      float64
+	deposit_date string
 }
 
 type WithdrawalDB struct {
-	account_id string
-	client_id  string
-	user_id    string
-	agency_id  uint32
-	withdrawal float64
-	balance    float64
+	withdrawal_id   string
+	account_id      string
+	client_id       string
+	user_id         string
+	agency_id       uint32
+	withdrawal      float64
+	withdrawal_date string
 }
 
 type ClientDB struct {
