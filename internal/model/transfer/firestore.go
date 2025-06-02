@@ -43,7 +43,9 @@ func (db *TransferFirestore) Create() *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response.Transfer_id = docRef.ID
+	db.Response = &TransferResponse{
+		Transfer_id: docRef.ID,
+	}
 	// Add withdrawal to account list
 	return nil
 }
@@ -83,6 +85,7 @@ func (db *TransferFirestore) Get() *model.Erro {
 		log.Error().Msg("Nil account from snapshot" + db.Request.Transfer_id)
 		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.Transfer_id)), HttpCode: http.StatusInternalServerError}
 	}
+	db.Response = &TransferResponse{}
 	if err := docSnapshot.DataTo(db.Response); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
@@ -145,7 +148,6 @@ func (db *TransferFirestore) GetAll() *model.Erro {
 			return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
 		transferResponse.Transfer_id = docSnap.Ref.ID
-		// condicional para saber se a transferencia pertence ao account
 		transferResponseSlice = append(transferResponseSlice, transferResponse)
 	}
 	db.Slice = &transferResponseSlice

@@ -36,7 +36,7 @@ func AccountPostHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	if accountInfo.Agency_id != 0 {
+	if accountInfo.Agency_id == 0 {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 	accountResponse, err := service.CreateAccount(&accountInfo)

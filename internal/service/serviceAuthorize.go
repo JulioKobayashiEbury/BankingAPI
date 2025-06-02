@@ -11,6 +11,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var NoAuthenticationToken = errors.New("Not authenticated")
+
 // validate token and authorize access to endpoint
 func Authorize(cookie *http.Cookie, err error) (*model.Claims, *model.Erro, *http.Cookie) {
 	if err != nil {

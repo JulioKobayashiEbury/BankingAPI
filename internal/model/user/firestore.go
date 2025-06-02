@@ -45,7 +45,9 @@ func (db *UserFirestore) Create() *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response.User_id = docRef.ID
+	db.Response = &UserResponse{
+		User_id: docRef.ID,
+	}
 	return nil
 }
 
@@ -84,9 +86,11 @@ func (db *UserFirestore) Get() *model.Erro {
 		log.Error().Msg("Nil account from snapshot" + db.Request.User_id)
 		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.User_id)), HttpCode: http.StatusInternalServerError}
 	}
+	db.Response = &UserResponse{}
 	if err := docSnapshot.DataTo(db.Response); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+	db.Response.User_id = docSnapshot.Ref.ID
 	return nil
 }
 
@@ -169,6 +173,7 @@ func (db *UserFirestore) GetAuthInfo() *model.Erro {
 		log.Error().Msg("Nil account from snapshot" + db.Request.User_id)
 		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.User_id)), HttpCode: http.StatusInternalServerError}
 	}
+	db.AuthUser = &AuthenticateUser{}
 	if err := docSnapshot.DataTo(db.AuthUser); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}

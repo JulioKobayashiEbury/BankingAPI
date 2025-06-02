@@ -17,8 +17,10 @@ var jwtKey = []byte("bankingapi-key")
 
 func Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro) {
 	database := &user.UserFirestore{}
-	database.Request.User_id = *typeID
-	if err := database.Get(); err != nil {
+	database.Request = &user.UserRequest{
+		User_id: *typeID,
+	}
+	if err := database.GetAuthInfo(); err != nil {
 		return false, err
 	}
 	if *password != database.AuthUser.Password {
@@ -31,8 +33,7 @@ func Authenticate(typeID *string, password *string, collection string) (bool, *m
 func GenerateToken(typeID *string, role string) (*http.Cookie, *model.Erro) {
 	expirationTime := time.Now().Add(time.Minute * expirationMin)
 	Claim := &model.Claims{
-		Id:   (*typeID),
-		Role: role,
+		Id: (*typeID),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: expirationTime},
 		},

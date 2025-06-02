@@ -46,7 +46,9 @@ func (db *AutoDebitFirestore) Create() *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.AutoDebit.Debit_id = docRef.ID
+	db.AutoDebit = &AutomaticDebit{
+		Debit_id: docRef.ID,
+	}
 	return nil
 }
 

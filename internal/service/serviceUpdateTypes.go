@@ -15,6 +15,9 @@ import (
 func UpdateAccount(accountRequest *account.AccountRequest) (*account.AccountResponse, *model.Erro) {
 	// verifica valores que foram passados ou não
 	database := &account.AccountFirestore{}
+	database.Request = &account.AccountRequest{
+		Account_id: accountRequest.Account_id,
+	}
 	if accountRequest.Account_id == "" {
 		log.Warn().Msg("No account with id: 0 allowed")
 		return nil, &model.Erro{Err: errors.New("Account id invalid"), HttpCode: http.StatusBadRequest}
@@ -40,7 +43,9 @@ func UpdateAccount(accountRequest *account.AccountRequest) (*account.AccountResp
 
 func UpdateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro) {
 	database := &client.ClientFirestore{}
-	database.Request.Client_id = clientRequest.Client_id
+	database.Request = &client.ClientRequest{
+		Client_id: clientRequest.Client_id,
+	}
 	if clientRequest.User_id != "" {
 		database.AddUpdate("user_id", clientRequest.User_id)
 	}
@@ -60,7 +65,9 @@ func UpdateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, 
 
 func UpdateUser(userRequest *user.UserRequest) (*user.UserResponse, *model.Erro) {
 	database := &user.UserFirestore{}
-	database.Request.User_id = userRequest.User_id
+	database.Request = &user.UserRequest{
+		User_id: userRequest.User_id,
+	}
 	if userRequest.Name != "" {
 		database.AddUpdate("name", userRequest.Name)
 	}

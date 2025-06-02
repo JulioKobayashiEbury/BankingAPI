@@ -16,19 +16,19 @@ func GenerateReportByAccount(accountID *string) (*account.AccountReport, *model.
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := GetAllTransfers(accountID)
+	transfers, err := GetAllTransfersByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := GetAllDeposits(accountID)
+	deposits, err := GetAllDepositsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	withdrawals, err := GetAllWithdrawals(accountID)
+	withdrawals, err := GetAllWithdrawalsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	automaticDebits, err := GetAllAutoDebits(accountID)
+	automaticDebits, err := GetAllAutoDebitsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func GenerateReportByClient(clientID *string) (*client.ClientReport, *model.Erro
 		Document:      clientInfo.Document,
 		Register_date: clientInfo.Register_date,
 		Status:        clientInfo.Status,
-		Accounts:      *accounts,
+		Accounts:      (*accounts),
 		Report_date:   time.Now().Format(timeLayout),
 	}, nil
 }

@@ -38,9 +38,8 @@ func ProcessWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest) *model.E
 			Account_id: withdrawalRequest.Account_id,
 		},
 	}
-	databaseAccount.Response.Withdrawals = append(databaseAccount.Response.Withdrawals, databaseWithdrawal.Request.Withdrawal_id)
+
 	databaseAccount.AddUpdate("balance", accountResponse.Balance)
-	databaseAccount.AddUpdate("withdrawals", accountResponse.Withdrawals)
 
 	if err := databaseAccount.Update(); err != nil {
 		if err := databaseWithdrawal.Delete(); err != nil {

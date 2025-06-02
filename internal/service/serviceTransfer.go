@@ -11,10 +11,14 @@ import (
 
 func ProcessNewTransfer(transferRequest *transfer.TransferRequest) *model.Erro {
 	accountToDatabase := &account.AccountFirestore{}
-	accountToDatabase.Request.Account_id = transferRequest.Account_to
+	accountToDatabase.Request = &account.AccountRequest{
+		Account_id: transferRequest.Account_to,
+	}
 
 	accountFromDatabase := &account.AccountFirestore{}
-	accountFromDatabase.Request.Account_id = transferRequest.Account_id
+	accountFromDatabase.Request = &account.AccountRequest{
+		Account_id: transferRequest.Account_id,
+	}
 
 	if err := accountToDatabase.Get(); err == model.IDnotFound || err != nil {
 		return err
@@ -41,8 +45,6 @@ func ProcessNewTransfer(transferRequest *transfer.TransferRequest) *model.Erro {
 		log.Error().Msg("Update Account Receiving Transfer failed, transfer canceled")
 		return err
 	}
-	accountFromDatabase.Response.Transfers = append(accountFromDatabase.Response.Transfers, transferDatabase.Response.Transfer_id)
-	accountFromDatabase.AddUpdate("transfers", accountFromDatabase.Response.Transfers)
 	accountFromDatabase.AddUpdate("balance", accountFromDatabase.Response.Balance)
 	if err := accountFromDatabase.Update(); err != nil {
 		accountToDatabase.AddUpdate("balance", accountToDatabase.Response.Balance-transferRequest.Value)

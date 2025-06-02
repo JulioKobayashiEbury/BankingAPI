@@ -28,7 +28,7 @@ func ClientPostHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	if len(clientInfo.Document) != documentLenghtIdeal || len(clientInfo.Name) < maxNameLenght {
+	if len(clientInfo.Document) != documentLenghtIdeal || len(clientInfo.Name) > maxNameLenght {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 	clientResponse, err := service.CreateClient(&clientInfo)
@@ -122,6 +122,5 @@ func ClientGetReportHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-
 	return c.JSON(http.StatusOK, (*clientReport))
 }

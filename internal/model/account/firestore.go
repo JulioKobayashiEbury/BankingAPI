@@ -45,7 +45,9 @@ func (db *AccountFirestore) Create() *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response.Account_id = docRef.ID
+	db.Response = &AccountResponse{
+		Account_id: docRef.ID,
+	}
 	return nil
 }
 
@@ -84,9 +86,11 @@ func (db *AccountFirestore) Get() *model.Erro {
 		log.Error().Msg("Nil account from snapshot" + db.Request.Account_id)
 		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.Account_id)), HttpCode: http.StatusInternalServerError}
 	}
+	db.Response = &AccountResponse{}
 	if err := docSnapshot.DataTo(db.Response); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+	db.Response.Account_id = docSnapshot.Ref.ID
 	return nil
 }
 

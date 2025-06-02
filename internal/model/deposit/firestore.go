@@ -45,7 +45,9 @@ func (db *DepositFirestore) Create() *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response.Deposit_id = docRef.ID
+	db.Response = &DepositResponse{
+		Deposit_id: docRef.ID,
+	}
 	return nil
 }
 
@@ -84,6 +86,7 @@ func (db *DepositFirestore) Get() *model.Erro {
 		log.Error().Msg("Nil account from snapshot" + db.Request.Deposit_id)
 		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.Deposit_id)), HttpCode: http.StatusInternalServerError}
 	}
+	db.Response = &DepositResponse{}
 	if err := docSnapshot.DataTo(db.Response); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}

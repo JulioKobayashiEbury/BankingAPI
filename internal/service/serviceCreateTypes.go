@@ -19,13 +19,17 @@ func CreateAccount(accountRequest *account.AccountRequest) (*account.AccountResp
 	}
 	// verify if client and user exists, PERMISSION MUST BE of user
 	userDatabase := &user.UserFirestore{}
-	userDatabase.Request.User_id = accountRequest.User_id
+	userDatabase.Request = &user.UserRequest{
+		User_id: accountRequest.User_id,
+	}
 	if err := userDatabase.Get(); err == model.IDnotFound || err != nil {
 		return nil, err
 	}
 
 	clientDatabase := &client.ClientFirestore{}
-	clientDatabase.Request.Client_id = accountRequest.Client_id
+	clientDatabase.Request = &client.ClientRequest{
+		Client_id: accountRequest.Client_id,
+	}
 	if err := clientDatabase.Get(); err == model.IDnotFound || err != nil {
 		return nil, err
 	}
@@ -49,7 +53,9 @@ func CreateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, 
 	}
 
 	userDatabase := &user.UserFirestore{}
-	userDatabase.Request.User_id = clientRequest.User_id
+	userDatabase.Request = &user.UserRequest{
+		User_id: clientRequest.User_id,
+	}
 	if err := userDatabase.Get(); err == model.IDnotFound || err != nil {
 		return nil, err
 	}

@@ -33,7 +33,7 @@ func (db *ClientFirestore) Create() *model.Erro {
 	}
 	defer clientDB.Close()
 	entity := map[string]interface{}{
-		"user_id":       db.Request.Client_id,
+		"user_id":       db.Request.User_id,
 		"name":          db.Request.Name,
 		"document":      db.Request.Document,
 		"status":        true,
@@ -44,7 +44,9 @@ func (db *ClientFirestore) Create() *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response.Client_id = docRef.ID
+	db.Response = &ClientResponse{
+		Client_id: docRef.ID,
+	}
 	return nil
 }
 
@@ -83,9 +85,11 @@ func (db *ClientFirestore) Get() *model.Erro {
 		log.Error().Msg("Nil account from snapshot" + db.Request.Client_id)
 		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.Client_id)), HttpCode: http.StatusInternalServerError}
 	}
+	db.Response = &ClientResponse{}
 	if err := docSnapshot.DataTo(db.Response); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+	db.Response.Client_id = docSnapshot.Ref.ID
 	return nil
 }
 

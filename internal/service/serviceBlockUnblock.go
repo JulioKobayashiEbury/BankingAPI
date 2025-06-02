@@ -59,7 +59,9 @@ func UserUnBlock(userID string) *model.Erro {
 
 func toggleAccountStatus(status bool, accountID *string) *model.Erro {
 	database := &account.AccountFirestore{}
-	database.Request.Account_id = *accountID
+	database.Request = &account.AccountRequest{
+		Account_id: *accountID,
+	}
 	database.AddUpdate("status", status)
 	if err := database.Update(); err != nil {
 		return err
@@ -69,7 +71,9 @@ func toggleAccountStatus(status bool, accountID *string) *model.Erro {
 
 func toggleClientStatus(status bool, clientID *string) *model.Erro {
 	database := &client.ClientFirestore{}
-	database.Request.Client_id = *clientID
+	database.Request = &client.ClientRequest{
+		Client_id: *clientID,
+	}
 	database.AddUpdate("status", status)
 	if err := database.Update(); err != nil {
 		return err
@@ -79,7 +83,9 @@ func toggleClientStatus(status bool, clientID *string) *model.Erro {
 
 func toggleUserStatus(status bool, userID *string) *model.Erro {
 	database := &user.UserFirestore{}
-	database.Request.User_id = *userID
+	database.Request = &user.UserRequest{
+		User_id: *userID,
+	}
 	database.AddUpdate("status", status)
 	if err := database.Update(); err != nil {
 		return err

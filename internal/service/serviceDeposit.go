@@ -37,7 +37,9 @@ func ProcessDeposit(depositRequest *deposit.DepositRequest) *model.Erro {
 	depositDatabase.Request.Deposit_id = depositDatabase.Response.Deposit_id
 
 	accountDatabase := &account.AccountFirestore{}
-	accountDatabase.Request.Account_id = depositRequest.Account_id
+	accountDatabase.Request = &account.AccountRequest{
+		Account_id: depositRequest.Account_id,
+	}
 	accountDatabase.AddUpdate("balance", accountRequest.Balance)
 	if err := accountDatabase.Update(); err != nil {
 		if err := depositDatabase.Delete(); err != nil {

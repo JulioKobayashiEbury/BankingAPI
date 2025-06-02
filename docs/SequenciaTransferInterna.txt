@@ -62,7 +62,6 @@ service -> transfer : Delete()
 end
 
 service -> account : AddUpdate()
-service -> account : AddUpdate()
 service -> account : Update()
 alt Error
 service -> account : AddUpdate()

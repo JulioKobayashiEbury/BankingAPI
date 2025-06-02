@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"BankingAPI/internal/model"
@@ -144,14 +143,22 @@ func UserGetReportHandler(c echo.Context) error {
 func userAuthorization(c *echo.Context) (*string, *model.Erro) {
 	claims, err, cookie := service.Authorize((*c).Cookie("Token"))
 	if err != nil {
+		if err.Err == http.ErrNoCookie {
+			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
+		}
 		return nil, err
 	}
 	if cookie != nil {
 		(*c).SetCookie(cookie)
 	}
-	userID := (*c).Param("user_id")
-	if (*claims).Id != userID {
-		return nil, &model.Erro{Err: errors.New("Not authorized"), HttpCode: http.StatusBadRequest}
+	var userID string
+	if (*c).Path() == "/users/:user_id" {
+		log.Debug().Msg("Entering users path...")
+		userID = (*c).Param("user_id")
+		if (*claims).Id != userID {
+			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: http.StatusBadRequest}
+		}
 	}
+
 	return &userID, nil
 }

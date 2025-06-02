@@ -11,7 +11,9 @@ import (
 
 func AccountDelete(accountID string) *model.Erro {
 	database := &account.AccountFirestore{}
-	database.Request.Account_id = accountID
+	database.Request = &account.AccountRequest{
+		Account_id: accountID,
+	}
 	if err := database.Delete(); err != nil {
 		return err
 	}
@@ -21,7 +23,9 @@ func AccountDelete(accountID string) *model.Erro {
 
 func ClientDelete(clientID string) *model.Erro {
 	database := &client.ClientFirestore{}
-	database.Request.Client_id = clientID
+	database.Request = &client.ClientRequest{
+		Client_id: clientID,
+	}
 	if err := database.Delete(); err != nil {
 		return err
 	}
@@ -31,7 +35,9 @@ func ClientDelete(clientID string) *model.Erro {
 
 func UserDelete(userID string) *model.Erro {
 	database := &user.UserFirestore{}
-	database.Request.User_id = userID
+	database.Request = &user.UserRequest{
+		User_id: userID,
+	}
 	if err := database.Delete(); err != nil {
 		return err
 	}

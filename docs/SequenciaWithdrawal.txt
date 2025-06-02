@@ -22,6 +22,12 @@ userHandler -> accountHandler : string
 accountHandler -> service : ProcessWithdrawal
 service -> service : Account()
 service -> account : Get()
+account -> repository : GetFireStoreClient()
+repository -> firestore: NewClient()
+firestore -> repository : firestore.Client
+repository -> account : firestore.Client
+account -> firestore : .Collection().Doc().Get()
+firestore -> account : firestore.DocumentSnapshot
 account -> service : account.AccountResponse
 service -> service : account.AccountResponse
 
@@ -33,7 +39,6 @@ repository -> withdrawal : firestore.Client
 withdrawal -> firestore : .Collection().Add()
 firestore -> withdrawal : firestore.DocumentRef
 
-service -> account : AddUpdate()
 service -> account : AddUpdate()
 service -> account : Update()
 alt Error
