@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	repository "BankingAPI/internal/model/repository"
-	model "BankingAPI/internal/model/types"
+	"BankingAPI/internal/model"
+	"BankingAPI/internal/model/user"
 	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
@@ -24,10 +24,13 @@ func AddUsersEndPoints(server *echo.Echo) {
 }
 
 func UserPostHandler(c echo.Context) error {
-	var userInfo model.UserRequest
+	var userInfo user.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+	if (len(userInfo.Document) != documentLenghtIdeal) || (len(userInfo.Name) > maxNameLenght) {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 	userResponse, err := service.CreateUser(&userInfo)
 	if err != nil {
@@ -37,12 +40,12 @@ func UserPostHandler(c echo.Context) error {
 }
 
 func UserAuthHandler(c echo.Context) error {
-	var userInfo model.UserRequest
+	var userInfo user.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	ok, err := service.Authenticate(&(userInfo).User_id, &(userInfo).Password, repository.UsersPath)
+	ok, err := service.Authenticate(&(userInfo).User_id, &(userInfo).Password, model.UsersPath)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -88,7 +91,7 @@ func UserPutHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var userInfo model.UserRequest
+	var userInfo user.UserRequest
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())

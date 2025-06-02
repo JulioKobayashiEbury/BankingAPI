@@ -3,32 +3,35 @@ note top
     Complete Authentication Sequence before following this diagram
 end note
 
-participant AccountOwner as AccountOwner
-boundary AccountHandler as AccountHandler
-control Service as Service
-control Repository as Repository
-database Firestore as Firestore
+participant accountOwner as accountOwner
+boundary accountHandler as accountHandler
+entity automaticdebit as automaticdebit
+control service as service
+control repository as repository
+database firestore as firestore
 
-AccountOwner -> AccountHandler : /accounts/account_id/debit
-AccountHandler -> AccountHandler : accountAuthorization
-AccountHandler -> Service : Authorize
-Service -> AccountHandler : model.Claims,model.Erro,http.Cookie
-AccountHandler ->  AccountHandler : string,model.Erro
-AccountHandler -> Service : ProcessNewAutomaticDebit
-Service -> Service : IsValidDate
-Service -> Repository : CreateObject
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Firestore -> Repository : firestore.Client
-Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Add()
-Firestore -> Repository : firestore.DocumentRef
-Repository -> Service : createdID string
-Service -> AccountHandler :  model.Erro
-alt Succesful
-AccountHandler -> AccountOwner : http.StatusAccepted
-else Not succesful
-AccountHandler -> AccountOwner : apropriated http code
+accountOwner -> accountHandler : /accounts/:account_id/debit
+accountHandler -> accountHandler : AccountPutAutomaticDebit
+accountHandler -> userHandler : userAuthorization
+userHandler -> service : Authorize
+service -> userHandler : model.Claims,model.Erro,http.Cookie
+userHandler ->  accountHandler : string,model.Erro
+accountHandler -> service : ProcessNewAutomaticDebit
+
+service -> service : IsValidDate
+service -> automaticdebit : Create
+automaticdebit -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repository : firestore.Client
+repository -> automaticdebit : firestore.Client
+automaticdebit -> firestore : .Collection().Add()
+firestore -> automaticdebit : firestore.DocumentRef
+automaticdebit -> service
+service -> accountHandler :  model.Erro
+alt No Error
+accountHandler -> accountOwner : http.StatusAccepted
+else Error
+accountHandler -> accountOwner : http.BadRequest
 end
 
 @enduml

@@ -1,190 +1,75 @@
 package service
 
 import (
-	"net/http"
-
-	repository "BankingAPI/internal/model/repository"
-	model "BankingAPI/internal/model/types"
+	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
+	automaticdebit "BankingAPI/internal/model/automaticDebit"
+	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/model/deposit"
+	"BankingAPI/internal/model/transfer"
+	"BankingAPI/internal/model/user"
+	"BankingAPI/internal/model/withdrawal"
 
 	"github.com/rs/zerolog/log"
 )
 
-func Account(accountID string) (*model.AccountResponse, *model.Erro) {
-	docSnapshot, err := repository.GetTypeFromDB(&accountID, repository.AccountsPath)
-	if err != nil {
+func Account(accountID string) (*account.AccountResponse, *model.Erro) {
+	database := &account.AccountFirestore{}
+	database.Request.Account_id = accountID
+
+	if err := database.Get(); err != nil {
 		return nil, err
 	}
-	var accountResponse model.AccountResponse
-	if err := docSnapshot.DataTo(&accountResponse); err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	accountResponse.Account_id = accountID
-
 	log.Info().Msg("Account returned: " + accountID)
-	return &accountResponse, nil
+	return database.Response, nil
 }
 
-func GetAccountByFilterAndOrder(listRequest *model.ListRequest) (*[]model.AccountResponse, *model.Erro) {
+func GetAccountByFilterAndOrder() (*[]account.AccountResponse, *model.Erro) {
 	return nil, nil
 }
 
-func Client(clientID string) (*model.ClientResponse, *model.Erro) {
-	docSnapshot, err := repository.GetTypeFromDB(&clientID, repository.ClientPath)
-	if err != nil {
+func Client(clientID string) (*client.ClientResponse, *model.Erro) {
+	database := &client.ClientFirestore{}
+	database.Request.Client_id = clientID
+
+	if err := database.Get(); err != nil {
 		return nil, err
 	}
-	var clientResponse model.ClientResponse
-	if err := docSnapshot.DataTo(&clientResponse); err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	clientResponse.Client_id = clientID
-
-	log.Info().Msg("Client returned: " + clientID)
-	return &clientResponse, nil
+	log.Info().Msg("Account returned: " + clientID)
+	return database.Response, nil
 }
 
-func User(userID string) (*model.UserResponse, *model.Erro) {
-	docSnapshot, err := repository.GetTypeFromDB(&userID, repository.UsersPath)
-	if err != nil {
+func User(userID string) (*user.UserResponse, *model.Erro) {
+	database := &user.UserFirestore{}
+	database.Request.User_id = userID
+
+	if err := database.Get(); err != nil {
 		return nil, err
 	}
-
-	var userResponse model.UserResponse
-	if err := docSnapshot.DataTo(&userResponse); err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-
-	userResponse.User_id = userID
-
-	log.Info().Msg("User returned: " + userID)
-	return &userResponse, nil
+	log.Info().Msg("Account returned: " + userID)
+	return database.Response, nil
 }
 
-// implement getallby(each type)
-func GetAllTransfers(accountID *string) (*[]model.TransferResponse, *model.Erro) {
-	docSnapshots, err := repository.GetAllByTypeDB(repository.TransfersPath)
-	if err != nil {
-		return nil, err
-	}
-	tranfersReponseSlice := make([]model.TransferResponse, 0, len(docSnapshots))
-	for index := 0; index < len(docSnapshots); index++ {
-		docSnap := docSnapshots[index]
-		transferResponse := model.TransferResponse{}
-		if err := docSnap.DataTo(&transferResponse); err != nil {
-			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-		}
-		transferResponse.Transfer_id = docSnap.Ref.ID
-		// condicional para saber se a transferencia pertence ao account
-		if *accountID == transferResponse.Account_id {
-			tranfersReponseSlice = append(tranfersReponseSlice, transferResponse)
-		}
-	}
-
-	return &tranfersReponseSlice, nil
+func GetAllTransfers(accounID *string) (*[]transfer.TransferResponse, *model.Erro) {
+	return nil, nil
 }
 
-func GetAllAutoDebits(accountID *string) (*[]model.AutomaticDebitResponse, *model.Erro) {
-	docSnapshots, err := repository.GetAllByTypeDB(repository.AutoDebit)
-	if err != nil {
-		return nil, err
-	}
-	autoDebitsResponseSlice := make([]model.AutomaticDebitResponse, 0, len(docSnapshots))
-	for index := 0; index < len(docSnapshots); index++ {
-		docSnap := docSnapshots[index]
-		autoDebitResponse := model.AutomaticDebitResponse{}
-		if err := docSnap.DataTo(&autoDebitResponse); err != nil {
-			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-		}
-		autoDebitResponse.Debit_id = docSnap.Ref.ID
-		if *accountID == autoDebitResponse.Account_id {
-			autoDebitsResponseSlice = append(autoDebitsResponseSlice, autoDebitResponse)
-		}
-	}
-	return &autoDebitsResponseSlice, nil
+func GetAllAutoDebits(accountID *string) (*[]automaticdebit.AutomaticDebit, *model.Erro) {
+	return nil, nil
 }
 
-func GetAllWithdrawals(accountID *string) (*[]model.WithdrawalResponse, *model.Erro) {
-	docSnapshots, err := repository.GetAllByTypeDB(repository.WithdrawalsPath)
-	if err != nil {
-		return nil, err
-	}
-	withdrawalsResponseSlice := make([]model.WithdrawalResponse, 0, len(docSnapshots))
-	for index := 0; index < len(docSnapshots); index++ {
-		docSnap := docSnapshots[index]
-		withdrawalsResponse := model.WithdrawalResponse{}
-		if err := docSnap.DataTo(&withdrawalsResponse); err != nil {
-			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-		}
-		withdrawalsResponse.Withdrawal_id = docSnap.Ref.ID
-		if *accountID == withdrawalsResponse.Withdrawal_id {
-			withdrawalsResponseSlice = append(withdrawalsResponseSlice, withdrawalsResponse)
-		}
-	}
-	return &withdrawalsResponseSlice, nil
+func GetAllWithdrawals(accountID *string) (*[]withdrawal.WithdrawalResponse, *model.Erro) {
+	return nil, nil
 }
 
-func GetAllDeposits(accountID *string) (*[]model.DepositResponse, *model.Erro) {
-	docSnapshots, err := repository.GetAllByTypeDB(repository.DepositPath)
-	if err != nil {
-		return nil, err
-	}
-	depositsResponseSlice := make([]model.DepositResponse, 0, len(docSnapshots))
-	for index := 0; index < len(docSnapshots); index++ {
-		docSnap := docSnapshots[index]
-		depositResponse := model.DepositResponse{}
-		if err := docSnap.DataTo(&depositResponse); err != nil {
-			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-		}
-		depositResponse.Deposit_id = docSnap.Ref.ID
-		if *accountID == depositResponse.Account_id {
-			depositsResponseSlice = append(depositsResponseSlice, depositResponse)
-		}
-	}
-	return &depositsResponseSlice, nil
+func GetAllDeposits(accountID *string) (*[]deposit.DepositResponse, *model.Erro) {
+	return nil, nil
 }
 
-func GetAccountsByClientID(clientID *string) (*[]model.AccountResponse, *model.Erro) {
-	docSnapshots, err := repository.GetAllByTypeDB(repository.AccountsPath)
-	if err != nil {
-		return nil, err
-	}
-	accountsByClientIDSlice := make([]model.AccountResponse, 0, len(docSnapshots))
-	for index := 0; index < len(docSnapshots); index++ {
-		docSnap := docSnapshots[index]
-		accountResponse := model.AccountResponse{}
-		if err := docSnap.DataTo(&accountResponse); err != nil {
-			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-		}
-		accountResponse.Account_id = docSnap.Ref.ID
-		if *clientID == accountResponse.Client_id {
-			accountsByClientIDSlice = append(accountsByClientIDSlice, accountResponse)
-		}
-	}
-	return &accountsByClientIDSlice, nil
+func GetAccountsByClientID(clientID *string) (*[]account.AccountResponse, *model.Erro) {
+	return nil, nil
 }
 
-func GetClientsByUserID(userID *string) (*[]model.ClientResponse, *model.Erro) {
-	docSnapshots, err := repository.GetAllByTypeDB(repository.ClientPath)
-	if err != nil {
-		return nil, err
-	}
-	clientsByUserIDSlice := make([]model.ClientResponse, 0, len(docSnapshots))
-	for index := 0; index < len(docSnapshots); index++ {
-		docSnap := docSnapshots[index]
-		clientResponse := model.ClientResponse{}
-		if err := docSnap.DataTo(&clientResponse); err != nil {
-			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-		}
-		clientResponse.Client_id = docSnap.Ref.ID
-		if *userID == clientResponse.User_id {
-			clientsByUserIDSlice = append(clientsByUserIDSlice, clientResponse)
-		}
-	}
-	return &clientsByUserIDSlice, nil
+func GetClientsByUserID(userID *string) (*[]client.ClientResponse, *model.Erro) {
+	return nil, nil
 }

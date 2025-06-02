@@ -3,29 +3,47 @@ note top
     Complete Authentication Sequence before following this diagram
 end note
 
-participant AccountOwner as AccountOwner
-boundary AccountHandler as AccountHandler
-control Service as Service
-control Repository as Repository
-database Firestore as Firestore
+participant accountOwner as accountOwner
+boundary accountHandler as accountHandler
+boundary userHandler as userHandler
+entity account as account
+entity withdrawal as withdrawal
+entity repository as repository
+control service as service
+control accountHandler as accountHandler
+database firestore as firestore
 
-AccountOwner -> AccountHandler : /accounts/account_id/balance/withdrawal
-AccountHandler -> Service : ProcessWithdrawal
-Service -> Repository : Account
-Repository -> Service : model.AccountResponse
+accountOwner -> accountHandler : /accounts/:account_id/balance/withdrawal
+accountHandler -> accountHandler : AccountPutWithdrawalHandler
+accountHandler -> userHandler : userAuthorization
+userHandler -> service : Authorize
+service -> userHandler : model.Claims, http.Cookie
+userHandler -> accountHandler : string
+accountHandler -> service : ProcessWithdrawal
+service -> service : Account()
+service -> account : Get()
+account -> service : account.AccountResponse
+service -> service : account.AccountResponse
 
-Service -> Repository : UpdateTypesDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Repository -> Repository : firestore.Client
-Repository -> Firestore : Get
-Repository -> Firestore : Update
-Repository -> Service : model.Erro
+service -> withdrawal : Create()
+withdrawal -> repository : GetFireStoreClient()
+repository -> firestore: NewClient()
+firestore -> repository : firestore.Client
+repository -> withdrawal : firestore.Client
+withdrawal -> firestore : .Collection().Add()
+firestore -> withdrawal : firestore.DocumentRef
 
-Service -> AccountHandler : float64
+service -> account : AddUpdate()
+service -> account : AddUpdate()
+service -> account : Update()
+alt Error
+service -> withdrawal : Delete()
+end
+
+service -> accountHandler : model.Erro
 alt No errors
-AccountHandler -> AccountOwner : http.StatusAccepted
+accountHandler -> accountOwner : http.StatusAccepted
 else Error found
-AccountHandler -> AccountOwner : apropriate http code
+accountHandler -> accountOwner : http.(ApropriateErrorCode)
 end
 @enduml

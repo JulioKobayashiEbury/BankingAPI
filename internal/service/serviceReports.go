@@ -3,12 +3,15 @@ package service
 import (
 	"time"
 
-	model "BankingAPI/internal/model/types"
+	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
+	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/model/user"
 
 	"github.com/rs/zerolog/log"
 )
 
-func GenerateReportByAccount(accountID *string) (*model.AccountReport, *model.Erro) {
+func GenerateReportByAccount(accountID *string) (*account.AccountReport, *model.Erro) {
 	accountInfo, err := Account(*accountID)
 	if err != nil {
 		return nil, err
@@ -29,7 +32,7 @@ func GenerateReportByAccount(accountID *string) (*model.AccountReport, *model.Er
 	if err != nil {
 		return nil, err
 	}
-	accountReport := model.AccountReport{
+	accountReport := account.AccountReport{
 		Account_id:       accountInfo.Account_id,
 		Client_id:        accountInfo.Client_id,
 		Agency_id:        accountInfo.Agency_id,
@@ -46,7 +49,7 @@ func GenerateReportByAccount(accountID *string) (*model.AccountReport, *model.Er
 	return &accountReport, nil
 }
 
-func GenerateReportByClient(clientID *string) (*model.ClientReport, *model.Erro) {
+func GenerateReportByClient(clientID *string) (*client.ClientReport, *model.Erro) {
 	clientInfo, err := Client(*clientID)
 	if err != nil {
 		return nil, err
@@ -55,7 +58,7 @@ func GenerateReportByClient(clientID *string) (*model.ClientReport, *model.Erro)
 	if err != nil {
 		return nil, err
 	}
-	return &model.ClientReport{
+	return &client.ClientReport{
 		Client_id:     clientInfo.Client_id,
 		User_id:       clientInfo.User_id,
 		Name:          clientInfo.Name,
@@ -67,7 +70,7 @@ func GenerateReportByClient(clientID *string) (*model.ClientReport, *model.Erro)
 	}, nil
 }
 
-func GenerateReportByUser(userId *string) (*model.UserReport, *model.Erro) {
+func GenerateReportByUser(userId *string) (*user.UserReport, *model.Erro) {
 	userInfo, err := User(*userId)
 	if err != nil {
 		return nil, err
@@ -76,7 +79,7 @@ func GenerateReportByUser(userId *string) (*model.UserReport, *model.Erro) {
 	if err != nil {
 		return nil, err
 	}
-	return &model.UserReport{
+	return &user.UserReport{
 		User_id:       userInfo.User_id,
 		Name:          userInfo.Name,
 		Document:      userInfo.Document,

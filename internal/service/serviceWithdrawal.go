@@ -3,64 +3,54 @@ package service
 import (
 	"errors"
 	"net/http"
-	"time"
 
-	repository "BankingAPI/internal/model/repository"
-	model "BankingAPI/internal/model/types"
+	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
+	"BankingAPI/internal/model/withdrawal"
 
-	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
 )
 
-func ProcessWithdrawal(withdrawalRequest *model.WithdrawalRequest) *model.Erro {
+func ProcessWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest) *model.Erro {
 	// monta update
-	withdrawal := WithdrawalDB{
-		account_id:      withdrawalRequest.Account_id,
-		client_id:       withdrawalRequest.Client_id,
-		agency_id:       withdrawalRequest.Agency_iD,
-		withdrawal:      withdrawalRequest.Withdrawal,
-		withdrawal_date: time.Now().Format(timeLayout),
-	}
-	account, err := Account(withdrawal.account_id)
+	accountResponse, err := Account(withdrawalRequest.Account_id)
 	if err != nil {
 		return err
 	}
-	if account.Client_id != withdrawal.client_id {
+	if accountResponse.Client_id != withdrawalRequest.Client_id {
 		return &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 
-	if account.Agency_id != withdrawal.agency_id {
+	if accountResponse.Agency_id != withdrawalRequest.Agency_id {
 		return &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
-	account.Balance = (account.Balance - withdrawal.withdrawal)
-	if account.Balance < 0.0 {
+	accountResponse.Balance = (accountResponse.Balance - withdrawalRequest.Withdrawal)
+	if accountResponse.Balance < 0.0 {
 		return &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
 	}
-	updates := []firestore.Update{
-		{
-			Path:  "balance",
-			Value: account.Balance,
+	databaseWithdrawal := &withdrawal.WithdrawalFirestore{Request: withdrawalRequest}
+	if err := databaseWithdrawal.Create(); err != nil {
+		return err
+	}
+
+	databaseAccount := &account.AccountFirestore{
+		Request: &account.AccountRequest{
+			Account_id: withdrawalRequest.Account_id,
 		},
 	}
-	withdrawalMap := map[string]interface{}{
-		"account_id":      withdrawal.account_id,
-		"client_id":       withdrawal.client_id,
-		"user_id":         withdrawal.user_id,
-		"agency_id":       withdrawal.agency_id,
-		"withdrawal":      withdrawal.withdrawal,
-		"withdrawal_date": withdrawal.withdrawal_date,
-	}
-	if err := repository.CreateObject(&withdrawalMap, repository.WithdrawalsPath, &withdrawal.withdrawal_id); err != nil {
-		return err
-	}
+	databaseAccount.Response.Withdrawals = append(databaseAccount.Response.Withdrawals, databaseWithdrawal.Request.Withdrawal_id)
+	databaseAccount.AddUpdate("balance", accountResponse.Balance)
+	databaseAccount.AddUpdate("withdrawals", accountResponse.Withdrawals)
 
-	if err := repository.UpdateTypesDB(&updates, &withdrawal.account_id, repository.AccountsPath); err != nil {
-		if err := repository.DeleteObject(&withdrawal.withdrawal_id, repository.WithdrawalsPath); err != nil {
-			log.Panic().Msg("Error deleting withdrawal after update failure: " + err.Err.Error())
+	if err := databaseAccount.Update(); err != nil {
+		if err := databaseWithdrawal.Delete(); err != nil {
+			log.Error().Msg("Account and Withdrawals DB changes failed during processing withdrawal")
+			return err
 		}
+		log.Error().Msg("Creating Account Update failed, withdrawal reversed")
 		return err
 	}
 
-	log.Info().Msg("Succesful Withdrawal: " + withdrawal.account_id)
+	log.Info().Msg("Succesful Withdrawal: " + withdrawalRequest.Account_id)
 	return nil
 }

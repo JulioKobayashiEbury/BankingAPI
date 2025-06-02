@@ -1,0 +1,20 @@
+package deposit
+
+type DepositRequest struct {
+	Deposit_id string  `json:"deposit_id" xml:"deposit_id"`
+	Account_id string  `json:"account_id" xml:"account_id"`
+	Client_id  string  `json:"client_id" xml:"client_id"`
+	User_id    string  `json:"user_id" xml:"user_id"`
+	Agency_id  uint32  `json:"agency_id" xml:"agency_id"`
+	Deposit    float64 `json:"deposit" xml:"deposit"`
+}
+
+type DepositResponse struct {
+	Deposit_id   string  `json:"deposit_id" xml:"deposit_id"`
+	Account_id   string  `json:"account_id" xml:"account_id"`
+	Client_id    string  `json:"client_id" xml:"client_id"`
+	User_id      string  `json:"user_id" xml:"user_id"`
+	Agency_id    uint32  `json:"agency_id" xml:"agency_id"`
+	Deposit      float64 `json:"deposit" xml:"deposit"`
+	Deposit_date string  `json:"deposit_date" xml:"deposit_date"`
+}

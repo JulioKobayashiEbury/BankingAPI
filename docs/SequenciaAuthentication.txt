@@ -1,27 +1,27 @@
 @startuml
-participant AccountOwner as AccountOwner
-boundary AccountHandler as AccountHandler
-control Service as Service
-control Repository as Repository
-database Firestore as Firestore
+participant userOwner as userOwner
+boundary userHandler as userHandler
+control service as service
+control repository as repository
+database firestore as firestore
 
-AccountOwner -> AccountHandler : /accounts/auth
-AccountHandler -> AccountHandler : AccountAuthHandler
+userOwner -> userHandler : /users/auth
+userHandler -> userHandler : UserAuthHandler
 
-AccountHandler -> Service : Authenticate
-Service -> Repository : GetTypeFromDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Firestore -> Repository : firestore.Client
-Repository -> Repository : firestore.Client
-Repository -> Service : firestore.DocumentSnapshot
-Service -> AccountHandler : boolean
+userHandler -> service : Authenticate
+service -> user : Get
+user -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repository : firestore.Client
+repository -> user : firestore.Client
+user -> service : user.UserResponse
+service -> userHandler : boolean
 
 alt True
-AccountHandler -> Service : GenerateToken
-Service -> AccountHandler : http.Cookie
-AccountHandler -> AccountOwner : http.StatusAccepted
+userHandler -> service : GenerateToken
+service -> userHandler : http.Cookie
+userHandler -> userOwner : http.StatusAccepted
 else False
-AccountHandler -> AccountOwner : http.Unauthorized
+userHandler -> userOwner : http.Unauthorized
 end
 @enduml

@@ -1,14 +1,18 @@
 package service
 
 import (
-	repository "BankingAPI/internal/model/repository"
-	model "BankingAPI/internal/model/types"
+	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
+	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/model/user"
 
 	"github.com/rs/zerolog/log"
 )
 
 func AccountDelete(accountID string) *model.Erro {
-	if err := repository.DeleteObject(&accountID, repository.AccountsPath); err != nil {
+	database := &account.AccountFirestore{}
+	database.Request.Account_id = accountID
+	if err := database.Delete(); err != nil {
 		return err
 	}
 	log.Info().Msg("Account deleted: " + accountID)
@@ -16,17 +20,21 @@ func AccountDelete(accountID string) *model.Erro {
 }
 
 func ClientDelete(clientID string) *model.Erro {
-	if err := repository.DeleteObject(&clientID, repository.ClientPath); err != nil {
+	database := &client.ClientFirestore{}
+	database.Request.Client_id = clientID
+	if err := database.Delete(); err != nil {
 		return err
 	}
-	log.Info().Msg("Client deleted: " + clientID)
+	log.Info().Msg("Account deleted: " + clientID)
 	return nil
 }
 
 func UserDelete(userID string) *model.Erro {
-	if err := repository.DeleteObject(&userID, repository.UsersPath); err != nil {
+	database := &user.UserFirestore{}
+	database.Request.User_id = userID
+	if err := database.Delete(); err != nil {
 		return err
 	}
-	log.Info().Msg("User deleted: " + userID)
+	log.Info().Msg("Account deleted: " + userID)
 	return nil
 }

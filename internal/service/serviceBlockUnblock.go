@@ -1,15 +1,16 @@
 package service
 
 import (
-	repository "BankingAPI/internal/model/repository"
-	model "BankingAPI/internal/model/types"
+	"BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
+	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/model/user"
 
-	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
 )
 
 func AccountBlock(accountID string) *model.Erro {
-	if err := toggleStatus(false, &accountID, repository.AccountsPath); err != nil {
+	if err := toggleAccountStatus(false, &accountID); err != nil {
 		return err
 	}
 	log.Info().Msg("Account Blocked")
@@ -17,7 +18,7 @@ func AccountBlock(accountID string) *model.Erro {
 }
 
 func AccountUnBlock(accountID string) *model.Erro {
-	if err := toggleStatus(true, &accountID, repository.AccountsPath); err != nil {
+	if err := toggleAccountStatus(true, &accountID); err != nil {
 		return err
 	}
 	log.Info().Msg("Account Blocked")
@@ -25,7 +26,7 @@ func AccountUnBlock(accountID string) *model.Erro {
 }
 
 func ClientBlock(clientID string) *model.Erro {
-	if err := toggleStatus(false, &clientID, repository.ClientPath); err != nil {
+	if err := toggleClientStatus(false, &clientID); err != nil {
 		return err
 	}
 	log.Info().Msg("Client Blocked")
@@ -33,7 +34,7 @@ func ClientBlock(clientID string) *model.Erro {
 }
 
 func ClientUnBlock(clientID string) *model.Erro {
-	if err := toggleStatus(true, &clientID, repository.ClientPath); err != nil {
+	if err := toggleClientStatus(true, &clientID); err != nil {
 		return err
 	}
 	log.Info().Msg("Client UnBlocked")
@@ -41,7 +42,7 @@ func ClientUnBlock(clientID string) *model.Erro {
 }
 
 func UserBlock(userID string) *model.Erro {
-	if err := toggleStatus(false, &userID, repository.UsersPath); err != nil {
+	if err := toggleUserStatus(false, &userID); err != nil {
 		return err
 	}
 	log.Info().Msg("User Blocked")
@@ -49,22 +50,38 @@ func UserBlock(userID string) *model.Erro {
 }
 
 func UserUnBlock(userID string) *model.Erro {
-	if err := toggleStatus(true, &userID, repository.UsersPath); err != nil {
+	if err := toggleUserStatus(true, &userID); err != nil {
 		return err
 	}
 	log.Info().Msg("User UnBlocked")
 	return nil
 }
 
-func toggleStatus(status bool, typesID *string, collection string) *model.Erro {
-	updates := []firestore.Update{
-		{
-			Path:  "status",
-			Value: status,
-		},
+func toggleAccountStatus(status bool, accountID *string) *model.Erro {
+	database := &account.AccountFirestore{}
+	database.Request.Account_id = *accountID
+	database.AddUpdate("status", status)
+	if err := database.Update(); err != nil {
+		return err
 	}
-	// put account into db again
-	if err := repository.UpdateTypesDB(&updates, typesID, collection); err != nil {
+	return nil
+}
+
+func toggleClientStatus(status bool, clientID *string) *model.Erro {
+	database := &client.ClientFirestore{}
+	database.Request.Client_id = *clientID
+	database.AddUpdate("status", status)
+	if err := database.Update(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func toggleUserStatus(status bool, userID *string) *model.Erro {
+	database := &user.UserFirestore{}
+	database.Request.User_id = *userID
+	database.AddUpdate("status", status)
+	if err := database.Update(); err != nil {
 		return err
 	}
 	return nil

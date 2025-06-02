@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	repository "BankingAPI/internal/model/repository"
-	model "BankingAPI/internal/model/types"
+	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model/user"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
@@ -16,15 +16,12 @@ const expirationMin = 30
 var jwtKey = []byte("bankingapi-key")
 
 func Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro) {
-	docSnapshot, err := repository.GetTypeFromDB(typeID, collection)
-	if err != nil {
+	database := &user.UserFirestore{}
+	database.Request.User_id = *typeID
+	if err := database.Get(); err != nil {
 		return false, err
 	}
-	var typeAuth Auth
-	if err := docSnapshot.DataTo(&typeAuth); err != nil {
-		return false, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	if *password != typeAuth.Password {
+	if *password != database.AuthUser.Password {
 		return false, nil
 	}
 	log.Info().Msg("Authenticated entrance: " + *typeID)

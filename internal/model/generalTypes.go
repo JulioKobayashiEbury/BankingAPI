@@ -1,6 +1,15 @@
 package model
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+const (
+	//"2006-01-02T15:04:05+07:00"
+	TimeLayout = time.RFC3339
+)
 
 type StandartResponse struct {
 	Message string `json:"message" xml:"message"`

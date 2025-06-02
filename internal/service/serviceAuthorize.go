@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	model "BankingAPI/internal/model/types"
+	model "BankingAPI/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"

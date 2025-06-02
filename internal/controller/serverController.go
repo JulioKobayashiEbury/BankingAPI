@@ -17,6 +17,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	documentLenghtIdeal = 11
+	maxNameLenght       = 30
+)
+
 func Server() {
 	server := echo.New()
 	AddAccountEndPoints(server)

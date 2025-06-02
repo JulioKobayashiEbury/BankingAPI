@@ -1,67 +1,60 @@
 package service
 
 import (
-	"time"
+	"BankingAPI/internal/model"
 
-	repository "BankingAPI/internal/model/repository"
-	model "BankingAPI/internal/model/types"
+	"BankingAPI/internal/model/account"
+	"BankingAPI/internal/model/transfer"
 
-	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
 )
 
-func ProcessNewTransfer(transfer *model.TransferRequest) *model.Erro {
-	transferDBT := TransferDB{
-		account_id:    transfer.Account_id,
-		account_to:    transfer.Account_to,
-		value:         transfer.Value,
-		transfer_date: time.Now().Format(timeLayout),
+func ProcessNewTransfer(transferRequest *transfer.TransferRequest) *model.Erro {
+	accountToDatabase := &account.AccountFirestore{}
+	accountToDatabase.Request.Account_id = transferRequest.Account_to
+
+	accountFromDatabase := &account.AccountFirestore{}
+	accountFromDatabase.Request.Account_id = transferRequest.Account_id
+
+	if err := accountToDatabase.Get(); err == model.IDnotFound || err != nil {
+		return err
 	}
-	// get account from and authenticate
-	accountFrom, err := Account(transferDBT.account_id)
-	if err != nil {
+	if err := accountFromDatabase.Get(); err == model.IDnotFound || err != nil {
 		return err
 	}
 
-	accountTo, err := Account(transferDBT.account_to)
-	if err != nil {
-		return err
-	}
+	accountToDatabase.Response.Balance += transferRequest.Value
+	accountFromDatabase.Response.Balance -= transferRequest.Value
 
-	accountFrom.Balance -= transferDBT.value
-	accountTo.Balance += transferDBT.value
-
-	updateOnFrom := []firestore.Update{
-		{
-			Path:  "balance",
-			Value: accountFrom.Balance,
-		},
+	transferDatabase := &transfer.TransferFirestore{
+		Request: transferRequest,
 	}
-	updateOnTo := []firestore.Update{
-		{
-			Path:  "balance",
-			Value: accountTo.Balance,
-		},
-	}
-	if err := repository.UpdateTypesDB(&updateOnFrom, &transferDBT.account_id, repository.AccountsPath); err != nil {
+	if err := transferDatabase.Create(); err != nil {
 		return err
 	}
-	if err := repository.UpdateTypesDB(&updateOnTo, &transferDBT.account_to, repository.AccountsPath); err != nil {
+	transferDatabase.Request.Transfer_id = transferDatabase.Response.Transfer_id
+	accountToDatabase.AddUpdate("balance", accountToDatabase.Response.Balance)
+	if err := accountToDatabase.Update(); err != nil {
+		if err := transferDatabase.Delete(); err != nil {
+			return err
+		}
+		log.Error().Msg("Update Account Receiving Transfer failed, transfer canceled")
 		return err
 	}
-	transferMap := map[string]interface{}{
-		"account_id":    accountFrom.Account_id,
-		"account_to":    accountTo.Account_id,
-		"value":         transferDBT.value,
-		"transfer_date": time.Now().Format(timeLayout),
+	accountFromDatabase.Response.Transfers = append(accountFromDatabase.Response.Transfers, transferDatabase.Response.Transfer_id)
+	accountFromDatabase.AddUpdate("transfers", accountFromDatabase.Response.Transfers)
+	accountFromDatabase.AddUpdate("balance", accountFromDatabase.Response.Balance)
+	if err := accountFromDatabase.Update(); err != nil {
+		accountToDatabase.AddUpdate("balance", accountToDatabase.Response.Balance-transferRequest.Value)
+		if err := accountToDatabase.Update(); err != nil {
+			return err
+		}
+		if err := transferDatabase.Delete(); err != nil {
+			return err
+		}
+		log.Error().Msg("Update Account Sending Transfer failed, transfer canceled")
 	}
-	var transferID string
-	if err := repository.CreateObject(&transferMap, repository.TransfersPath, &transferID); err != nil {
-		return err
-	}
-	(*transfer).Transfer_id = transferID
-
-	log.Info().Msg("Transfer was succesful: " + transferDBT.account_id + " to " + transferDBT.account_to)
+	log.Info().Msg("Transfer was succesful: " + transferRequest.Transfer_id + " to " + transferRequest.Account_to)
 	return nil
 }
 

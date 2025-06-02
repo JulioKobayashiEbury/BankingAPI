@@ -3,78 +3,76 @@ note top
     Complete Authentication Sequence before following this diagram
 end note
 
-participant AccountOwner as AccountOwner
-boundary AccountHandler as AccountHandler
-control Service as Service
-control Repository as Repository
-database Firestore as Firestore
+participant accountOwner as accountOwner
+boundary accountHandler as accountHandler
+boundary userHandler as userHandler
+control service as service
+control repository as repository
+entity account as account
+entity transfer as transfer
+database firestore as firestore
 
-AccountOwner -> AccountHandler : /accounts/reports
-AccountHandler -> AccountHandler : AccountGetReportHandler
+accountOwner -> accountHandler : /accounts/reports
+accountHandler -> accountHandler : AccountGetReportHandler
 
-AccountHandler -> AccountHandler : accountAuthorization
-AccountHandler -> Service : Authorize
-Service -> AccountHandler : model.Claims,model.Erro,http.Cookie
-AccountHandler ->  AccountHandler : string,model.Erro
+accountHandler -> userHandler : userAuthorization
+userHandler -> service : Authorize
+service -> userHandler : model.Claims,http.Cookie
+userHandler ->  accountHandler : string,model.Erro
 
-AccountHandler -> Service : GenerateReportByAccount
-Service -> Service : Account
-Service -> Repository : GetTypeFromDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Firestore -> Repository : firestore.Client
-Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Documents()
-Firestore -> Repository : firestore.DocumentIterator
-Repository -> Service : []firestore.DocumentSnapshot
-Service -> Service : model.AccountReponse
+accountHandler -> service : GenerateReportByAccount
+service -> service : Account
+service -> account : Get
+account -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repository : firestore.Client
+repository -> account : firestore.Client
+account -> firestore : .Collection().Doc().Get()
+firestore -> account : firestore.DocumentSnapshot
+account -> service : accountResponse
 
-Service -> Service : GetAllTransfers
-Service -> Repository : GetTypeFromDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Firestore -> Repository : firestore.Client
-Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Documents()
-Firestore -> Repository : firestore.DocumentIterator
-Repository -> Service : []firestore.DocumentSnapshot
-Service -> Service : []model.TransferRequest
+service -> service : GetAllTransfers
+service -> transfer : GetAll
+transfer -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repository : firestore.Client
+repository -> transfer : firestore.Client
+transfer -> firestore : .Collection().Documents()
+firestore -> transfer : firestore.DocumentIterator
+transfer -> service : []transfer.TransferResponse
 
-Service -> Service : GetAllAutoDebits
-Service -> Repository : GetTypeFromDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Firestore -> Repository : firestore.Client
-Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Documents()
-Firestore -> Repository : firestore.DocumentIterator
-Repository -> Service : []firestore.DocumentSnapshot
-Service -> Service : []model.AutomaticDebitResponse
+service -> service : GetAllAutoDebits
+service -> automaticDebit : Get
+automaticDebit -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repository : firestore.Client
+repository -> automaticDebit : firestore.Client
+automaticDebit -> firestore : .Collection().Documents()
+firestore -> automaticDebit : firestore.DocumentIterator
+automaticDebit -> service : []automaticdebit.AutomaticDebit
 
-Service -> Service : GetAllWithdrawals
-Service -> Repository : GetTypeFromDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Firestore -> Repository : firestore.Client
-Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Documents()
-Firestore -> Repository : firestore.DocumentIterator
-Repository -> Service : []firestore.DocumentSnapshot
-Service -> Service : []model.WithdrawalRequest
+service -> service : GetAllWithdrawals
+service -> withdrawal : Get
+withdrawal -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repository : firestore.Client
+repository -> withdrawal : firestore.Client
+withdrawal -> firestore : .Collection().Documents()
+firestore -> withdrawal : firestore.DocumentIterator
+withdrawal -> service : []withdrawal.WithdrawalResponse
 
-Service -> Service : GetAllDeposits
-Service -> Repository : GetTypeFromDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Firestore -> Repository : firestore.Client
-Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Documents()
-Firestore -> Repository : firestore.DocumentIterator
-Repository -> Service : []firestore.DocumentSnapshot
-Service -> Service : []model.DepositRequest
+service -> service : GetAllDeposits
+service -> deposits : Get
+deposits -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repository : firestore.Client
+repository -> deposits : firestore.Client
+deposits -> firestore : .Collection().Documents()
+firestore -> deposits : firestore.DocumentIterator
+deposits -> service : []deposits.DepositResponse
 
-Service -> AccountHandler : model.AccountReport
-AccountHandler -> AccountOwner : JSON(http.StatusOK,model.Report)
+service -> accountHandler : model.AccountReport
+accountHandler -> accountOwner : JSON(http.StatusOK,model.Report)
 
 
 @enduml

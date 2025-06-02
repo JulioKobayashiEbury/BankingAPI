@@ -3,53 +3,80 @@ note top
     Complete Authentication Sequence before following this diagram
 end note
 
-participant AccountOwner as AccountOwner
-boundary AccountHandler as AccountHandler
-control Service as Service
-control Repository as Repository
-database Firestore as Firestore
+participant accountOwner as accountOwner
+boundary accountHandler as accountHandler
+boundary userHandler as userHandler
+entity account as account
+entity transfer as transfer
+control service as service
+control repository as repository
+database firestore as firestore
 
-AccountOwner -> AccountHandler : /accounts/newTransfer
-AccountHandler -> AccountHandler : AccountPutTransferHandler
-AccountHandler -> AccountHandler : accountAuthorization
-AccountHandler -> Service : Authorize
-Service -> AccountHandler : http.Claims
-AccountHandler -> AccountHandler : string
+accountOwner -> accountHandler : /accounts/transfer
+accountHandler -> accountHandler : AccountPutTransferHandler
+accountHandler -> userHandler : userAuthorization
+userHandler -> service : Authorize
+service -> userHandler : http.Claims, http.Cookie
+userHandler -> accountHandler : string
 
-AccountHandler -> Service : ProcessNewTransfer
-Service -> Service : Account
-Service -> Service : model.AccountResponse
-Service -> Service : Account
-Service -> Service: model.AccountResponse
+accountHandler -> service : ProcessNewTransfer
+service -> account : Get
+account -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repostitory : firestore.Client
+repository -> account : firestore.Client
+account -> firestore : .Collection().Doc().Get()
+firestore -> account : firestore.DocumentSnapshot
+account -> service : account.AccountResponse
 
-Service -> Repository : UpdateTypesDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Repository -> Repository : firestore.Client
-Repository -> Firestore : Get
-Repository -> Firestore : Update
-Repository -> Service : model.Erro
+service -> account : Get
+account -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repostitory : firestore.Client
+repository -> account : firestore.Client
+account -> firestore : .Collection().Doc().Get()
+firestore -> account : firestore.DocumentSnapshot
+account -> service : account.AccountResponse
 
-Service -> Repository : UpdateTypesDB
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Repository -> Repository : firestore.Client
-Repository -> Firestore : Get
-Repository -> Firestore : Update
-Repository -> Service : model.Erro
+service -> transfer : Create
+transfer -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+firestore -> repostitory : firestore.Client
+repository -> transfer : firestore.Client
+transfer -> firestore : .Collection().Add()
+firestore -> transfer : firestore.DocumentRef
+transfer -> service : transfer.TransferResponse
 
-Service -> Repository : CreateObject
-Repository -> Repository : GetFireStoreClient
-Repository -> Firestore : NewClient
-Repository -> Repository : firestore.Client
-Repository -> Firestore : .Collection().Add()
-Repository -> Service : string createdID
+service -> repository : UpdateTypesDB
+repository -> repository : GetFireStoreClient
+repository -> firestore : NewClient
+repository -> repository : firestore.Client
+repository -> firestore : Get
+repository -> firestore : Update
+repository -> service : model.Erro
 
-Service -> AccountHandler : model.Erro
+service -> account : AddUpdate()
+service -> account : Update()
+alt Error
+service -> transfer : Delete()
+end
+
+service -> account : AddUpdate()
+service -> account : AddUpdate()
+service -> account : Update()
+alt Error
+service -> account : AddUpdate()
+service -> account : Update()
 alt No Error
-AccountHandler -> AccountOwner : http.StatusOK
+account -> transfer : Delete()
+end
+end
+
+service -> accountHandler : model.Erro
+alt No Error
+accountHandler -> accountOwner : http.StatusOK
 else Error
-AccountHandler -> AccountOwner : appropriate error code
+accountHandler -> accountOwner : http.(ApropriateErrorCode)
 end
 
 @enduml
