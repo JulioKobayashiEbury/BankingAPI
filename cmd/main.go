@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,13 +10,29 @@ import (
 	"BankingAPI/internal/controller"
 	"BankingAPI/internal/service"
 
+	"cloud.google.com/go/firestore"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/rs/zerolog/log"
 )
 
+var DatabaseClient *firestore.Client
+
 func init() {
 	os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:8080")
 	os.Setenv("GOOGLE_CLOUD_PROJECT", "banking")
+
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+
+	ctx := context.Background()
+	defer ctx.Done()
+
+	client, err := firestore.NewClient(ctx, projectID)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
+
+	DatabaseClient = client
 }
 
 func main() {

@@ -10,6 +10,7 @@ import (
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/model/withdrawal"
 
+	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,38 +19,62 @@ const (
 	timeLayout = time.RFC3339
 )
 
-func ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) *model.Erro {
-	// map new debit
-	if !IsValidDate(autoDebit.Expiration_date) {
-		log.Warn().Msg("Invalid date format")
-		return &model.Erro{Err: errors.New("Invalid date format"), HttpCode: http.StatusBadRequest}
-	}
-	// insert in db
-	database := &automaticdebit.AutoDebitFirestore{
-		AutoDebit: autoDebit,
-	}
-	if err := database.Create(); err != nil {
-		return err
-	}
-	log.Info().Msg("Automatic debit created: " + database.AutoDebit.Debit_id)
-	return nil
+type ServiceAutoDebit interface {
+	ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebitRequest) (*automaticdebit.AutomaticDebitResponse, *model.Erro)
+	CheckAutomaticDebits()
 }
 
-func IsValidDate(date string) bool {
+type serviceAutoDebitImpl struct {
+	autoDebitFirestore model.RepositoryInterface
+}
+
+func NewAutoDebitImpl(dbClient *firestore.Client) ServiceAutoDebit {
+	return serviceAutoDebitImpl{
+		autoDebitFirestore: automaticdebit.NewAutoDebitFirestore(dbClient),
+	}
+}
+
+func (debitService serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebitRequest) (*automaticdebit.AutomaticDebitResponse, *model.Erro) {
+	if !isValidDate(autoDebit.Expiration_date) {
+		log.Warn().Msg("Invalid date format")
+		return nil, &model.Erro{Err: errors.New("Invalid date format"), HttpCode: http.StatusBadRequest}
+	}
+	responseID, err := debitService.autoDebitFirestore.Create(autoDebit)
+	if err != nil {
+		return nil, err
+	}
+	log.Info().Msg("Automatic debit created: " + *responseID)
+	obj, err := debitService.autoDebitFirestore.Get(responseID)
+	if err != nil {
+		return nil, err
+	}
+	autoDebitResponse, ok := obj.(automaticdebit.AutomaticDebitResponse)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	return &autoDebitResponse, nil
+}
+
+func isValidDate(date string) bool {
 	fmt.Println(date)
 	_, err := time.Parse(model.TimeLayout, date)
 	return err == nil
 }
 
-func CheckAutomaticDebits() {
+func (autoDebitService serviceAutoDebitImpl) CheckAutomaticDebits() {
 	log.Info().Msg("Checking for auto debits...")
-	database := &automaticdebit.AutoDebitFirestore{}
-	if err := database.GetAll(); err != nil {
+	obj, err := autoDebitService.autoDebitFirestore.GetAll()
+	if err != nil {
 		log.Error().Msg(err.Err.Error())
 		return
 	}
-	for index := 0; index < len(*(database.Slice)); index++ {
-		autoDebit := (*database.Slice)[index]
+	autoDebitList, ok := obj.(*[]*automaticdebit.AutomaticDebitResponse)
+	if !ok {
+		log.Error().Msg("Error getting automatic debit list as data type returned is wrong")
+		return
+	}
+	for index := 0; index < len(*(autoDebitList)); index++ {
+		autoDebit := (*autoDebitList)[index]
 		if !autoDebit.Status {
 			log.Warn().Msg("Debit is expired")
 			return
@@ -60,8 +85,8 @@ func CheckAutomaticDebits() {
 				return
 			}
 			if expirationDate.Unix() > time.Now().Unix() {
-				database.AddUpdate("status", false)
-				if err := database.Update(); err != nil {
+				autoDebitService.autoDebitFirestore.AddUpdate("status", false)
+				if err := autoDebitService.autoDebitFirestore.Update(&autoDebit.Debit_id); err != nil {
 					return
 				}
 				log.Warn().Msg("Debit is expired")

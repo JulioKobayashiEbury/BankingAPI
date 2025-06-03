@@ -30,15 +30,15 @@ type ListRequest struct {
 }
 
 type AccountReport struct {
-	Account_id       string                          `json:"account_id" xml:"account_id"`
-	Client_id        string                          `json:"client_id" xml:"client_id"`
-	Agency_id        uint32                          `json:"agency_id" xml:"agency_id"`
-	Balance          float64                         `json:"balance" xml:"balance"`
-	Register_date    string                          `json:"register_date" xml:"register_date"`
-	Status           bool                            `json:"status" xml:"status"`
-	Transfers        []transfer.TransferResponse     `json:"transfer" xml:"transfers"`
-	Deposits         []deposit.DepositResponse       `json:"deposits" xml:"deposits"`
-	Withdrawals      []withdrawal.WithdrawalResponse `json:"withdrawals" xml:"withdrawals"`
-	Automatic_Debits []automaticdebit.AutomaticDebit `json:"automatic_debits" xml:"automatic_debits"`
-	Report_Date      string                          `json:"report_date" xml:"report_date"`
+	Account_id       string                                  `json:"account_id" xml:"account_id"`
+	Client_id        string                                  `json:"client_id" xml:"client_id"`
+	Agency_id        uint32                                  `json:"agency_id" xml:"agency_id"`
+	Balance          float64                                 `json:"balance" xml:"balance"`
+	Register_date    string                                  `json:"register_date" xml:"register_date"`
+	Status           bool                                    `json:"status" xml:"status"`
+	Transfers        []transfer.TransferResponse             `json:"transfer" xml:"transfers"`
+	Deposits         []deposit.DepositResponse               `json:"deposits" xml:"deposits"`
+	Withdrawals      []withdrawal.WithdrawalResponse         `json:"withdrawals" xml:"withdrawals"`
+	Automatic_Debits []automaticdebit.AutomaticDebitResponse `json:"automatic_debits" xml:"automatic_debits"`
+	Report_Date      string                                  `json:"report_date" xml:"report_date"`
 }

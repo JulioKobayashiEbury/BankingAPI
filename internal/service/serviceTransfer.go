@@ -9,6 +9,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type ServiceTransfer interface {
+	ProcessNewTransfer(*transfer.TransferRequest) *model.Erro
+}
+
+type transferImpl struct {
+	accountDatabase  account.AccountFirestore
+	transferDatabase transfer.TransferFirestore
+}
+
 func ProcessNewTransfer(transferRequest *transfer.TransferRequest) *model.Erro {
 	accountToDatabase := &account.AccountFirestore{}
 	accountToDatabase.Request = &account.AccountRequest{
@@ -58,7 +67,4 @@ func ProcessNewTransfer(transferRequest *transfer.TransferRequest) *model.Erro {
 	}
 	log.Info().Msg("Transfer was succesful: " + transferRequest.Transfer_id + " to " + transferRequest.Account_to)
 	return nil
-}
-
-func rollBackTranfer() {
 }

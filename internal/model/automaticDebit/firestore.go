@@ -1,6 +1,7 @@
 package automaticdebit
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -15,143 +16,136 @@ import (
 
 const collection = "autodebit"
 
-type AutoDebitFirestore struct {
-	AutoDebit *AutomaticDebit
-	Slice     *[]*AutomaticDebit
-	model.Repository
+type autoDebitFirestore struct {
+	databaseClient *firestore.Client
+	updateList     map[string]interface{}
 }
 
-func (db *AutoDebitFirestore) Create() *model.Erro {
-	if db.AutoDebit == nil {
-		log.Error().Msg("Client Request not set for DB creation")
-		return model.ResquestNotSet
+func NewAutoDebitFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+	return autoDebitFirestore{
+		databaseClient: dbClient,
 	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return model.FailCreatingClient
+}
+
+func (db autoDebitFirestore) AddUpdate(key string, value interface{}) {
+	if db.updateList == nil {
+		db.updateList = make(map[string]interface{})
 	}
-	defer clientDB.Close()
+	db.updateList[key] = value
+}
+
+func (db autoDebitFirestore) Create(request interface{}) (*string, *model.Erro) {
+	autoDebitRequest, ok := request.(AutomaticDebitRequest)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	ctx := context.Background()
+	defer ctx.Done()
+
 	entity := map[string]interface{}{
-		"account_id":      db.AutoDebit.Account_id,
-		"client_id":       db.AutoDebit.Client_id,
-		"agency_id":       db.AutoDebit.Agency_id,
-		"value":           db.AutoDebit.Value,
-		"debit_day":       db.AutoDebit.Debit_day,
-		"expiration_date": db.AutoDebit.Expiration_date,
+		"account_id":      autoDebitRequest.Account_id,
+		"client_id":       autoDebitRequest.Client_id,
+		"agency_id":       autoDebitRequest.Agency_id,
+		"value":           autoDebitRequest.Value,
+		"debit_day":       autoDebitRequest.Debit_day,
+		"expiration_date": autoDebitRequest.Expiration_date,
 		"status":          true,
 		"register_date":   time.Now().Format(model.TimeLayout),
 	}
-	docRef, _, err := clientDB.Collection(collection).Add(*ctx, entity)
+	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.AutoDebit = &AutomaticDebit{
-		Debit_id: docRef.ID,
-	}
-	return nil
+	return &docRef.ID, nil
 }
 
-func (db *AutoDebitFirestore) Delete() *model.Erro {
-	if db.AutoDebit.Debit_id == "" {
-		log.Error().Msg(model.ResquestNotSet.Err.Error())
-		return model.ResquestNotSet
-	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return model.FailCreatingClient
-	}
-	defer clientDB.Close()
-	docRef := clientDB.Collection(collection).Doc(db.AutoDebit.Debit_id)
-	_, err = docRef.Delete(*ctx)
-	if err != nil {
+func (db autoDebitFirestore) Delete(id *string) *model.Erro {
+	ctx := context.Background()
+	defer ctx.Done()
+
+	docRef := db.databaseClient.Collection(collection).Doc(*id)
+
+	if _, err := docRef.Delete(ctx); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	return nil
 }
 
-func (db *AutoDebitFirestore) Get() *model.Erro {
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+func (db autoDebitFirestore) Get(id *string) (interface{}, *model.Erro) {
+	ctx := context.Background()
+	defer ctx.Done()
 
-	docSnapshot, err := clientDB.Collection(collection).Doc(db.AutoDebit.Debit_id).Get(*ctx)
+	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return &model.Erro{Err: errors.New("ID in collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
+		return nil, &model.Erro{Err: errors.New("ID in collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
 	}
 	if docSnapshot == nil {
-		log.Error().Msg("Nil account from snapshot" + db.AutoDebit.Debit_id)
-		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.AutoDebit.Debit_id)), HttpCode: http.StatusInternalServerError}
+		log.Error().Msg("Nil account from snapshot" + *id)
+		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
 	}
-	if err := docSnapshot.DataTo(db.AutoDebit); err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	autoDebitResponse := AutomaticDebitResponse{}
+	if err := docSnapshot.DataTo(&autoDebitResponse); err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return nil
+	autoDebitResponse.Debit_id = docSnapshot.Ref.ID
+	return &autoDebitResponse, nil
 }
 
-func (db *AutoDebitFirestore) Update() *model.Erro {
-	if db.GetUpdateList() == nil {
+func (db autoDebitFirestore) Update(id *string) *model.Erro {
+	if db.updateList == nil {
 		log.Error().Msg(model.ResquestNotSet.Err.Error())
 		return model.ResquestNotSet
 	}
 	updates := make([]firestore.Update, 0, 0)
-	for key, value := range *db.GetUpdateList() {
+	for key, value := range db.updateList {
 		updates = append(updates, firestore.Update{
 			Path:  key,
 			Value: value,
 		})
 	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
 
-	docRef := clientDB.Collection((collection)).Doc(db.AutoDebit.Debit_id)
+	ctx := context.Background()
+	defer ctx.Done()
 
-	docSnap, _ := docRef.Get(*ctx)
+	docRef := db.databaseClient.Collection((collection)).Doc(*id)
+
+	docSnap, _ := docRef.Get(ctx)
 	if !docSnap.Exists() {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
 		return &model.Erro{Err: errors.New("ID from collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
 	}
-	_, err = docRef.Update(*ctx, updates)
-	if err != nil {
+
+	if _, err := docRef.Update(ctx, updates); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	return nil
 }
 
-func (db *AutoDebitFirestore) GetAll() *model.Erro {
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+func (db autoDebitFirestore) GetAll() (interface{}, *model.Erro) {
+	ctx := context.Background()
+	defer ctx.Done()
 
-	iterator := clientDB.Collection(collection).Documents(*ctx)
+	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
 	if err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	autoebitResponseSlice := make([]*AutomaticDebit, 0, len(docSnapshots))
+	autoebitResponseSlice := make([]*AutomaticDebitResponse, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		autodebitReponse := &AutomaticDebit{}
+		autodebitReponse := &AutomaticDebitResponse{}
 		if err := docSnap.DataTo(&autodebitReponse); err != nil {
 			log.Error().Msg(err.Error())
-			return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
 		autodebitReponse.Debit_id = docSnap.Ref.ID
 		// condicional para saber se a transferencia pertence ao account
 		autoebitResponseSlice = append(autoebitResponseSlice, autodebitReponse)
 	}
-	db.Slice = &autoebitResponseSlice
-	return nil
+	return &autoebitResponseSlice, nil
 }

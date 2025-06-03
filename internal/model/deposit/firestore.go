@@ -1,6 +1,7 @@
 package deposit
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -15,54 +16,55 @@ import (
 
 const collection = "deposit"
 
-type DepositFirestore struct {
-	Response *DepositResponse
-	Request  *DepositRequest
-	Slice    *[]*DepositResponse
-	model.Repository
+type depositFirestore struct {
+	databaseClient *firestore.Client
+	updateList     map[string]interface{}
 }
 
-func (db *DepositFirestore) Create() *model.Erro {
-	if db.Request == nil {
-		log.Error().Msg("Client Request not set for DB creation")
-		return model.ResquestNotSet
+func NewDepositFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+	return depositFirestore{
+		databaseClient: dbClient,
 	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return model.FailCreatingClient
+}
+
+func (db depositFirestore) AddUpdate(key string, value interface{}) {
+	if db.updateList == nil {
+		db.updateList = make(map[string]interface{})
 	}
-	defer clientDB.Close()
+	db.updateList[key] = value
+}
+
+func (db depositFirestore) Create(request interface{}) (*string, *model.Erro) {
+	depositRequest, _ := interfaceToDeposit(request)
+	if depositRequest == nil {
+		return nil, model.DataTypeWrong
+	}
+
+	ctx := context.Background()
+	defer ctx.Done()
+
 	entity := map[string]interface{}{
-		"account_id":      db.Request.Account_id,
-		"client_id":       db.Request.Client_id,
-		"agency_id":       db.Request.Agency_id,
-		"deposit":         db.Request.Deposit,
+		"account_id":      depositRequest.Account_id,
+		"client_id":       depositRequest.Client_id,
+		"agency_id":       depositRequest.Agency_id,
+		"deposit":         depositRequest.Deposit,
 		"status":          true,
 		"withdrawal_date": time.Now().Format(model.TimeLayout),
 	}
-	docRef, _, err := clientDB.Collection(collection).Add(*ctx, entity)
+	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response = &DepositResponse{
-		Deposit_id: docRef.ID,
-	}
-	return nil
+	return &docRef.ID, nil
 }
 
-func (db *DepositFirestore) Delete() *model.Erro {
-	if db.Request.Client_id == "" {
-		log.Error().Msg(model.ResquestNotSet.Err.Error())
-		return model.ResquestNotSet
-	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return model.FailCreatingClient
-	}
-	defer clientDB.Close()
-	docRef := clientDB.Collection(collection).Doc(db.Request.Deposit_id)
-	_, err = docRef.Delete(*ctx)
+func (db depositFirestore) Delete(id *string) *model.Erro {
+	ctx := context.Background()
+	defer ctx.Done()
+
+	docRef := db.databaseClient.Collection(collection).Doc(*id)
+	_, err := docRef.Delete(ctx)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
@@ -70,75 +72,64 @@ func (db *DepositFirestore) Delete() *model.Erro {
 	return nil
 }
 
-func (db *DepositFirestore) Get() *model.Erro {
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+func (db depositFirestore) Get(id *string) (interface{}, *model.Erro) {
+	ctx := context.Background()
+	defer ctx.Done()
 
-	docSnapshot, err := clientDB.Collection(collection).Doc(db.Request.Deposit_id).Get(*ctx)
+	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return &model.Erro{Err: errors.New("ID in collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
+		return nil, &model.Erro{Err: errors.New("ID in collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
 	}
 	if docSnapshot == nil {
-		log.Error().Msg("Nil account from snapshot" + db.Request.Deposit_id)
-		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.Deposit_id)), HttpCode: http.StatusInternalServerError}
+		log.Error().Msg("Nil account from snapshot" + *id)
+		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + *id), HttpCode: http.StatusInternalServerError}
 	}
-	db.Response = &DepositResponse{}
-	if err := docSnapshot.DataTo(db.Response); err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	depositResponse := DepositResponse{}
+	if err := docSnapshot.DataTo(&depositResponse); err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return nil
+	return &depositResponse, nil
 }
 
-func (db *DepositFirestore) Update() *model.Erro {
-	if db.GetUpdateList() == nil {
+func (db depositFirestore) Update(id *string) *model.Erro {
+	if db.updateList == nil {
 		log.Error().Msg(model.ResquestNotSet.Err.Error())
 		return model.ResquestNotSet
 	}
 	updates := make([]firestore.Update, 0, 0)
-	for key, value := range *db.GetUpdateList() {
+	for key, value := range db.updateList {
 		updates = append(updates, firestore.Update{
 			Path:  key,
 			Value: value,
 		})
 	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+	ctx := context.Background()
+	defer ctx.Done()
 
-	docRef := clientDB.Collection((collection)).Doc(db.Request.Deposit_id)
+	docRef := db.databaseClient.Collection((collection)).Doc(*id)
 
-	docSnap, _ := docRef.Get(*ctx)
+	docSnap, _ := docRef.Get(ctx)
 	if !docSnap.Exists() {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
 		return &model.Erro{Err: errors.New("ID from collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
 	}
-	_, err = docRef.Update(*ctx, updates)
+	_, err := docRef.Update(ctx, updates)
 	if err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	return nil
 }
 
-func (db *DepositFirestore) GetAll() *model.Erro {
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+func (db depositFirestore) GetAll() (interface{}, *model.Erro) {
+	ctx := context.Background()
+	defer ctx.Done()
 
-	iterator := clientDB.Collection(collection).Documents(*ctx)
+	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
 	if err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	depositResponseSlice := make([]*DepositResponse, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
@@ -146,12 +137,21 @@ func (db *DepositFirestore) GetAll() *model.Erro {
 		depositReponse := &DepositResponse{}
 		if err := docSnap.DataTo(&depositReponse); err != nil {
 			log.Error().Msg(err.Error())
-			return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
 		depositReponse.Deposit_id = docSnap.Ref.ID
 		// condicional para saber se a transferencia pertence ao account
 		depositResponseSlice = append(depositResponseSlice, depositReponse)
 	}
-	db.Slice = &depositResponseSlice
-	return nil
+	return &depositResponseSlice, nil
+}
+
+func interfaceToDeposit(argument interface{}) (*DepositRequest, *DepositResponse) {
+	if obj, ok := argument.(DepositRequest); ok {
+		return &obj, nil
+	}
+	if obj, ok := argument.(DepositResponse); ok {
+		return nil, &obj
+	}
+	return nil, nil
 }

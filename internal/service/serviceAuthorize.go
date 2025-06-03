@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	model "BankingAPI/internal/model"
 
@@ -36,9 +35,5 @@ func Authorize(cookie *http.Cookie, err error) (*model.Claims, *model.Erro, *htt
 
 	log.Info().Msg("Authorized entrance: " + claims.Id)
 
-	if time.Unix(claims.ExpiresAt.Unix(), 0).Sub(time.Now()) < 30*time.Second {
-		cookie, err := GenerateToken(&(claims.Id), claims.Role)
-		return &claims, err, cookie
-	}
 	return &claims, nil, nil
 }

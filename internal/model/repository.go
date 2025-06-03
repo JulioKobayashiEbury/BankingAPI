@@ -25,47 +25,30 @@ var (
 	ResquestNotSet     = &Erro{Err: errors.New("Request value not set"), HttpCode: http.StatusInternalServerError}
 	FailCreatingClient = &Erro{Err: errors.New("Failed to create DB client"), HttpCode: http.StatusInternalServerError}
 	IDnotFound         = &Erro{Err: errors.New("Id not founc"), HttpCode: http.StatusBadRequest}
+	DataTypeWrong      = &Erro{Err: errors.New("Invalid argument passed"), HttpCode: http.StatusBadRequest}
 )
 
 type RepositoryInterface interface {
-	Create() *Erro
-	Delete() *Erro
-	Get() *Erro
-	Update() *Erro
-	GetAll() *Erro
+	Create(interface{}) (*string, *Erro)
+	Delete(*string) *Erro
+	Get(id *string) (interface{}, *Erro)
+	Update(*string) *Erro
+	GetAll() (interface{}, *Erro)
+	AddUpdate(key string, value interface{})
 }
 
-type Repository struct {
-	updateList map[string]interface{}
-	RepositoryInterface
-}
-
-func GetFireStoreClient() (*context.Context, *firestore.Client, error) {
-	ctx := context.Background()
-
+func GetFireStoreClient() (*firestore.Client, error) {
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 
 	if projectID == "" {
 		log.Error().Msg("GOOGLE_CLOUD_PROJECT environment variable not set.")
-		return nil, nil, errors.New("GOOGLE_CLOUD_PROJECT environment variable not set")
+		return nil, errors.New("GOOGLE_CLOUD_PROJECT environment variable not set")
 	}
 
-	client, err := firestore.NewClient(ctx, projectID)
+	client, err := firestore.NewClient(context.Background(), projectID)
 	if err != nil {
 		log.Error().Msg("Failed to create client: %v")
-		return nil, nil, err
+		return nil, err
 	}
-	ctx.Done()
-	return &ctx, client, nil
-}
-
-func (db *Repository) AddUpdate(key string, value interface{}) {
-	if (*db).updateList == nil {
-		(*db).updateList = make(map[string]interface{})
-	}
-	(*db).updateList[key] = value
-}
-
-func (db *Repository) GetUpdateList() *map[string]interface{} {
-	return &db.updateList
+	return client, nil
 }

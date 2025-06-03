@@ -1,12 +1,14 @@
 package service
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/user"
 
+	"cloud.google.com/go/firestore"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -15,22 +17,39 @@ const expirationMin = 30
 
 var jwtKey = []byte("bankingapi-key")
 
-func Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro) {
-	database := &user.UserFirestore{}
-	database.Request = &user.UserRequest{
-		User_id: *typeID,
+type Authentication interface {
+	Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro)
+	GenerateToken(typeID *string, role string) (*http.Cookie, *model.Erro)
+}
+
+type auth struct {
+	userDatabase model.RepositoryInterface
+}
+
+func NewAuth(databaseClient *firestore.Client) Authentication {
+	return auth{
+		userDatabase: user.NewUserFireStore(databaseClient),
 	}
-	if err := database.GetAuthInfo(); err != nil {
+}
+
+func (a auth) Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro) {
+	obj, err := a.userDatabase.Get(typeID)
+	if err != nil {
 		return false, err
 	}
-	if *password != database.AuthUser.Password {
-		return false, nil
+
+	userAuth, ok := obj.(user.User)
+	if !ok {
+		return false, model.DataTypeWrong
 	}
-	log.Info().Msg("Authenticated entrance: " + *typeID)
+
+	if *password != userAuth.Password {
+		return false, &model.Erro{Err: errors.New("Password is wrong"), HttpCode: http.StatusBadRequest}
+	}
 	return true, nil
 }
 
-func GenerateToken(typeID *string, role string) (*http.Cookie, *model.Erro) {
+func (a auth) GenerateToken(typeID *string, role string) (*http.Cookie, *model.Erro) {
 	expirationTime := time.Now().Add(time.Minute * expirationMin)
 	Claim := &model.Claims{
 		Id: (*typeID),
@@ -43,6 +62,7 @@ func GenerateToken(typeID *string, role string) (*http.Cookie, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+	log.Info().Msg("Authenticated entrance: " + *typeID)
 	return &http.Cookie{
 		Name:    "Token",
 		Value:   tokenString,

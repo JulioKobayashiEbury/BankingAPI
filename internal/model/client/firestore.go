@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -15,130 +16,117 @@ import (
 
 const collection = "clients"
 
-type ClientFirestore struct {
-	Response *ClientResponse
-	Request  *ClientRequest
-	Slice    *[]*ClientResponse
-	model.Repository
+type clientFirestore struct {
+	databaseClient *firestore.Client
+	updateList     map[string]interface{}
 }
 
-func (db *ClientFirestore) Create() *model.Erro {
-	if db.Request == nil {
-		log.Error().Msg("Client Request not set for DB creation")
-		return model.ResquestNotSet
+func NewClientFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+	return clientFirestore{
+		databaseClient: dbClient,
 	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return model.FailCreatingClient
+}
+
+func (db clientFirestore) AddUpdate(key string, value interface{}) {
+	if db.updateList == nil {
+		db.updateList = make(map[string]interface{})
 	}
-	defer clientDB.Close()
+	db.updateList[key] = value
+}
+
+func (db clientFirestore) Create(request interface{}) (*string, *model.Erro) {
+	clientRequest, _ := interfaceToClient(request)
+	if clientRequest == nil {
+		return nil, model.DataTypeWrong
+	}
+	ctx := context.Background()
+	defer ctx.Done()
+
 	entity := map[string]interface{}{
-		"user_id":       db.Request.User_id,
-		"name":          db.Request.Name,
-		"document":      db.Request.Document,
+		"user_id":       clientRequest.User_id,
+		"name":          clientRequest.Name,
+		"document":      clientRequest.Document,
 		"status":        true,
 		"register_date": time.Now().Format(model.TimeLayout),
 	}
-	docRef, _, err := clientDB.Collection(collection).Add(*ctx, entity)
+	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response = &ClientResponse{
-		Client_id: docRef.ID,
-	}
-	return nil
+	return &docRef.ID, nil
 }
 
-func (db *ClientFirestore) Delete() *model.Erro {
-	if db.Request.Client_id == "" {
-		log.Error().Msg(model.ResquestNotSet.Err.Error())
-		return model.ResquestNotSet
-	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return model.FailCreatingClient
-	}
-	defer clientDB.Close()
-	docRef := clientDB.Collection(collection).Doc(db.Request.Client_id)
-	_, err = docRef.Delete(*ctx)
-	if err != nil {
+func (db clientFirestore) Delete(id *string) *model.Erro {
+	ctx := context.Background()
+	defer ctx.Done()
+
+	docRef := db.databaseClient.Collection(collection).Doc(*id)
+	if _, err := docRef.Delete(ctx); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	return nil
 }
 
-func (db *ClientFirestore) Get() *model.Erro {
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+func (db clientFirestore) Get(id *string) (interface{}, *model.Erro) {
+	ctx := context.Background()
+	defer ctx.Done()
 
-	docSnapshot, err := clientDB.Collection(collection).Doc(db.Request.Client_id).Get(*ctx)
+	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return model.IDnotFound
+		return nil, model.IDnotFound
 	}
 	if docSnapshot == nil {
-		log.Error().Msg("Nil account from snapshot" + db.Request.Client_id)
-		return &model.Erro{Err: errors.New("Nil account from snapshot" + (db.Request.Client_id)), HttpCode: http.StatusInternalServerError}
+		log.Error().Msg("Nil account from snapshot" + *id)
+		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
 	}
-	db.Response = &ClientResponse{}
-	if err := docSnapshot.DataTo(db.Response); err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	clientResponse := ClientResponse{}
+	if err := docSnapshot.DataTo(&clientResponse); err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	db.Response.Client_id = docSnapshot.Ref.ID
-	return nil
+	clientResponse.Client_id = docSnapshot.Ref.ID
+	return &clientResponse, nil
 }
 
-func (db *ClientFirestore) Update() *model.Erro {
-	if db.GetUpdateList() == nil {
+func (db clientFirestore) Update(id *string) *model.Erro {
+	if db.updateList == nil {
 		log.Error().Msg(model.ResquestNotSet.Err.Error())
 		return model.ResquestNotSet
 	}
 	updates := make([]firestore.Update, 0, 0)
-	for key, value := range *db.GetUpdateList() {
+	for key, value := range db.updateList {
 		updates = append(updates, firestore.Update{
 			Path:  key,
 			Value: value,
 		})
 	}
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+	ctx := context.Background()
+	defer ctx.Done()
 
-	docRef := clientDB.Collection((collection)).Doc(db.Request.Client_id)
+	docRef := db.databaseClient.Collection((collection)).Doc(*id)
 
-	docSnap, _ := docRef.Get(*ctx)
+	docSnap, _ := docRef.Get(ctx)
 	if !docSnap.Exists() {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
 		return &model.Erro{Err: errors.New("ID from collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
 	}
-	_, err = docRef.Update(*ctx, updates)
-	if err != nil {
+	if _, err := docRef.Update(ctx, updates); err != nil {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	return nil
 }
 
-func (db *ClientFirestore) GetAll() *model.Erro {
-	ctx, clientDB, err := model.GetFireStoreClient()
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	defer clientDB.Close()
+func (db clientFirestore) GetAll() (interface{}, *model.Erro) {
+	ctx := context.Background()
+	defer ctx.Done()
 
-	iterator := clientDB.Collection(collection).Documents(*ctx)
+	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
 	if err != nil {
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	clientResponseSlice := make([]*ClientResponse, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
@@ -146,12 +134,21 @@ func (db *ClientFirestore) GetAll() *model.Erro {
 		clientResponse := &ClientResponse{}
 		if err := docSnap.DataTo(&clientResponse); err != nil {
 			log.Error().Msg(err.Error())
-			return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
 		clientResponse.Client_id = docSnap.Ref.ID
 		// condicional para saber se a transferencia pertence ao account
 		clientResponseSlice = append(clientResponseSlice, clientResponse)
 	}
-	db.Slice = &clientResponseSlice
-	return nil
+	return &clientResponseSlice, nil
+}
+
+func interfaceToClient(argument interface{}) (*ClientRequest, *ClientResponse) {
+	if obj, ok := argument.(ClientRequest); ok {
+		return &obj, nil
+	}
+	if obj, ok := argument.(ClientResponse); ok {
+		return nil, &obj
+	}
+	return nil, nil
 }
