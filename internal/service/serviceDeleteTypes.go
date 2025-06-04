@@ -2,43 +2,48 @@ package service
 
 import (
 	model "BankingAPI/internal/model"
-	"BankingAPI/internal/model/account"
-	"BankingAPI/internal/model/client"
-	"BankingAPI/internal/model/user"
 
 	"github.com/rs/zerolog/log"
 )
 
-func AccountDelete(accountID string) *model.Erro {
-	database := &account.AccountFirestore{}
-	database.Request = &account.AccountRequest{
-		Account_id: accountID,
+type DeleteService interface {
+	AccountDelete(accountID string) *model.Erro
+	ClientDelete(clientID string) *model.Erro
+	UserDelete(userID string) *model.Erro
+}
+
+type deleteImpl struct {
+	userDatabase    model.RepositoryInterface
+	clientDatabase  model.RepositoryInterface
+	accountDatabase model.RepositoryInterface
+}
+
+func NewDeleteService(userDB model.RepositoryInterface, clientDB model.RepositoryInterface, accounDB model.RepositoryInterface) DeleteService {
+	return deleteImpl{
+		userDatabase:    userDB,
+		clientDatabase:  clientDB,
+		accountDatabase: accounDB,
 	}
-	if err := database.Delete(); err != nil {
+}
+
+func (delete deleteImpl) AccountDelete(accountID string) *model.Erro {
+	if err := delete.accountDatabase.Delete(&accountID); err != nil {
 		return err
 	}
 	log.Info().Msg("Account deleted: " + accountID)
 	return nil
 }
 
-func ClientDelete(clientID string) *model.Erro {
-	database := &client.ClientFirestore{}
-	database.Request = &client.ClientRequest{
-		Client_id: clientID,
-	}
-	if err := database.Delete(); err != nil {
+func (delete deleteImpl) ClientDelete(clientID string) *model.Erro {
+	if err := delete.clientDatabase.Delete(&clientID); err != nil {
 		return err
 	}
 	log.Info().Msg("Account deleted: " + clientID)
 	return nil
 }
 
-func UserDelete(userID string) *model.Erro {
-	database := &user.UserFirestore{}
-	database.Request = &user.UserRequest{
-		User_id: userID,
-	}
-	if err := database.Delete(); err != nil {
+func (delete deleteImpl) UserDelete(userID string) *model.Erro {
+	if err := delete.userDatabase.Delete(&userID); err != nil {
 		return err
 	}
 	log.Info().Msg("Account deleted: " + userID)

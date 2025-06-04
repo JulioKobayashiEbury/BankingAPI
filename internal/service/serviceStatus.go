@@ -2,10 +2,7 @@ package service
 
 import (
 	"BankingAPI/internal/model"
-	"BankingAPI/internal/model/client"
-	"BankingAPI/internal/model/user"
 
-	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
 )
 
@@ -22,13 +19,15 @@ type statusImpl struct {
 	userDatabase   model.RepositoryInterface
 	clientDatabase model.RepositoryInterface
 	accountDatabse model.RepositoryInterface
+	getService     ServiceGet
 }
 
-func NewStatusService(dbClient *firestore.Client) StatusService {
+func NewStatusService(userDB model.RepositoryInterface, clientDB model.RepositoryInterface, accountDB model.RepositoryInterface, get ServiceGet) StatusService {
 	return statusImpl{
-		userDatabase:   user.NewUserFireStore(dbClient),
-		clientDatabase: client.NewClientFirestore(dbClient),
-		accountDatabse: client.NewClientFirestore(dbClient),
+		userDatabase:   userDB,
+		clientDatabase: clientDB,
+		accountDatabse: accountDB,
+		getService:     get,
 	}
 }
 
@@ -81,23 +80,35 @@ func (si statusImpl) UserUnBlock(userID string) *model.Erro {
 }
 
 func (si statusImpl) toggleAccountStatus(status bool, accountID *string) *model.Erro {
-	si.accountDatabse.AddUpdate("status", status)
-	if err := si.accountDatabse.Update(accountID); err != nil {
+	account, err := si.getService.Account(*accountID)
+	if err != nil {
+		return err
+	}
+	account.Status = status
+	if err := si.accountDatabse.Update(account); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (si statusImpl) toggleClientStatus(status bool, clientID *string) *model.Erro {
-	si.clientDatabase.AddUpdate("status", status)
-	if err := si.clientDatabase.Update(clientID); err != nil {
+	client, err := si.getService.Client(*clientID)
+	if err != nil {
+		return err
+	}
+	client.Status = status
+	if err := si.clientDatabase.Update(client); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (si statusImpl) toggleUserStatus(status bool, userID *string) *model.Erro {
-	si.userDatabase.AddUpdate("status", status)
+	user, err := si.getService.User(*userID)
+	if err != nil {
+		return err
+	}
+	user.Status = status
 	if err := si.userDatabase.Update(userID); err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ return
 import (
 	"time"
 
+	"cloud.google.com/go/firestore"
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -21,6 +22,8 @@ const (
 	documentLenghtIdeal = 11
 	maxNameLenght       = 30
 )
+
+var DatabaseClient *firestore.Client
 
 func Server() {
 	server := echo.New()

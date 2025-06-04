@@ -12,78 +12,104 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func UpdateAccount(accountRequest *account.AccountRequest) (*account.AccountResponse, *model.Erro) {
-	// verifica valores que foram passados ou não
-	database := &account.AccountFirestore{}
-	database.Request = &account.AccountRequest{
-		Account_id: accountRequest.Account_id,
+type ServiceUpdate interface {
+	UpdateAccount(accountRequest *account.Account) (*account.Account, *model.Erro)
+	UpdateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro)
+	UpdateUser(userRequest *user.User) (*user.User, *model.Erro)
+}
+
+type updateImpl struct {
+	accountDatabase model.RepositoryInterface
+	clientDatabase  model.RepositoryInterface
+	userDatabase    model.RepositoryInterface
+	get             ServiceGet
+}
+
+func NewUpdateService(accountDB model.RepositoryInterface, clientDB model.RepositoryInterface, userDB model.RepositoryInterface, getService ServiceGet) ServiceUpdate {
+	return updateImpl{
+		accountDatabase: accountDB,
+		clientDatabase:  clientDB,
+		userDatabase:    userDB,
+		get:             getService,
 	}
+}
+
+func (update updateImpl) UpdateAccount(accountRequest *account.Account) (*account.Account, *model.Erro) {
+	accountResponse, err := update.get.Account(accountRequest.Account_id)
+	if err != nil {
+		return nil, err
+	}
+
+	// verifica valores que foram passados ou não
 	if accountRequest.Account_id == "" {
 		log.Warn().Msg("No account with id: 0 allowed")
 		return nil, &model.Erro{Err: errors.New("Account id invalid"), HttpCode: http.StatusBadRequest}
 	}
 	if accountRequest.Agency_id != 0 {
-		database.AddUpdate("agency_id", accountRequest.Agency_id)
+		accountResponse.Agency_id = accountRequest.Agency_id
 	}
 	if accountRequest.Client_id != "" {
-		database.AddUpdate("client_id", accountRequest.Client_id)
+		accountResponse.Client_id = accountRequest.Client_id
 	}
 	if accountRequest.User_id != "" {
-		database.AddUpdate("user_id", accountRequest.User_id)
+		accountResponse.User_id = accountRequest.User_id
 	}
 	// monta struct de update
 
-	if err := database.Update(); err != nil {
+	if err := update.accountDatabase.Update(accountResponse); err != nil {
 		return nil, err
 	}
 
 	log.Info().Msg("Update was succesful (account): " + accountRequest.Account_id)
-	return Account(accountRequest.Account_id)
+
+	return update.get.Account(accountRequest.Account_id)
 }
 
-func UpdateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro) {
-	database := &client.ClientFirestore{}
-	database.Request = &client.ClientRequest{
-		Client_id: clientRequest.Client_id,
+func (update updateImpl) UpdateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro) {
+	clientResponse, err := update.get.Client(clientRequest.Client_id)
+	if err != nil {
+		return nil, err
 	}
+
 	if clientRequest.User_id != "" {
-		database.AddUpdate("user_id", clientRequest.User_id)
+		clientResponse.User_id = clientRequest.User_id
 	}
 	if clientRequest.Name != "" {
-		database.AddUpdate("name", clientRequest.Name)
+		clientResponse.Name = clientRequest.Name
 	}
 	if clientRequest.Document != "" {
-		database.AddUpdate("document", clientRequest.Document)
+		clientResponse.Document = clientRequest.Document
 	}
 	// monta struct de update
-	if err := database.Update(); err != nil {
+	if err := update.clientDatabase.Update(clientResponse); err != nil {
 		return nil, err
 	}
 	log.Info().Msg("Update was succesful (client): " + clientRequest.Client_id)
-	return Client(clientRequest.Client_id)
+	return update.get.Client(clientRequest.Client_id)
 }
 
-func UpdateUser(userRequest *user.UserRequest) (*user.UserResponse, *model.Erro) {
-	database := &user.UserFirestore{}
-	database.Request = &user.UserRequest{
-		User_id: userRequest.User_id,
+func (update updateImpl) UpdateUser(userRequest *user.User) (*user.User, *model.Erro) {
+	userResponse, err := update.get.User(userRequest.User_id)
+	if err != nil {
+		return nil, err
 	}
+
 	if userRequest.Name != "" {
-		database.AddUpdate("name", userRequest.Name)
+		userResponse.Name = userRequest.Name
 	}
 	if userRequest.Document != "" {
-		database.AddUpdate("document", userRequest.Document)
+		userResponse.Document = userRequest.Document
 	}
 	if userRequest.Password != "" {
-		database.AddUpdate("password", userRequest.Password)
+		userResponse.Password = userRequest.Password
 	}
 	// monta struct de updat
 
-	if err := database.Update(); err != nil {
+	if err := update.userDatabase.Update(userResponse); err != nil {
 		return nil, err
 	}
 
 	log.Info().Msg("Update was succesful (user): " + userRequest.User_id)
 
-	return User(userRequest.User_id)
+	return update.get.User(userRequest.User_id)
 }

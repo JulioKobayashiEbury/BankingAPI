@@ -4,7 +4,13 @@ import (
 	"net/http"
 
 	"BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
+	automaticdebit "BankingAPI/internal/model/automaticDebit"
+	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/model/deposit"
+	"BankingAPI/internal/model/transfer"
 	"BankingAPI/internal/model/user"
+	"BankingAPI/internal/model/withdrawal"
 	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
@@ -23,7 +29,7 @@ func AddUsersEndPoints(server *echo.Echo) {
 }
 
 func UserPostHandler(c echo.Context) error {
-	var userInfo user.UserRequest
+	var userInfo user.User
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -31,7 +37,12 @@ func UserPostHandler(c echo.Context) error {
 	if (len(userInfo.Document) != documentLenghtIdeal) || (len(userInfo.Name) > maxNameLenght) {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
-	userResponse, err := service.CreateUser(&userInfo)
+
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(nil, nil, userDatabase)
+	serviceCreate := service.NewCreateService(nil, nil, userDatabase, serviceGet)
+	userResponse, err := serviceCreate.CreateUser(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -39,19 +50,24 @@ func UserPostHandler(c echo.Context) error {
 }
 
 func UserAuthHandler(c echo.Context) error {
-	var userInfo user.UserRequest
+	var userInfo user.User
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	ok, err := service.Authenticate(&(userInfo).User_id, &(userInfo).Password, model.UsersPath)
+
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+	serviceAuthenticate := service.NewAuth(userDatabase)
+
+	ok, err := serviceAuthenticate.Authenticate(&(userInfo).User_id, &(userInfo).Password, model.UsersPath)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	if !ok {
 		return c.JSON(http.StatusUnauthorized, "Credentials not valid")
 	}
-	cookie, err := service.GenerateToken(&(userInfo.User_id), service.UserRole)
+
+	cookie, err := serviceAuthenticate.GenerateToken(&(userInfo.User_id))
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -67,7 +83,12 @@ func UserPutBlockHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	if err := service.UserBlock(*userID); err != nil {
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(nil, nil, userDatabase)
+	serviceStatus := service.NewStatusService(userDatabase, nil, nil, serviceGet)
+
+	if err := serviceStatus.UserBlock(*userID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Blocked"})
@@ -79,7 +100,12 @@ func UserPutUnBlockHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := service.UserUnBlock(*userID); err != nil {
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(nil, nil, userDatabase)
+	serviceStatus := service.NewStatusService(userDatabase, nil, nil, serviceGet)
+
+	if err := serviceStatus.UserUnBlock(*userID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Unblocked"})
@@ -90,13 +116,19 @@ func UserPutHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var userInfo user.UserRequest
+	var userInfo user.User
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
+
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(nil, nil, userDatabase)
+	serviceUpdate := service.NewUpdateService(nil, nil, userDatabase, serviceGet)
+
 	userInfo.User_id = *userID
-	userResponse, err := service.UpdateUser(&userInfo)
+	userResponse, err := serviceUpdate.UpdateUser(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -108,7 +140,10 @@ func UserGetHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	userResponse, err := service.User(*userID)
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+	serviceGet := service.NewGetService(nil, nil, userDatabase)
+
+	userResponse, err := serviceGet.User(*userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -121,7 +156,11 @@ func UserDeleteHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	if err := service.UserDelete(*userID); err != nil {
+
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+	serviceDelete := service.NewDeleteService(userDatabase, nil, nil)
+
+	if err := serviceDelete.UserDelete(*userID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -133,7 +172,21 @@ func UserGetReportHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	userReport, err := service.GenerateReportByUser(userID)
+
+	autodebitDatabase := automaticdebit.NewAutoDebitFirestore(DatabaseClient)
+	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(DatabaseClient)
+	depositDatabase := deposit.NewDepositFirestore(DatabaseClient)
+	transferDatabase := transfer.NewTransferFirestore(DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
+	serviceGetAll := service.NewGetAllService(autodebitDatabase, withdrawalDatabase, depositDatabase, transferDatabase, accountDatabase, clientDatabase)
+
+	serviceReport := service.NewReportService(serviceGet, serviceGetAll)
+
+	userReport, err := serviceReport.GenerateReportByUser(userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -141,15 +194,12 @@ func UserGetReportHandler(c echo.Context) error {
 }
 
 func userAuthorization(c *echo.Context) (*string, *model.Erro) {
-	claims, err, cookie := service.Authorize((*c).Cookie("Token"))
+	claims, err := service.Authorize((*c).Cookie("Token"))
 	if err != nil {
 		if err.Err == http.ErrNoCookie {
 			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
 		}
 		return nil, err
-	}
-	if cookie != nil {
-		(*c).SetCookie(cookie)
 	}
 	var userID string
 	if (*c).Path() == "/users/:user_id" {

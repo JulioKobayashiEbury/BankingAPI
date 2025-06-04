@@ -1,0 +1,34 @@
+@startuml
+actor Owner
+boundary "UserHandler" as UserBoundary
+control "ServiceAuthorize" as AuthorizeControl
+control "Service" as ServiceControl
+
+Owner -> UserBoundary : GET /users/:user_id
+activate UserBoundary
+UserBoundary -> UserBoundary : userAuthorization(&c)
+UserBoundary -> AuthorizeControl : Authorize(cookie)
+activate AuthorizeControl
+AuthorizeControl --> UserBoundary : claims, nil
+deactivate AuthorizeControl
+
+alt True
+    UserBoundary -> UserBoundary : &userID, nil
+else False
+    UserBoundary -> UserBoundary: nil, HTTP 401 Unauthorized
+end
+alt Valid
+    activate ServiceControl
+    UserBoundary ->> ServiceControl
+    note right: Business logic proceeds if authorized
+            
+    ServiceControl ->> UserBoundary
+    deactivate ServiceControl
+        
+    UserBoundary -> Owner : HTTP 200 OK (userResponse)
+else NotValid
+    UserBoundary -> Owner: HTTP 401 Unauthorized
+end
+deactivate UserBoundary
+
+@enduml

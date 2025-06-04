@@ -18,7 +18,6 @@ const collection = "transfers"
 
 type transferFirestore struct {
 	databaseClient *firestore.Client
-	updateList     map[string]interface{}
 }
 
 func NewTransferFirestore(dbClient *firestore.Client) model.RepositoryInterface {
@@ -27,14 +26,8 @@ func NewTransferFirestore(dbClient *firestore.Client) model.RepositoryInterface 
 	}
 }
 
-func (db transferFirestore) AddUpdate(key string, value interface{}) {
-	if db.updateList == nil {
-		db.updateList = make(map[string]interface{})
-	}
-}
-
 func (db transferFirestore) Create(request interface{}) (*string, *model.Erro) {
-	clientRequest, ok := request.(TransferRequest)
+	transferRequest, ok := request.(TransferRequest)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -43,9 +36,9 @@ func (db transferFirestore) Create(request interface{}) (*string, *model.Erro) {
 	defer ctx.Done()
 
 	entity := map[string]interface{}{
-		"account_id":    clientRequest.Account_id,
-		"account_to":    clientRequest.Account_to,
-		"value":         clientRequest.Value,
+		"account_id":    transferRequest.Account_id,
+		"account_to":    transferRequest.Account_to,
+		"value":         transferRequest.Value,
 		"register_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
@@ -89,28 +82,27 @@ func (db transferFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &transferResponse, nil
 }
 
-func (db transferFirestore) Update(id *string) *model.Erro {
-	updates := make([]firestore.Update, 0, 0)
-	for key, value := range db.updateList {
-		updates = append(updates, firestore.Update{
-			Path:  key,
-			Value: value,
-		})
+func (db transferFirestore) Update(request interface{}) *model.Erro {
+	transferRequest, ok := request.(*TransferRequest)
+	if !ok {
+		return model.DataTypeWrong
 	}
 	ctx := context.Background()
 	defer ctx.Done()
 
-	docRef := db.databaseClient.Collection((collection)).Doc(*id)
-
-	docSnap, _ := docRef.Get(ctx)
-	if !docSnap.Exists() {
-		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return &model.Erro{Err: errors.New("ID from collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
+	entity := map[string]interface{}{
+		"account_id":    transferRequest.Account_id,
+		"account_to":    transferRequest.Account_to,
+		"value":         transferRequest.Value,
+		"register_date": time.Now().Format(model.TimeLayout),
 	}
-
-	if _, err := docRef.Update(ctx, updates); err != nil {
+	docRef := db.databaseClient.Collection(collection).Doc(transferRequest.Transfer_id)
+	_, err := docRef.Set(ctx, entity)
+	if err != nil {
+		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+
 	return nil
 }
 

@@ -11,42 +11,58 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func ProcessDeposit(depositRequest *deposit.DepositRequest) *model.Erro {
-	accountRequest, err := Account(depositRequest.Account_id)
-	if err != nil {
-		return err
-	}
-	if accountRequest.Client_id != depositRequest.Client_id {
-		return &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
-	}
-	if accountRequest.User_id != depositRequest.User_id {
-		return &model.Erro{Err: errors.New("User ID not valid"), HttpCode: http.StatusBadRequest}
-	}
-	if accountRequest.Agency_id != depositRequest.Agency_id {
-		return &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
-	}
+type ServiceDeposit interface {
+	ProcessDeposit(depositRequest *deposit.DepositRequest) (*string, *model.Erro)
+}
 
+type depositImpl struct {
+	depositDatabase model.RepositoryInterface
+	accountDatabase model.RepositoryInterface
+	getService      ServiceGet
+}
+
+func NewDepositService(depositDB model.RepositoryInterface, accountDB model.RepositoryInterface, get ServiceGet) ServiceDeposit {
+	return depositImpl{
+		depositDatabase: depositDB,
+		accountDatabase: accountDB,
+		getService:      get,
+	}
+}
+
+func (deposit depositImpl) ProcessDeposit(depositRequest *deposit.DepositRequest) (*string, *model.Erro) {
+	accountRequest, err := deposit.getService.Account(depositRequest.Account_id)
+	if err != nil {
+		return nil, err
+	}
+	if ok, err := verifyDeposit(depositRequest, accountRequest); !ok {
+		return nil, err
+	}
 	accountRequest.Balance = accountRequest.Balance + depositRequest.Deposit
 
-	depositDatabase := &deposit.DepositFirestore{
-		Request: depositRequest,
+	depositID, err := deposit.depositDatabase.Create(depositRequest)
+	if err != nil {
+		return nil, err
 	}
-	if err := depositDatabase.Create(); err != nil {
-		return err
-	}
-	depositDatabase.Request.Deposit_id = depositDatabase.Response.Deposit_id
 
-	accountDatabase := &account.AccountFirestore{}
-	accountDatabase.Request = &account.AccountRequest{
-		Account_id: depositRequest.Account_id,
-	}
-	accountDatabase.AddUpdate("balance", accountRequest.Balance)
-	if err := accountDatabase.Update(); err != nil {
-		if err := depositDatabase.Delete(); err != nil {
+	if err := deposit.accountDatabase.Update(accountRequest); err != nil {
+		if err := deposit.depositDatabase.Delete(depositID); err != nil {
 			log.Panic().Msg("Error deleting deposit after update failure: " + err.Err.Error())
 		}
-		return err
+		return nil, err
 	}
 	log.Info().Msg("Deposit created: " + depositRequest.Account_id)
-	return nil
+	return depositID, nil
+}
+
+func verifyDeposit(depositRequest *deposit.DepositRequest, accountResponse *account.Account) (bool, *model.Erro) {
+	if accountResponse.Client_id != depositRequest.Client_id {
+		return false, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
+	}
+	if accountResponse.User_id != depositRequest.User_id {
+		return false, &model.Erro{Err: errors.New("User ID not valid"), HttpCode: http.StatusBadRequest}
+	}
+	if accountResponse.Agency_id != depositRequest.Agency_id {
+		return false, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
+	}
+	return true, nil
 }

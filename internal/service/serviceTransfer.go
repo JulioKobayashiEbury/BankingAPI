@@ -10,61 +10,64 @@ import (
 )
 
 type ServiceTransfer interface {
-	ProcessNewTransfer(*transfer.TransferRequest) *model.Erro
+	ProcessNewTransfer(*transfer.TransferRequest) (*string, *model.Erro)
 }
 
 type transferImpl struct {
-	accountDatabase  account.AccountFirestore
-	transferDatabase transfer.TransferFirestore
+	accountDatabase  model.RepositoryInterface
+	transferDatabase model.RepositoryInterface
 }
 
-func ProcessNewTransfer(transferRequest *transfer.TransferRequest) *model.Erro {
-	accountToDatabase := &account.AccountFirestore{}
-	accountToDatabase.Request = &account.AccountRequest{
-		Account_id: transferRequest.Account_to,
+func NewTransferService(accountDB model.RepositoryInterface, transferDB model.RepositoryInterface) ServiceTransfer {
+	return transferImpl{
+		accountDatabase:  accountDB,
+		transferDatabase: transferDB,
+	}
+}
+
+func (transfer transferImpl) ProcessNewTransfer(transferRequest *transfer.TransferRequest) (*string, *model.Erro) {
+	obj, err := transfer.accountDatabase.Get(&transferRequest.Account_to)
+	if err == model.IDnotFound || err != nil {
+		return nil, err
+	}
+	accountTo, ok := obj.(*account.Account)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	obj, err = transfer.accountDatabase.Get(&transferRequest.Account_id)
+	if err == model.IDnotFound || err != nil {
+		return nil, err
+	}
+	accountFrom, ok := obj.(*account.Account)
+	if !ok {
+		return nil, model.DataTypeWrong
 	}
 
-	accountFromDatabase := &account.AccountFirestore{}
-	accountFromDatabase.Request = &account.AccountRequest{
-		Account_id: transferRequest.Account_id,
-	}
+	accountTo.Balance += transferRequest.Value
+	accountFrom.Balance -= transferRequest.Value
 
-	if err := accountToDatabase.Get(); err == model.IDnotFound || err != nil {
-		return err
+	transferID, err := transfer.transferDatabase.Create(transferRequest)
+	if err != nil {
+		return nil, err
 	}
-	if err := accountFromDatabase.Get(); err == model.IDnotFound || err != nil {
-		return err
-	}
-
-	accountToDatabase.Response.Balance += transferRequest.Value
-	accountFromDatabase.Response.Balance -= transferRequest.Value
-
-	transferDatabase := &transfer.TransferFirestore{
-		Request: transferRequest,
-	}
-	if err := transferDatabase.Create(); err != nil {
-		return err
-	}
-	transferDatabase.Request.Transfer_id = transferDatabase.Response.Transfer_id
-	accountToDatabase.AddUpdate("balance", accountToDatabase.Response.Balance)
-	if err := accountToDatabase.Update(); err != nil {
-		if err := transferDatabase.Delete(); err != nil {
-			return err
+	if err := transfer.accountDatabase.Update(accountTo); err != nil {
+		if err := transfer.transferDatabase.Delete(transferID); err != nil {
+			return nil, err
 		}
 		log.Error().Msg("Update Account Receiving Transfer failed, transfer canceled")
-		return err
+		return nil, err
 	}
-	accountFromDatabase.AddUpdate("balance", accountFromDatabase.Response.Balance)
-	if err := accountFromDatabase.Update(); err != nil {
-		accountToDatabase.AddUpdate("balance", accountToDatabase.Response.Balance-transferRequest.Value)
-		if err := accountToDatabase.Update(); err != nil {
-			return err
+
+	if err := transfer.accountDatabase.Update(accountFrom); err != nil {
+		accountTo.Balance -= transferRequest.Value
+		if err := transfer.accountDatabase.Update(accountTo); err != nil {
+			return nil, err
 		}
-		if err := transferDatabase.Delete(); err != nil {
-			return err
+		if err := transfer.transferDatabase.Delete(transferID); err != nil {
+			return nil, err
 		}
 		log.Error().Msg("Update Account Sending Transfer failed, transfer canceled")
 	}
-	log.Info().Msg("Transfer was succesful: " + transferRequest.Transfer_id + " to " + transferRequest.Account_to)
-	return nil
+	log.Info().Msg("Transfer was succesful: " + *transferID + " to " + transferRequest.Account_to)
+	return transferID, nil
 }

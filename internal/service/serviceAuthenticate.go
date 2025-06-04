@@ -8,7 +8,6 @@ import (
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/user"
 
-	"cloud.google.com/go/firestore"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -19,16 +18,16 @@ var jwtKey = []byte("bankingapi-key")
 
 type Authentication interface {
 	Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro)
-	GenerateToken(typeID *string, role string) (*http.Cookie, *model.Erro)
+	GenerateToken(typeID *string) (*http.Cookie, *model.Erro)
 }
 
 type auth struct {
 	userDatabase model.RepositoryInterface
 }
 
-func NewAuth(databaseClient *firestore.Client) Authentication {
+func NewAuth(userDB model.RepositoryInterface) Authentication {
 	return auth{
-		userDatabase: user.NewUserFireStore(databaseClient),
+		userDatabase: userDB,
 	}
 }
 
@@ -38,7 +37,7 @@ func (a auth) Authenticate(typeID *string, password *string, collection string) 
 		return false, err
 	}
 
-	userAuth, ok := obj.(user.User)
+	userAuth, ok := obj.(*user.User)
 	if !ok {
 		return false, model.DataTypeWrong
 	}
@@ -49,7 +48,7 @@ func (a auth) Authenticate(typeID *string, password *string, collection string) 
 	return true, nil
 }
 
-func (a auth) GenerateToken(typeID *string, role string) (*http.Cookie, *model.Erro) {
+func (a auth) GenerateToken(typeID *string) (*http.Cookie, *model.Erro) {
 	expirationTime := time.Now().Add(time.Minute * expirationMin)
 	Claim := &model.Claims{
 		Id: (*typeID),

@@ -13,9 +13,9 @@ import (
 var NoAuthenticationToken = errors.New("Not authenticated")
 
 // validate token and authorize access to endpoint
-func Authorize(cookie *http.Cookie, err error) (*model.Claims, *model.Erro, *http.Cookie) {
+func Authorize(cookie *http.Cookie, err error) (*model.Claims, *model.Erro) {
 	if err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}, nil
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	tokenString := cookie.Value
 	var claims model.Claims
@@ -25,15 +25,15 @@ func Authorize(cookie *http.Cookie, err error) (*model.Claims, *model.Erro, *htt
 		})
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusUnauthorized}, nil
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusUnauthorized}
 		}
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}, nil
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	if !token.Valid {
-		return nil, &model.Erro{Err: errors.New("Token not valid"), HttpCode: http.StatusUnauthorized}, nil
+		return nil, &model.Erro{Err: errors.New("Token not valid"), HttpCode: http.StatusUnauthorized}
 	}
 
 	log.Info().Msg("Authorized entrance: " + claims.Id)
 
-	return &claims, nil, nil
+	return &claims, nil
 }

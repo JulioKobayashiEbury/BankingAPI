@@ -1,27 +1,39 @@
 @startuml
-participant userOwner as userOwner
-boundary userHandler as userHandler
-control service as service
-control repository as repository
-database firestore as firestore
+actor user
+boundary "UserAuthHandler" as UserAuthBoundary
+control "Authenticate" as AuthenticateControl
+entity "user.userFirestore" as UserFirestoreEntity
+entity "model.GetFireStoreClient" as GetFireStoreClientEntity
+database "FirestoreDB" as DB
+control "GenerateToken" as GenerateTokenControl
 
-userOwner -> userHandler : /users/auth
-userHandler -> userHandler : UserAuthHandler
-
-userHandler -> service : Authenticate
-service -> user : Get
-user -> repository : GetFireStoreClient
-repository -> firestore : NewClient
-firestore -> repository : firestore.Client
-repository -> user : firestore.Client
-user -> service : user.UserResponse
-service -> userHandler : boolean
+user -> UserAuthBoundary : POST /users/auth (userInfo)
+activate UserAuthBoundary
+UserAuthBoundary -> AuthenticateControl : Authenticate(&userInfo.User_id, &userInfo.Password, entity.model.UsersPath)
+activate AuthenticateControl
+AuthenticateControl -> UserFirestoreEntity : Get(&userInfo.User_id)
+activate UserFirestoreEntity
+UserFirestoreEntity -> GetFireStoreClientEntity : GetFireStoreClient()
+activate GetFireStoreClientEntity
+GetFireStoreClientEntity --> UserFirestoreEntity : client
+deactivate GetFireStoreClientEntity
+UserFirestoreEntity -> DB : Get User Document
+activate DB
+DB --> UserFirestoreEntity : userDocument
+deactivate DB
+UserFirestoreEntity --> AuthenticateControl : userObject, nil
+deactivate UserFirestoreEntity
+AuthenticateControl --> UserAuthBoundary : boolean, nil
+deactivate AuthenticateControl
 
 alt True
-userHandler -> service : GenerateToken
-service -> userHandler : http.Cookie
-userHandler -> userOwner : http.StatusAccepted
+UserAuthBoundary -> GenerateTokenControl : GenerateToken(&userInfo.User_id, control.UserRole)
+activate GenerateTokenControl
+GenerateTokenControl --> UserAuthBoundary : cookie, nil
+deactivate GenerateTokenControl
+UserAuthBoundary -> user : HTTP 202 Accepted (Set-Cookie: Token)
 else False
-userHandler -> userOwner : http.Unauthorized
+UserAuthBoundary -> user : HTTP 400 Bad Request
 end
+deactivate UserAuthBoundary
 @enduml

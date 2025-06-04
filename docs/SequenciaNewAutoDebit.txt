@@ -1,37 +1,47 @@
 @startuml
-note top
-    Complete Authentication Sequence before following this diagram
-end note
+actor Owner
+boundary "AccountHandler" as AccountDebitBoundary
+boundary "userAuthorization" as UserAuthorizationBoundaryFunc
+control "Authorize" as AuthorizeControl
+control "ProcessNewAutomaticDebit" as ProcessAutoDebitControl
+entity "automaticdebit.autoDebitFirestore" as AutoDebitFirestoreEntity
+database "FirestoreDB" as DB
 
-participant accountOwner as accountOwner
-boundary accountHandler as accountHandler
-entity automaticdebit as automaticdebit
-control service as service
-control repository as repository
-database firestore as firestore
+Owner -> AccountDebitBoundary : PUT /accounts/:account_id/debit (newAutoDebit)
+activate AccountDebitBoundary
+AccountDebitBoundary -> UserAuthorizationBoundaryFunc : userAuthorization(&c)
+activate UserAuthorizationBoundaryFunc
+UserAuthorizationBoundaryFunc -> AuthorizeControl : Authorize(cookie)
+activate AuthorizeControl
+AuthorizeControl --> UserAuthorizationBoundaryFunc : claims, nil, nil
+deactivate AuthorizeControl
+UserAuthorizationBoundaryFunc --> AccountDebitBoundary : &userID, nil
+deactivate UserAuthorizationBoundaryFunc
 
-accountOwner -> accountHandler : /accounts/:account_id/debit
-accountHandler -> accountHandler : AccountPutAutomaticDebit
-accountHandler -> userHandler : userAuthorization
-userHandler -> service : Authorize
-service -> userHandler : model.Claims,model.Erro,http.Cookie
-userHandler ->  accountHandler : string,model.Erro
-accountHandler -> service : ProcessNewAutomaticDebit
+AccountDebitBoundary -> ProcessAutoDebitControl : ProcessNewAutomaticDebit(&newAutoDebit)
+activate ProcessAutoDebitControl
+ProcessAutoDebitControl -> ProcessAutoDebitControl : isValidDate(newAutoDebit.Expiration_date)
+ProcessAutoDebitControl -> AutoDebitFirestoreEntity : Create(newAutoDebit)
+activate AutoDebitFirestoreEntity
+AutoDebitFirestoreEntity -> DB : .Collection().Add()
+activate DB
+DB --> AutoDebitFirestoreEntity : firestore.DocumentRef
+deactivate DB
+AutoDebitFirestoreEntity --> ProcessAutoDebitControl : &responseID, nil
+deactivate AutoDebitFirestoreEntity
 
-service -> service : IsValidDate
-service -> automaticdebit : Create
-automaticdebit -> repository : GetFireStoreClient
-repository -> firestore : NewClient
-firestore -> repository : firestore.Client
-repository -> automaticdebit : firestore.Client
-automaticdebit -> firestore : .Collection().Add()
-firestore -> automaticdebit : firestore.DocumentRef
-automaticdebit -> service
-service -> accountHandler :  model.Erro
-alt No Error
-accountHandler -> accountOwner : http.StatusAccepted
-else Error
-accountHandler -> accountOwner : http.BadRequest
-end
+ProcessAutoDebitControl -> AutoDebitFirestoreEntity : Get(&responseID)
+activate AutoDebitFirestoreEntity
+AutoDebitFirestoreEntity -> DB : .Collection().Doc().Get()
+activate DB
+DB --> AutoDebitFirestoreEntity : firestore.DocumentSnapshot
+deactivate DB
+AutoDebitFirestoreEntity --> ProcessAutoDebitControl : autoDebitResponse, nil
+deactivate AutoDebitFirestoreEntity
+
+ProcessAutoDebitControl --> AccountDebitBoundary : &autoDebitResponse, nil
+deactivate ProcessAutoDebitControl
+AccountDebitBoundary -> Owner : HTTP 202 Accepted
+deactivate AccountDebitBoundary
 
 @enduml

@@ -3,7 +3,13 @@ package controller
 import (
 	"net/http"
 
+	"BankingAPI/internal/model/account"
+	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/model/deposit"
+	"BankingAPI/internal/model/transfer"
+	"BankingAPI/internal/model/user"
+	"BankingAPI/internal/model/withdrawal"
 	"BankingAPI/internal/service"
 
 	model "BankingAPI/internal/model"
@@ -31,7 +37,12 @@ func ClientPostHandler(c echo.Context) error {
 	if len(clientInfo.Document) != documentLenghtIdeal || len(clientInfo.Name) > maxNameLenght {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
-	clientResponse, err := service.CreateClient(&clientInfo)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(nil, clientDatabase, userDatabase)
+	serviceCreate := service.NewCreateService(nil, clientDatabase, userDatabase, serviceGet)
+	clientResponse, err := serviceCreate.CreateClient(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -45,7 +56,10 @@ func ClientGetHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	clientInfo, err := service.Client(clientID)
+
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	serviceGet := service.NewGetService(nil, clientDatabase, nil)
+	clientInfo, err := serviceGet.Client(clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -59,7 +73,9 @@ func ClientDeleteHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	if err := service.ClientDelete(clientID); err != nil {
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	serviceDelete := service.NewDeleteService(nil, clientDatabase, nil)
+	if err := serviceDelete.ClientDelete(clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -77,8 +93,13 @@ func ClientPutHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	clientInfo.Client_id = c.Param("client_id")
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
 
-	clientResponse, err := service.UpdateClient(&clientInfo)
+	serviceGet := service.NewGetService(nil, clientDatabase, userDatabase)
+	serviceUpdate := service.NewUpdateService(nil, clientDatabase, userDatabase, serviceGet)
+
+	clientResponse, err := serviceUpdate.UpdateClient(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -92,7 +113,10 @@ func ClientPutBlockHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	if err := service.ClientBlock(clientID); err != nil {
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	serviceGet := service.NewGetService(nil, clientDatabase, nil)
+	serviceStatus := service.NewStatusService(nil, clientDatabase, nil, serviceGet)
+	if err := serviceStatus.ClientBlock(clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -105,7 +129,10 @@ func ClientPutUnBlockHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	if err := service.ClientUnBlock(clientID); err != nil {
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	serviceGet := service.NewGetService(nil, clientDatabase, nil)
+	serviceStatus := service.NewStatusService(nil, clientDatabase, nil, serviceGet)
+	if err := serviceStatus.ClientUnBlock(clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -118,7 +145,21 @@ func ClientGetReportHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	clientReport, err := service.GenerateReportByClient(&clientID)
+
+	autodebitDatabase := automaticdebit.NewAutoDebitFirestore(DatabaseClient)
+	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(DatabaseClient)
+	depositDatabase := deposit.NewDepositFirestore(DatabaseClient)
+	transferDatabase := transfer.NewTransferFirestore(DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
+	serviceGetAll := service.NewGetAllService(autodebitDatabase, withdrawalDatabase, depositDatabase, transferDatabase, accountDatabase, clientDatabase)
+
+	serviceReport := service.NewReportService(serviceGet, serviceGetAll)
+
+	clientReport, err := serviceReport.GenerateReportByClient(&clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}

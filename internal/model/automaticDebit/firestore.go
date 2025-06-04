@@ -18,20 +18,12 @@ const collection = "autodebit"
 
 type autoDebitFirestore struct {
 	databaseClient *firestore.Client
-	updateList     map[string]interface{}
 }
 
 func NewAutoDebitFirestore(dbClient *firestore.Client) model.RepositoryInterface {
 	return autoDebitFirestore{
 		databaseClient: dbClient,
 	}
-}
-
-func (db autoDebitFirestore) AddUpdate(key string, value interface{}) {
-	if db.updateList == nil {
-		db.updateList = make(map[string]interface{})
-	}
-	db.updateList[key] = value
 }
 
 func (db autoDebitFirestore) Create(request interface{}) (*string, *model.Erro) {
@@ -95,33 +87,33 @@ func (db autoDebitFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &autoDebitResponse, nil
 }
 
-func (db autoDebitFirestore) Update(id *string) *model.Erro {
-	if db.updateList == nil {
-		log.Error().Msg(model.ResquestNotSet.Err.Error())
-		return model.ResquestNotSet
+func (db autoDebitFirestore) Update(request interface{}) *model.Erro {
+	autoDebitRequest, ok := request.(*AutomaticDebitRequest)
+	if !ok {
+		return model.DataTypeWrong
 	}
-	updates := make([]firestore.Update, 0, 0)
-	for key, value := range db.updateList {
-		updates = append(updates, firestore.Update{
-			Path:  key,
-			Value: value,
-		})
-	}
-
 	ctx := context.Background()
 	defer ctx.Done()
 
-	docRef := db.databaseClient.Collection((collection)).Doc(*id)
-
-	docSnap, _ := docRef.Get(ctx)
-	if !docSnap.Exists() {
-		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return &model.Erro{Err: errors.New("ID from collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
+	entity := map[string]interface{}{
+		"account_id":      autoDebitRequest.Account_id,
+		"client_id":       autoDebitRequest.Client_id,
+		"agency_id":       autoDebitRequest.Agency_id,
+		"value":           autoDebitRequest.Value,
+		"debit_day":       autoDebitRequest.Debit_day,
+		"expiration_date": autoDebitRequest.Expiration_date,
+		"status":          true,
+		"register_date":   time.Now().Format(model.TimeLayout),
 	}
-
-	if _, err := docRef.Update(ctx, updates); err != nil {
+	docRef := db.databaseClient.Collection(collection).Doc(autoDebitRequest.Debit_id)
+	_, err := docRef.Set(ctx, entity)
+	if err != nil {
+		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+
+	log.Info().Msg("Account: " + autoDebitRequest.Debit_id + " has been updated")
+
 	return nil
 }
 

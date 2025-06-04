@@ -9,31 +9,32 @@ import (
 	"BankingAPI/internal/model/client"
 	"BankingAPI/internal/model/user"
 
-	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
 )
 
 type ServiceCreate interface {
-	CreateAccount(accountRequest *account.AccountRequest) (*account.AccountResponse, *model.Erro)
+	CreateAccount(accountRequest *account.Account) (*account.Account, *model.Erro)
 	CreateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro)
-	CreateUser(userRequest *user.UserRequest) (*user.UserResponse, *model.Erro)
+	CreateUser(userRequest *user.User) (*user.User, *model.Erro)
 }
 
 type createImpl struct {
 	accountDatabase model.RepositoryInterface
 	clientDatabase  model.RepositoryInterface
 	userDatabase    model.RepositoryInterface
+	getService      ServiceGet
 }
 
-func NewCreateService(dbClient *firestore.Client) ServiceCreate {
+func NewCreateService(accoutnDB model.RepositoryInterface, clientDB model.RepositoryInterface, userDB model.RepositoryInterface, get ServiceGet) ServiceCreate {
 	return createImpl{
-		accountDatabase: account.NewAccountFirestore(dbClient),
-		clientDatabase:  client.NewClientFirestore(dbClient),
-		userDatabase:    user.NewUserFireStore(dbClient),
+		accountDatabase: accoutnDB,
+		clientDatabase:  clientDB,
+		userDatabase:    userDB,
+		getService:      get,
 	}
 }
 
-func (create createImpl) CreateAccount(accountRequest *account.AccountRequest) (*account.AccountResponse, *model.Erro) {
+func (create createImpl) CreateAccount(accountRequest *account.Account) (*account.Account, *model.Erro) {
 	if accountRequest.User_id == "" || accountRequest.Client_id == "" {
 		log.Warn().Msg("Missing credentials on creating account")
 		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
@@ -52,8 +53,8 @@ func (create createImpl) CreateAccount(accountRequest *account.AccountRequest) (
 		return nil, err
 	}
 
-	log.Info().Msg("Account created: " + AccountRole)
-	return Account(*accountID)
+	log.Info().Msg("Account created")
+	return create.getService.Account(*accountID)
 }
 
 func (create createImpl) CreateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro) {
@@ -71,11 +72,10 @@ func (create createImpl) CreateClient(clientRequest *client.ClientRequest) (*cli
 	if err != nil {
 		return nil, err
 	}
-
-	return Client(*clientID)
+	return create.getService.Client(*clientID)
 }
 
-func (create createImpl) CreateUser(userRequest *user.UserRequest) (*user.UserResponse, *model.Erro) {
+func (create createImpl) CreateUser(userRequest *user.User) (*user.User, *model.Erro) {
 	if userRequest.Name == "" || userRequest.Document == "" || userRequest.Password == "" {
 		log.Warn().Msg("Missing credentials on creating user")
 		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
@@ -85,6 +85,6 @@ func (create createImpl) CreateUser(userRequest *user.UserRequest) (*user.UserRe
 		return nil, err
 	}
 
-	log.Info().Msg("User created: " + userRequest.User_id)
-	return User(*userID)
+	log.Info().Msg("User created: " + *userID)
+	return create.getService.User(*userID)
 }

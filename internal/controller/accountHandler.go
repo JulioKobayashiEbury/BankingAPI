@@ -6,8 +6,10 @@ import (
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
+	"BankingAPI/internal/model/client"
 	"BankingAPI/internal/model/deposit"
 	"BankingAPI/internal/model/transfer"
+	"BankingAPI/internal/model/user"
 	"BankingAPI/internal/model/withdrawal"
 	"BankingAPI/internal/service"
 
@@ -31,7 +33,7 @@ func AddAccountEndPoints(server *echo.Echo) {
 }
 
 func AccountPostHandler(c echo.Context) error {
-	var accountInfo account.AccountRequest
+	var accountInfo account.Account
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -39,7 +41,14 @@ func AccountPostHandler(c echo.Context) error {
 	if accountInfo.Agency_id == 0 {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
-	accountResponse, err := service.CreateAccount(&accountInfo)
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
+	serviceCreate := service.NewCreateService(accountDatabase, clientDatabase, userDatabase, serviceGet)
+
+	accountResponse, err := serviceCreate.CreateAccount(&accountInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -52,7 +61,13 @@ func AccountGetHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	accountID := c.Param("account_id")
-	accountResponse, err := service.Account(accountID)
+
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
+	accountResponse, err := serviceGet.Account(accountID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -82,7 +97,8 @@ func AccountDeleteHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	accountID := c.Param("account_id")
-	if err := service.AccountDelete(accountID); err != nil {
+	serviceDelete := service.NewDeleteService(nil, nil, account.NewAccountFirestore(DatabaseClient))
+	if err := serviceDelete.AccountDelete(accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -93,14 +109,20 @@ func AccountPutHandler(c echo.Context) error {
 	if _, err := userAuthorization(&c); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var accountInfo account.AccountRequest
+	var accountInfo account.Account
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	accountInfo.Account_id = c.Param("account_id")
 
-	accountResponse, err := service.UpdateAccount(&accountInfo)
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
+	serviceUpdate := service.NewUpdateService(accountDatabase, clientDatabase, userDatabase, serviceGet)
+	accountResponse, err := serviceUpdate.UpdateAccount(&accountInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -119,11 +141,18 @@ func AccountPutDepositHandler(c echo.Context) error {
 	}
 	depositRequest.Account_id = c.Param("account_id")
 
-	if err := service.ProcessDeposit(&depositRequest); err != nil {
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	depositDatabase := deposit.NewDepositFirestore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, nil, nil)
+	serviceDeposit := service.NewDepositService(accountDatabase, depositDatabase, serviceGet)
+
+	depositID, err := serviceDeposit.ProcessDeposit(&depositRequest)
+	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "Deposit Succesfull!"})
+	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: *depositID})
 }
 
 func AccountPutWithDrawalHandler(c echo.Context) error {
@@ -137,11 +166,17 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 	}
 	withdrawalRequest.Account_id = c.Param("account_id")
 	// talk to service
-	if err := service.ProcessWithdrawal(&withdrawalRequest); err != nil {
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, nil, nil)
+	serviceWithdrawal := service.NewWithdrawalService(accountDatabase, withdrawalDatabase, serviceGet)
+	withdrawalID, err := serviceWithdrawal.ProcessWithdrawal(&withdrawalRequest)
+	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "withdrawal Succesfull!"})
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: *withdrawalID})
 }
 
 func AccountPutBlockHandler(c echo.Context) error {
@@ -149,7 +184,11 @@ func AccountPutBlockHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	accountID := c.Param("account_id")
-	if err := service.AccountBlock(accountID); err != nil {
+
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	serviceGet := service.NewGetService(accountDatabase, nil, nil)
+	serviceBlock := service.NewStatusService(nil, nil, accountDatabase, serviceGet)
+	if err := serviceBlock.AccountBlock(accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -161,7 +200,11 @@ func AccountPutUnBlockHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	accountID := c.Param("account_id")
-	if err := service.AccountUnBlock(accountID); err != nil {
+
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	serviceGet := service.NewGetService(accountDatabase, nil, nil)
+	serviceUnblock := service.NewStatusService(nil, nil, accountDatabase, serviceGet)
+	if err := serviceUnblock.AccountUnBlock(accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -172,17 +215,26 @@ func AccountPutAutomaticDebit(c echo.Context) error {
 	if _, err := userAuthorization(&c); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var newAutoDebit automaticdebit.AutomaticDebit
+	var newAutoDebit automaticdebit.AutomaticDebitRequest
 	if err := c.Bind(&newAutoDebit); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	newAutoDebit.Account_id = c.Param("account_id")
-	if err := service.ProcessNewAutomaticDebit(&newAutoDebit); err != nil {
+
+	autodebitDatabase := automaticdebit.NewAutoDebitFirestore(DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, nil, nil)
+	serviceWithdrawal := service.NewWithdrawalService(accountDatabase, withdrawalDatabase, serviceGet)
+	serviceAutodebit := service.NewAutoDebitImpl(autodebitDatabase, serviceWithdrawal)
+	autodebitResponse, err := serviceAutodebit.ProcessNewAutomaticDebit(&newAutoDebit)
+	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "New automatic debit is registered"})
+	return c.JSON(http.StatusAccepted, *autodebitResponse)
 }
 
 func AccountPutTransferHandler(c echo.Context) error {
@@ -196,11 +248,15 @@ func AccountPutTransferHandler(c echo.Context) error {
 	}
 	newTransferInfo.Account_id = c.Param("account_id")
 
-	if err := service.ProcessNewTransfer(&newTransferInfo); err != nil {
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	transferDatabase := transfer.NewTransferFirestore(DatabaseClient)
+	serviceTransfer := service.NewTransferService(accountDatabase, transferDatabase)
+	transferResponse, err := serviceTransfer.ProcessNewTransfer(&newTransferInfo)
+	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Transfer was succesful: TransferID:" + newTransferInfo.Transfer_id})
+	return c.JSON(http.StatusOK, *transferResponse)
 }
 
 func AccountGetReportHandler(c echo.Context) error {
@@ -208,7 +264,20 @@ func AccountGetReportHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	accountID := c.Param("account_id")
-	report, err := service.GenerateReportByAccount(&accountID)
+
+	autodebitDatabase := automaticdebit.NewAutoDebitFirestore(DatabaseClient)
+	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(DatabaseClient)
+	depositDatabase := deposit.NewDepositFirestore(DatabaseClient)
+	transferDatabase := transfer.NewTransferFirestore(DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(DatabaseClient)
+	clientDatabase := client.NewClientFirestore(DatabaseClient)
+	userDatabase := user.NewUserFireStore(DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
+	serviceGetAll := service.NewGetAllService(autodebitDatabase, withdrawalDatabase, depositDatabase, transferDatabase, accountDatabase, clientDatabase)
+	serviceReport := service.NewReportService(serviceGet, serviceGetAll)
+
+	report, err := serviceReport.GenerateReportByAccount(&accountID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}

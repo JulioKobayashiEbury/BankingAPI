@@ -8,14 +8,17 @@ import (
 	"syscall"
 
 	"BankingAPI/internal/controller"
+	"BankingAPI/internal/model/account"
+	automaticdebit "BankingAPI/internal/model/automaticDebit"
+	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/model/user"
+	"BankingAPI/internal/model/withdrawal"
 	"BankingAPI/internal/service"
 
 	"cloud.google.com/go/firestore"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/rs/zerolog/log"
 )
-
-var DatabaseClient *firestore.Client
 
 func init() {
 	os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:8080")
@@ -32,7 +35,7 @@ func init() {
 		return
 	}
 
-	DatabaseClient = client
+	controller.DatabaseClient = client
 }
 
 func main() {
@@ -40,6 +43,17 @@ func main() {
 	if err != nil {
 		return
 	}
+
+	autodebitDatabase := automaticdebit.NewAutoDebitFirestore(controller.DatabaseClient)
+	accountDatabase := account.NewAccountFirestore(controller.DatabaseClient)
+	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(controller.DatabaseClient)
+	clientDatabase := client.NewClientFirestore(controller.DatabaseClient)
+	userDatabase := user.NewUserFireStore(controller.DatabaseClient)
+
+	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
+	serviceWithdrawal := service.NewWithdrawalService(accountDatabase, withdrawalDatabase, serviceGet)
+
+	serviceAutodebit := service.NewAutoDebitImpl(autodebitDatabase, serviceWithdrawal)
 
 	job, err := scheduler.NewJob(
 		/*
@@ -52,7 +66,7 @@ func main() {
 			false,
 		),
 		gocron.NewTask(
-			service.CheckAutomaticDebits,
+			serviceAutodebit.CheckAutomaticDebits,
 		),
 		gocron.WithName("Checking Automatic Debits"),
 	)

@@ -10,7 +10,6 @@ import (
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/model/withdrawal"
 
-	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
 )
 
@@ -26,11 +25,13 @@ type ServiceAutoDebit interface {
 
 type serviceAutoDebitImpl struct {
 	autoDebitFirestore model.RepositoryInterface
+	withdrawalService  ServiceWithdrawal
 }
 
-func NewAutoDebitImpl(dbClient *firestore.Client) ServiceAutoDebit {
+func NewAutoDebitImpl(autodebitDB model.RepositoryInterface, withdrawal ServiceWithdrawal) ServiceAutoDebit {
 	return serviceAutoDebitImpl{
-		autoDebitFirestore: automaticdebit.NewAutoDebitFirestore(dbClient),
+		autoDebitFirestore: autodebitDB,
+		withdrawalService:  withdrawal,
 	}
 }
 
@@ -85,7 +86,7 @@ func (autoDebitService serviceAutoDebitImpl) CheckAutomaticDebits() {
 				return
 			}
 			if expirationDate.Unix() > time.Now().Unix() {
-				autoDebitService.autoDebitFirestore.AddUpdate("status", false)
+
 				if err := autoDebitService.autoDebitFirestore.Update(&autoDebit.Debit_id); err != nil {
 					return
 				}
@@ -93,12 +94,13 @@ func (autoDebitService serviceAutoDebitImpl) CheckAutomaticDebits() {
 				return
 			} else {
 				if autoDebit.Debit_day == uint16(time.Now().Day()) {
-					if err := ProcessWithdrawal(&withdrawal.WithdrawalRequest{
+					_, err := autoDebitService.withdrawalService.ProcessWithdrawal(&withdrawal.WithdrawalRequest{
 						Account_id: autoDebit.Account_id,
 						Client_id:  autoDebit.Client_id,
 						Agency_id:  autoDebit.Agency_id,
 						Withdrawal: autoDebit.Value,
-					}); err != nil {
+					})
+					if err != nil {
 						log.Error().Msg(err.Err.Error())
 						return
 					}

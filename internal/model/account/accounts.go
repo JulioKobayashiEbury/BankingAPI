@@ -7,14 +7,7 @@ import (
 	"BankingAPI/internal/model/withdrawal"
 )
 
-type AccountRequest struct {
-	Account_id string `json:"account_id" xml:"account_id"`
-	Client_id  string `json:"client_id" xml:"client_id"`
-	User_id    string `json:"user_id" xml:"user_id"`
-	Agency_id  uint32 `json:"agency_id" xml:"agency_id"`
-}
-
-type AccountResponse struct {
+type Account struct {
 	Account_id    string  `json:"account_id" xml:"account_id"`
 	Client_id     string  `json:"client_id" xml:"client_id"`
 	User_id       string  `json:"user_id" xml:"user_id"`

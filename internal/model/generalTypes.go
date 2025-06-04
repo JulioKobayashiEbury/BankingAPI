@@ -11,6 +11,12 @@ const (
 	TimeLayout = time.RFC3339
 )
 
+type RepositoryList struct {
+	UserDatabase    RepositoryInterface
+	ClientDatabase  RepositoryInterface
+	AccountDatabase RepositoryInterface
+}
+
 type StandartResponse struct {
 	Message string `json:"message" xml:"message"`
 }

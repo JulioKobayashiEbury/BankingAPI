@@ -11,24 +11,42 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func GenerateReportByAccount(accountID *string) (*account.AccountReport, *model.Erro) {
-	accountInfo, err := Account(*accountID)
+type ReportService interface {
+	GenerateReportByAccount(accountID *string) (*account.AccountReport, *model.Erro)
+	GenerateReportByClient(clientID *string) (*client.ClientReport, *model.Erro)
+	GenerateReportByUser(userId *string) (*user.UserReport, *model.Erro)
+}
+
+type reportImpl struct {
+	getService    ServiceGet
+	getAllService ServiceGetAll
+}
+
+func NewReportService(toGetService ServiceGet, toGetAllService ServiceGetAll) ReportService {
+	return reportImpl{
+		getService:    toGetService,
+		getAllService: toGetAllService,
+	}
+}
+
+func (report reportImpl) GenerateReportByAccount(accountID *string) (*account.AccountReport, *model.Erro) {
+	accountInfo, err := report.getService.Account(*accountID)
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := GetAllTransfersByAccountID(accountID)
+	transfers, err := report.getAllService.GetAllTransfersByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := GetAllDepositsByAccountID(accountID)
+	deposits, err := report.getAllService.GetAllDepositsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	withdrawals, err := GetAllWithdrawalsByAccountID(accountID)
+	withdrawals, err := report.getAllService.GetAllWithdrawalsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	automaticDebits, err := GetAllAutoDebitsByAccountID(accountID)
+	automaticDebits, err := report.getAllService.GetAllAutoDebitsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,12 +67,12 @@ func GenerateReportByAccount(accountID *string) (*account.AccountReport, *model.
 	return &accountReport, nil
 }
 
-func GenerateReportByClient(clientID *string) (*client.ClientReport, *model.Erro) {
-	clientInfo, err := Client(*clientID)
+func (report reportImpl) GenerateReportByClient(clientID *string) (*client.ClientReport, *model.Erro) {
+	clientInfo, err := report.getService.Client(*clientID)
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := GetAccountsByClientID(clientID)
+	accounts, err := report.getAllService.GetAccountsByClientID(clientID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,12 +88,12 @@ func GenerateReportByClient(clientID *string) (*client.ClientReport, *model.Erro
 	}, nil
 }
 
-func GenerateReportByUser(userId *string) (*user.UserReport, *model.Erro) {
-	userInfo, err := User(*userId)
+func (report reportImpl) GenerateReportByUser(userId *string) (*user.UserReport, *model.Erro) {
+	userInfo, err := report.getService.User(*userId)
 	if err != nil {
 		return nil, err
 	}
-	clients, err := GetClientsByUserID(userId)
+	clients, err := report.getAllService.GetClientsByUserID(userId)
 	if err != nil {
 		return nil, err
 	}

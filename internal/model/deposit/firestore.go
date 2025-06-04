@@ -18,20 +18,12 @@ const collection = "deposit"
 
 type depositFirestore struct {
 	databaseClient *firestore.Client
-	updateList     map[string]interface{}
 }
 
 func NewDepositFirestore(dbClient *firestore.Client) model.RepositoryInterface {
 	return depositFirestore{
 		databaseClient: dbClient,
 	}
-}
-
-func (db depositFirestore) AddUpdate(key string, value interface{}) {
-	if db.updateList == nil {
-		db.updateList = make(map[string]interface{})
-	}
-	db.updateList[key] = value
 }
 
 func (db depositFirestore) Create(request interface{}) (*string, *model.Erro) {
@@ -92,32 +84,30 @@ func (db depositFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &depositResponse, nil
 }
 
-func (db depositFirestore) Update(id *string) *model.Erro {
-	if db.updateList == nil {
-		log.Error().Msg(model.ResquestNotSet.Err.Error())
-		return model.ResquestNotSet
-	}
-	updates := make([]firestore.Update, 0, 0)
-	for key, value := range db.updateList {
-		updates = append(updates, firestore.Update{
-			Path:  key,
-			Value: value,
-		})
+func (db depositFirestore) Update(request interface{}) *model.Erro {
+	depositRequest, ok := request.(*DepositResponse)
+	if !ok {
+		return model.DataTypeWrong
 	}
 	ctx := context.Background()
 	defer ctx.Done()
 
-	docRef := db.databaseClient.Collection((collection)).Doc(*id)
-
-	docSnap, _ := docRef.Get(ctx)
-	if !docSnap.Exists() {
-		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return &model.Erro{Err: errors.New("ID from collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
+	entity := map[string]interface{}{
+		"account_id":      depositRequest.Account_id,
+		"client_id":       depositRequest.Client_id,
+		"agency_id":       depositRequest.Agency_id,
+		"deposit":         depositRequest.Deposit,
+		"status":          true,
+		"withdrawal_date": time.Now().Format(model.TimeLayout),
 	}
-	_, err := docRef.Update(ctx, updates)
+	docRef := db.databaseClient.Collection(collection).Doc(depositRequest.Deposit_id)
+	_, err := docRef.Set(ctx, entity)
 	if err != nil {
+		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+	log.Info().Msg("Account: " + depositRequest.Deposit_id + " has been updated")
+
 	return nil
 }
 

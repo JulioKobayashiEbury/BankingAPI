@@ -11,45 +11,66 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func ProcessWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest) *model.Erro {
+type ServiceWithdrawal interface {
+	ProcessWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest) (*string, *model.Erro)
+}
+
+type withdrawalImpl struct {
+	accountDatabase    model.RepositoryInterface
+	withdrawalDatabase model.RepositoryInterface
+	getService         ServiceGet
+}
+
+func NewWithdrawalService(accountDB model.RepositoryInterface, withdrawalDB model.RepositoryInterface, get ServiceGet) ServiceWithdrawal {
+	return withdrawalImpl{
+		accountDatabase:    accountDB,
+		withdrawalDatabase: withdrawalDB,
+		getService:         get,
+	}
+}
+
+func (withdrawal withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest) (*string, *model.Erro) {
 	// monta update
-	accountResponse, err := Account(withdrawalRequest.Account_id)
+	accountResponse, err := withdrawal.getService.Account(withdrawalRequest.Account_id)
 	if err != nil {
-		return err
-	}
-	if accountResponse.Client_id != withdrawalRequest.Client_id {
-		return &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
+		return nil, err
 	}
 
-	if accountResponse.Agency_id != withdrawalRequest.Agency_id {
-		return &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
-	}
-	accountResponse.Balance = (accountResponse.Balance - withdrawalRequest.Withdrawal)
-	if accountResponse.Balance < 0.0 {
-		return &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
-	}
-	databaseWithdrawal := &withdrawal.WithdrawalFirestore{Request: withdrawalRequest}
-	if err := databaseWithdrawal.Create(); err != nil {
-		return err
+	if ok, err := verifyWithdrawal(withdrawalRequest, accountResponse); !ok {
+		return nil, err
 	}
 
-	databaseAccount := &account.AccountFirestore{
-		Request: &account.AccountRequest{
-			Account_id: withdrawalRequest.Account_id,
-		},
+	withdrawalID, err := withdrawal.withdrawalDatabase.Create(withdrawalRequest)
+	if err != nil {
+		return nil, err
 	}
 
-	databaseAccount.AddUpdate("balance", accountResponse.Balance)
+	accountResponse.Balance = accountResponse.Balance - withdrawalRequest.Withdrawal
 
-	if err := databaseAccount.Update(); err != nil {
-		if err := databaseWithdrawal.Delete(); err != nil {
+	if err := withdrawal.accountDatabase.Update(accountResponse); err != nil {
+		if err := withdrawal.withdrawalDatabase.Delete(withdrawalID); err != nil {
 			log.Error().Msg("Account and Withdrawals DB changes failed during processing withdrawal")
-			return err
+			return nil, err
 		}
 		log.Error().Msg("Creating Account Update failed, withdrawal reversed")
-		return err
+		return nil, err
 	}
 
 	log.Info().Msg("Succesful Withdrawal: " + withdrawalRequest.Account_id)
-	return nil
+	return withdrawalID, nil
+}
+
+func verifyWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest, accountResponse *account.Account) (bool, *model.Erro) {
+	if accountResponse.Client_id != withdrawalRequest.Client_id {
+		return false, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
+	}
+
+	if accountResponse.Agency_id != withdrawalRequest.Agency_id {
+		return false, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
+	}
+	accountResponse.Balance = (accountResponse.Balance - withdrawalRequest.Withdrawal)
+	if accountResponse.Balance < 0.0 {
+		return false, &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
+	}
+	return true, nil
 }

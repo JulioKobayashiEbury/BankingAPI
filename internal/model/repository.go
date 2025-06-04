@@ -32,9 +32,8 @@ type RepositoryInterface interface {
 	Create(interface{}) (*string, *Erro)
 	Delete(*string) *Erro
 	Get(id *string) (interface{}, *Erro)
-	Update(*string) *Erro
+	Update(interface{}) *Erro
 	GetAll() (interface{}, *Erro)
-	AddUpdate(key string, value interface{})
 }
 
 func GetFireStoreClient() (*firestore.Client, error) {
