@@ -5,11 +5,10 @@ actor Requester
 boundary UserGetReportHandler <<userHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
 control ReportService <<serviceReports.go>>
-control GetService <<serviceGetTypes.go>>
-control GetAllService <<serviceGetTypes.go>>
+control UserService <<serviceUser.go>>
+control ClientService <<serviceClient.go>>
 entity UserFirestore <<model/user/firestore.go>>
 entity ClientFirestore <<model/client/firestore.go>>
-' Other DBs for full service init (Account, Transfer, Deposit, Withdrawal, AutoDebit)
 
 Requester -> UserGetReportHandler : GET /users/:user_id/report
 activate UserGetReportHandler
@@ -22,32 +21,31 @@ deactivate AuthorizeService
 alt Authorization Failed (or user_id mismatch with claims.Id)
     UserGetReportHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
-    ' Initialize DBs (simplified for brevity)
     UserGetReportHandler -> ReportService : GenerateReportByUser(userIDFromClaims_or_path)
     activate ReportService
-    ReportService -> GetService : User(userID)
-    activate GetService
-    GetService -> UserFirestore : Get(&userID)
+    ReportService -> UserService : User(userID)
+    activate UserService
+    UserService -> UserFirestore : Get(&userID)
     activate UserFirestore
-    UserFirestore -->> GetService : userInfo / Error
+    UserFirestore -->> UserService : userInfo / Error
     deactivate UserFirestore
     
     alt Get UserInfo Failed
-        GetService -->> ReportService : Error
+        UserService -->> ReportService : Error
         ReportService -->> UserGetReportHandler : Error
         UserGetReportHandler -->> Requester : HTTP Error Response
     else Get UserInfo Succeeded
-        GetService -->> ReportService : userInfo
-        deactivate GetService
-        ReportService -> GetAllService : GetClientsByUserID(userID)
-        activate GetAllService
-        GetAllService -> ClientFirestore : GetAll()
+        UserService -->> ReportService : userInfo
+        deactivate UserService
+        ReportService -> ClientService : GetClientsByUserID(userID)
+        activate ClientService
+        ClientService -> ClientFirestore : GetAll()
         activate ClientFirestore
-        ClientFirestore -->> GetAllService : allClients / Error
+        ClientFirestore -->> ClientService : allClients / Error
         deactivate ClientFirestore
-        note right of GetAllService : Filters clients by userID
-        GetAllService -->> ReportService : clients / Error
-        deactivate GetAllService
+        note right of ClientService : Filters clients by userID
+        ClientService -->> ReportService : clients / Error
+        deactivate ClientService
         
         alt Get Clients Failed
             ReportService -->> UserGetReportHandler : Error

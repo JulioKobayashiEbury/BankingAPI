@@ -15,6 +15,10 @@ type RepositoryList struct {
 	UserDatabase    RepositoryInterface
 	ClientDatabase  RepositoryInterface
 	AccountDatabase RepositoryInterface
+	AutomaticDebit  RepositoryInterface
+	Deposit         RepositoryInterface
+	Transfer        RepositoryInterface
+	Withdrawal      RepositoryInterface
 }
 
 type StandartResponse struct {

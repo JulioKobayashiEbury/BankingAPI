@@ -4,7 +4,7 @@ title Delete Client - DELETE /clients/:client_id
 actor Requester
 boundary ClientDeleteHandler <<clientHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control DeleteService <<serviceDeleteTypes.go>>
+control ClientService <<serviceDeleteTypes.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
 activate Requester 
@@ -20,31 +20,22 @@ deactivate AuthorizeService
 alt Authorization Failed
     ClientDeleteHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
-    ClientDeleteHandler -> ClientFirestore : clientDatabase := NewClientFirestore(DatabaseClient)
-    activate ClientFirestore
-    ClientFirestore -->> ClientDeleteHandler : clientDatabase
-    deactivate ClientFirestore
-    
-    ClientDeleteHandler -> DeleteService : deleteService := NewDeleteService(nil, clientDatabase, nil)
-    activate DeleteService
-    DeleteService -->> ClientDeleteHandler : deleteService
-    deactivate DeleteService
 
-    ClientDeleteHandler -> DeleteService : ClientDelete(clientID_from_path)
-    activate DeleteService
-    DeleteService -> ClientFirestore : Delete(&clientID_from_path)
+    ClientDeleteHandler -> ClientService : ClientDelete(clientID_from_path)
+    activate ClientService
+    ClientService -> ClientFirestore : Delete(&clientID_from_path)
     activate ClientFirestore
-    ClientFirestore -->> DeleteService : nil / Error
+    ClientFirestore -->> ClientService : nil / Error
     deactivate ClientFirestore
     
     alt Delete Client Failed
-        DeleteService -->> ClientDeleteHandler : Error
+        ClientService -->> ClientDeleteHandler : Error
         ClientDeleteHandler -->> Requester : HTTP Error Response
     else Delete Client Succeeded
-        DeleteService -->> ClientDeleteHandler : nil
+        ClientService -->> ClientDeleteHandler : nil
         ClientDeleteHandler -->> Requester : HTTP 200 OK (Message: Client deleted seccesfully)
     end
-    deactivate DeleteService
+    deactivate ClientService
 end
 deactivate ClientDeleteHandler
 

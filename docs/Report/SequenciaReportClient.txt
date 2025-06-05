@@ -5,8 +5,8 @@ actor Requester
 boundary ClientGetReportHandler <<clientHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
 control ReportService <<serviceReports.go>>
-control GetService <<serviceGetTypes.go>>
-control GetAllService <<serviceGetTypes.go>>
+control ClientService <<serviceClient.go>>
+control AccountService <<serviceAccount.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 ' Other DBs for full service init (User, Transfer, Deposit, Withdrawal, AutoDebit)
@@ -25,29 +25,29 @@ else Authorization Succeeded
     ' Initialize DBs (simplified for brevity)
     ClientGetReportHandler -> ReportService : GenerateReportByClient(clientID_from_path)
     activate ReportService
-    ReportService -> GetService : Client(clientID)
-    activate GetService
-    GetService -> ClientFirestore : Get(&clientID)
+    ReportService -> ClientService : Client(clientID)
+    activate ClientService
+    ClientService -> ClientFirestore : Get(&clientID)
     activate ClientFirestore
-    ClientFirestore -->> GetService : clientInfo / Error
+    ClientFirestore -->> ClientService : clientInfo / Error
     deactivate ClientFirestore
     
     alt Get ClientInfo Failed
-        GetService -->> ReportService : Error
+        ClientService -->> ReportService : Error
         ReportService -->> ClientGetReportHandler : Error
         ClientGetReportHandler -->> Requester : HTTP Error Response
     else Get ClientInfo Succeeded
-        GetService -->> ReportService : clientInfo
-        deactivate GetService
-        ReportService -> GetAllService : GetAccountsByClientID(clientID)
-        activate GetAllService
-        GetAllService -> AccountFirestore : GetAll()
+        ClientService -->> ReportService : clientInfo
+        deactivate ClientService
+        ReportService -> AccountService : GetAccountsByClientID(clientID)
+        activate AccountService
+        AccountService -> AccountFirestore : GetAll()
         activate AccountFirestore
-        AccountFirestore -->> GetAllService : allAccounts / Error
+        AccountFirestore -->> AccountService : allAccounts / Error
         deactivate AccountFirestore
-        note right of GetAllService : Filters accounts by clientID
-        GetAllService -->> ReportService : accounts / Error
-        deactivate GetAllService
+        note right of AccountService : Filters accounts by clientID
+        AccountService -->> ReportService : accounts / Error
+        deactivate AccountService
         alt Get Accounts Failed
             ReportService -->> ClientGetReportHandler : Error
             ClientGetReportHandler -->> Requester : HTTP Error Response

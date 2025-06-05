@@ -4,10 +4,10 @@ title Update User - PUT /users/:user_id
 actor Requester
 boundary UserPutHandler <<userHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control UpdateService <<serviceUpdateTypes.go>>
-control GetService <<serviceGetTypes.go>>
+control UserService <<serviceUser.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
+activate Requester
 Requester -> UserPutHandler : PUT /users/:user_id (Body: User Info)
 activate UserPutHandler
 
@@ -20,52 +20,49 @@ alt Authorization Failed (or user_id mismatch with claims.Id)
     UserPutHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
 
-    UserPutHandler -> UpdateService : UpdateUser(userRequest with User_id from path/claims)
-    activate UpdateService
-    UpdateService -> GetService : User(userRequest.User_id)
-    activate GetService
-    GetService -> UserFirestore : Get(&userRequest.User_id)
+    UserPutHandler -> UserService : UpdateUser(userRequest with User_id from path/claims)
+    activate UserService
+    UserService -> UserService : User(userRequest.User_id)
+    UserService -> UserFirestore : Get(&userRequest.User_id)
     activate UserFirestore
-    UserFirestore -->> GetService : existingUserData / Error
+    UserFirestore -->> UserService : existingUserData / Error
     deactivate UserFirestore
     
     alt Get Existing User Failed
-        GetService -->> UpdateService : Error
-        UpdateService -->> UserPutHandler : Error
+        UserService -->> UserService : Error
+        UserService -->> UserPutHandler : Error
         UserPutHandler -->> Requester : HTTP Error Response
     else Get Existing User Succeeded
-        GetService -->> UpdateService : userResponse (existing data)
-        deactivate GetService
-        note right of UpdateService : Updates fields in userResponse if provided in userRequest
-        UpdateService -> UserFirestore : Update(updatedUserResponse)
+        UserService -->> UserService : userResponse ()
+        note right of UserService : Updates fields in userResponse if provided in userRequest
+        UserService -> UserFirestore : Update(updatedUserResponse)
         activate UserFirestore
-        UserFirestore -->> UpdateService : nil / Error
+        UserFirestore -->> UserService : nil / Error
         deactivate UserFirestore
         
         alt Update User Record Failed
-            UpdateService -->> UserPutHandler : Error
+            UserService -->> UserPutHandler : Error
             UserPutHandler -->> Requester : HTTP Error Response
         else Update User Record Succeeded
-            UpdateService -> GetService : User(userRequest.User_id) 'Re-fetch updated
-            activate GetService
-            GetService -> UserFirestore : Get(&userRequest.User_id)
+            UserService -> UserService : User(userRequest.User_id) 'Re-fetch updated
+            UserService -> UserFirestore : Get(&userRequest.User_id)
             activate UserFirestore
-            UserFirestore -->> GetService : finalUserData / Error
+            UserFirestore -->> UserService : finalUserData / Error
             deactivate UserFirestore
             
             alt Re-fetch Failed
-                 GetService -->> UpdateService : Error
-                 UpdateService -->> UserPutHandler : Error
+                 UserService -->> UserService : Error
+                 UserService -->> UserPutHandler : Error
                  UserPutHandler -->> Requester : HTTP Error Response
             else Re-fetch Succeeded
-                 GetService -->> UpdateService : finalUser
-                 UpdateService -->> UserPutHandler : finalUser
+                 UserService -->> UserService : finalUser
+                 UserService -->> UserPutHandler : finalUser
                  UserPutHandler -->> Requester : HTTP 200 OK (finalUser)
             end
-            deactivate GetService
-            deactivate UpdateService
+            deactivate UserService
         end
     end
 end
 deactivate UserPutHandler
+deactivate Requester
 @enduml

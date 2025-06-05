@@ -4,7 +4,7 @@ title Get User - GET /users/:user_id
 actor Requester
 boundary UserGetHandler <<userHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control GetService <<serviceGetTypes.go>>
+control UserService <<serviceUser.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
 Requester -> UserGetHandler : GET /users/:user_id
@@ -19,21 +19,21 @@ alt Authorization Failed (or user_id_from_path mismatch with claims.Id)
     UserGetHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
     ' Initialize DBs
-    UserGetHandler -> GetService : User(userID_from_path_or_claims)
-    activate GetService
-    GetService -> UserFirestore : Get(&userID_from_path_or_claims)
+    UserGetHandler -> UserService : User(userID_from_path_or_claims)
+    activate UserService
+    UserService -> UserFirestore : Get(&userID_from_path_or_claims)
     activate UserFirestore
-    UserFirestore -->> GetService : userData / Error
+    UserFirestore -->> UserService : userData / Error
     deactivate UserFirestore
     
     alt Get User Failed
-        GetService -->> UserGetHandler : Error
+        UserService -->> UserGetHandler : Error
         UserGetHandler -->> Requester : HTTP Error Response
     else Get User Succeeded
-        GetService -->> UserGetHandler : userResponse
+        UserService -->> UserGetHandler : userResponse
         UserGetHandler -->> Requester : HTTP 200 OK (userResponse)
     end
-    deactivate GetService
+    deactivate UserService
 end
 deactivate UserGetHandler
 @enduml

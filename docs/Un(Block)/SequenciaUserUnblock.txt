@@ -1,0 +1,50 @@
+@startuml
+title User UnBlock - PUT /users/:user_id/unblock
+
+actor Requester
+boundary UserPutUnblockHandler <<userHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control UserService <<serviceUser.go>>
+entity UserFirestore <<model/user/firestore.go>>
+
+Requester -> UserPutUnblockHandler : PUT /users/:user_id/unblock
+activate Requester
+activate UserPutUnblockHandler
+UserPutUnblockHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService --> UserPutUnblockHandler : Claims / Error
+deactivate AuthorizeService
+alt Authorization Failed
+    UserPutUnblockHandler --> Requester : HTTP Error Response
+else Authorization Succeeded
+    UserPutUnblockHandler -> UserService : UserUnblock(userID)
+    activate UserService
+    UserService -> UserService : User(userID)
+    UserService -> UserFirestore : Get(&userID)
+    activate UserFirestore
+    UserFirestore --> UserService : UserData / Error
+    deactivate UserFirestore
+    alt Get User Failed
+        UserService --> UserService : Error
+        UserService --> UserPutUnblockHandler : Error
+        UserPutUnblockHandler --> Requester : HTTP Error Response
+    else Get User Succeeded
+        UserService --> UserService : User
+        UserService -> UserFirestore : Update(User with Status=true)
+        activate UserFirestore
+        UserFirestore --> UserService : nil / Error
+        deactivate UserFirestore
+        alt Update User Failed
+            UserService --> UserPutUnblockHandler : Error
+            UserPutUnblockHandler --> Requester : HTTP Error Response
+        else Update User Succeeded
+            UserService --> UserPutUnblockHandler : nil
+            UserPutUnblockHandler --> Requester : HTTP 200 OK (User Blocked)
+        end
+        deactivate UserService
+    end
+    deactivate UserPutUnblockHandler
+end
+deactivate Requester
+
+@enduml

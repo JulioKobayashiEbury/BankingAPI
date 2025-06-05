@@ -3,8 +3,7 @@ title Create Account - POST /accounts
 
 actor Requester
 boundary AccountPostHandler <<accountHandler.go>>
-control CreateService <<serviceCreateTypes.go>>
-control GetService <<serviceGetTypes.go>>
+control AccountService <<serviceAccount.go>>
 entity UserFirestore <<model/user/firestore.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 entity AccountFirestore <<model/account/firestore.go>>
@@ -12,62 +11,58 @@ entity AccountFirestore <<model/account/firestore.go>>
 Requester -> AccountPostHandler : POST /accounts (Body: Account Info)
 activate AccountPostHandler
 
-AccountPostHandler -> CreateService : CreateAccount(accountRequest)
-activate CreateService
+AccountPostHandler -> AccountService : CreateAccount(accountRequest)
+activate AccountService
 
 alt Missing Credentials (User_id or Client_id)
-    CreateService -->> AccountPostHandler : Error (Missing credentials)
+    AccountService -->> AccountPostHandler : Error (Missing credentials)
     AccountPostHandler -->> Requester : HTTP Error Response
 else
-    CreateService -> UserFirestore : Get(&accountRequest.User_id)
+    AccountService -> UserFirestore : Get(&accountRequest.User_id)
     activate UserFirestore
-    UserFirestore -->> CreateService : userData / Error (IDnotFound or other)
+    UserFirestore -->> AccountService : userData / Error (IDnotFound or other)
     deactivate UserFirestore
     
     alt User Not Found or Error
-        CreateService -->> AccountPostHandler : Error
+        AccountService -->> AccountPostHandler : Error
         AccountPostHandler -->> Requester : HTTP Error Response
     else User Exists
-        CreateService -> ClientFirestore : Get(&accountRequest.Client_id)
+        AccountService -> ClientFirestore : Get(&accountRequest.Client_id)
         activate ClientFirestore
-        ClientFirestore -->> CreateService : clientData / Error (IDnotFound or other)
+        ClientFirestore -->> AccountService : clientData / Error (IDnotFound or other)
         deactivate ClientFirestore
         
         alt Client Not Found or Error
-            CreateService -->> AccountPostHandler : Error
+            AccountService -->> AccountPostHandler : Error
             AccountPostHandler -->> Requester : HTTP Error Response
         else Client Exists
-            CreateService -> AccountFirestore : Create(accountRequest)
+            AccountService -> AccountFirestore : Create(accountRequest)
             activate AccountFirestore
-            AccountFirestore -->> CreateService : accountID_ptr / Error
+            AccountFirestore -->> AccountService : accountID_ptr / Error
             deactivate AccountFirestore
             
             alt Create Account Record Failed
-                CreateService -->> AccountPostHandler : Error
+                AccountService -->> AccountPostHandler : Error
                 AccountPostHandler -->> Requester : HTTP Error Response
             else Create Account Record Succeeded
-                CreateService -> GetService : Account(*accountID_ptr)
-                activate GetService
-                GetService -> AccountFirestore : Get(*accountID_ptr)
+                AccountService -> AccountService : Account(*accountID_ptr)
+                AccountService -> AccountFirestore : Get(*accountID_ptr)
                 activate AccountFirestore
-                AccountFirestore -->> GetService : createdAccountData / Error
+                AccountFirestore -->> AccountService : createdAccountData / Error
                 deactivate AccountFirestore
                 
                 alt Get Created Account Failed
-                    GetService -->> CreateService : Error
-                    deactivate GetService
-                    CreateService -->> AccountPostHandler : Error
+                    AccountService -->> AccountService : Error
+                    AccountService -->> AccountPostHandler : Error
                     AccountPostHandler -->> Requester : HTTP Error Response
                 else Get Created Account Succeeded
-                    GetService -->> CreateService : createdAccount
-                    deactivate GetService
-                    CreateService -->> AccountPostHandler : createdAccount
-                    deactivate CreateService
+                    AccountService -->> AccountService : createdAccount
+                    AccountService -->> AccountPostHandler : createdAccount
                     AccountPostHandler -->> Requester : HTTP 201 Created (createdAccount)
                 end
             end
         end
     end
 end
+deactivate AccountService
 deactivate AccountPostHandler
-@enduml

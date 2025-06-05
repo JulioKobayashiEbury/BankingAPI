@@ -5,7 +5,6 @@ actor Requester
 boundary AccountPutDepositHandler <<accountHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
 control DepositService <<serviceDeposit.go>>
-control GetService <<serviceGetTypes.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 entity DepositFirestore <<model/deposit/firestore.go>>
 
@@ -19,60 +18,53 @@ deactivate AuthorizeService
 alt Authorization Failed
     AccountPutDepositHandler --> Requester : HTTP Error Response
 else Authorization Succeeded
-    AccountPutDepositHandler -> AccountFirestore : NewAccountFirestore(DatabaseClient)
-    activate AccountFirestore
-    AccountFirestore -> AccountPutDepositHandler : account.AccountFirestore
-    AccountPutDepositHandler -> DepositFirestore : NewDepositFirestore(DatabaseClient)
-    activate DepositFirestore
-    DepositFirestore -> AccountPutDepositHandler : deposit.DepositFirestore
-    AccountPutDepositHandler -> GetService : NewGetService(accountDatabase, nil, nil)
-    activate GetService
-    GetService -> AccountPutDepositHandler : ServiceGet
-    AccountPutDepositHandler -> DepositService : NewDepositService(depositDatabase, accountDatabase, getService)
-    activate DepositService
-    DepositService -> AccountPutDepositHandler : ServiceDeposit
+    
     AccountPutDepositHandler -> DepositService : ProcessDeposit(depositRequest)
+    activate DepositService
     note right of DepositService : depositRequest.Account_id is from path param
 
-    DepositService -> GetService : Account(depositRequest.Account_id)
-    GetService -> AccountFirestore : Get(&depositRequest.Account_id)
-    AccountFirestore --> GetService : accountData / Error
+    DepositService -> DepositService : Account(depositRequest.Account_id)
+    DepositService -> AccountFirestore : Get(&depositRequest.Account_id)
+    activate AccountFirestore
+    AccountFirestore --> DepositService : accountData / Error
+    deactivate AccountFirestore
     alt Get Account Failed
-        GetService --> DepositService : Error
+        DepositService --> DepositService : Error
         DepositService --> AccountPutDepositHandler : Error
         AccountPutDepositHandler --> Requester : HTTP Error Response
     else Get Account Succeeded
-        GetService --> DepositService : accountResponse
-        deactivate GetService
+        DepositService --> DepositService : accountResponse
         DepositService -> DepositService : verifyDeposit(depositRequest, accountResponse)
         alt Verification Failed
             DepositService --> AccountPutDepositHandler : Error (e.g. Client/User/Agency ID mismatch)
             AccountPutDepositHandler --> Requester : HTTP Error Response
         else Verification Succeeded
             DepositService -> DepositFirestore : Create(depositRequest)
+            activate DepositFirestore
             DepositFirestore --> DepositService : depositID / Error
             alt Create Deposit Record Failed
                 DepositService --> AccountPutDepositHandler : Error
                 AccountPutDepositHandler --> Requester : HTTP Error Response
             else Create Deposit Record Succeeded
                 DepositService -> AccountFirestore : Update(accountResponse with balance + depositRequest.Deposit)
+                activate AccountFirestore
                 AccountFirestore --> DepositService : nil / Error
                 deactivate AccountFirestore
                 alt Update Account Balance Failed (Rollback Create Deposit)
                     DepositService -> DepositFirestore : Delete(depositID)
                     DepositFirestore --> DepositService : (ignore error for this rollback attempt)
-                    deactivate DepositFirestore
                     DepositService --> AccountPutDepositHandler : Error
                     AccountPutDepositHandler --> Requester : HTTP Error Response
                 else Update Account Balance Succeeded
                     DepositService --> AccountPutDepositHandler : depositID
-                    deactivate DepositService
                     AccountPutDepositHandler --> Requester : HTTP 202 Accepted (depositID)
                 end
-                deactivate AccountPutDepositHandler
+                deactivate DepositFirestore
             end
         end
     end
+    deactivate DepositService
 end
+deactivate AccountPutDepositHandler
 deactivate Requester
 @enduml

@@ -3,50 +3,47 @@ title Create User - POST /users
 
 actor Requester
 boundary UserPostHandler <<userHandler.go>>
-control CreateService <<serviceCreateTypes.go>>
-control GetService <<serviceGetTypes.go>>
+control UserService <<serviceUser.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
 activate Requester
 Requester -> UserPostHandler : POST /users (Body: User Info)
 activate UserPostHandler
 
-UserPostHandler -> CreateService : CreateUser(userRequest)
-activate CreateService
+UserPostHandler -> UserService : CreateUser(userRequest)
+activate UserService
 
 alt Missing Credentials (Name, Document, or Password)
-    CreateService -->> UserPostHandler : Error (Missing credentials)
+    UserService -->> UserPostHandler : Error (Missing credentials)
     UserPostHandler -->> Requester : HTTP Error Response
 else
-    CreateService -> UserFirestore : Create(userRequest)
+    UserService -> UserFirestore : Create(userRequest)
     activate UserFirestore
-    UserFirestore -->> CreateService : userID_ptr / Error
+    UserFirestore -->> UserService : userID_ptr / Error
     deactivate UserFirestore
     
     alt Create User Record Failed
-        CreateService -->> UserPostHandler : Error
+        UserService -->> UserPostHandler : Error
         UserPostHandler -->> Requester : HTTP Error Response
     else Create User Record Succeeded
-        CreateService -> GetService : User(*userID_ptr)
-        activate GetService
-        GetService -> UserFirestore : Get(*userID_ptr)
+        UserService -> UserService : User(*userID_ptr)
+        UserService -> UserFirestore : Get(*userID_ptr)
         activate UserFirestore
-        UserFirestore -->> GetService : createdUserData / Error
+        UserFirestore -->> UserService : createdUserData / Error
         deactivate UserFirestore
         
         alt Get Created User Failed
-            GetService -->> CreateService : Error
-            CreateService -->> UserPostHandler : Error
+            UserService -->> UserService : Error
+            UserService -->> UserPostHandler : Error
             UserPostHandler -->> Requester : HTTP Error Response
         else Get Created User Succeeded
-            GetService -->> CreateService : createdUser
-            CreateService -->> UserPostHandler : createdUser
+            UserService -->> UserService : createdUser
+            UserService -->> UserPostHandler : createdUser
             UserPostHandler -->> Requester : HTTP 201 Created (createdUser)
         end
-        deactivate GetService
-        deactivate CreateService
     end
 end
+deactivate UserService
 deactivate UserPostHandler
 deactivate Requester
 @enduml

@@ -40,3 +40,9 @@ func Server() {
 	}
 	log.Info().Msg("Server started on port 25565")
 }
+
+func NewRepositoryList() {
+}
+
+func NewServiceList() {
+}

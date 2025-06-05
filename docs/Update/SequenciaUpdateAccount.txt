@@ -4,10 +4,10 @@ title Update Account - PUT /accounts/:account_id
 actor Requester
 boundary AccountPutHandler <<accountHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control UpdateService <<serviceUpdateTypes.go>>
-control GetService <<serviceGetTypes.go>>
+control AccountService <<serviceAccount.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 
+activate Requester
 Requester -> AccountPutHandler : PUT /accounts/:account_id (Body: Account Info)
 activate AccountPutHandler
 
@@ -20,50 +20,49 @@ alt Authorization Failed
     AccountPutHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
 
-    AccountPutHandler -> UpdateService : UpdateAccount(accountRequest with Account_id from path)
-    activate UpdateService
-    UpdateService -> GetService : Account(accountRequest.Account_id)
-    activate GetService
-    GetService -> AccountFirestore : Get(&accountRequest.Account_id)
+    AccountPutHandler -> AccountService : UpdateAccount(accountRequest with Account_id from path)
+    activate AccountService
+    AccountService -> AccountService : Account(accountRequest.Account_id)
+    AccountService -> AccountFirestore : Get(&accountRequest.Account_id)
     activate AccountFirestore
-    AccountFirestore -->> GetService : existingAccountData / Error
+    AccountFirestore -->> AccountService : existingAccountData / Error
     deactivate AccountFirestore
     
     alt Get Existing Account Failed
-        GetService -->> UpdateService : Error
-        UpdateService -->> AccountPutHandler : Error
+        AccountService -->> AccountService : Error
+        AccountService -->> AccountPutHandler : Error
         AccountPutHandler -->> Requester : HTTP Error Response
     else Get Existing Account Succeeded
-        GetService -->> UpdateService : accountResponse (existing data)
-        note right of UpdateService : Updates fields in accountResponse if provided in accountRequest
-        UpdateService -> AccountFirestore : Update(updatedAccountResponse)
+        AccountService -->> AccountService : accountResponse (existing data)
+        note right of AccountService : Updates fields in accountResponse if provided in accountRequest
+        AccountService -> AccountFirestore : Update(updatedAccountResponse)
         activate AccountFirestore
-        AccountFirestore -->> UpdateService : nil / Error
+        AccountFirestore -->> AccountService : nil / Error
         deactivate AccountFirestore
         
         alt Update Account Record Failed
-            UpdateService -->> AccountPutHandler : Error
+            AccountService -->> AccountPutHandler : Error
             AccountPutHandler -->> Requester : HTTP Error Response
         else Update Account Record Succeeded
-            UpdateService -> GetService : Account(accountRequest.Account_id) 'Re-fetch updated
-            GetService -> AccountFirestore : Get(&accountRequest.Account_id)
+            AccountService -> AccountService : Account(accountRequest.Account_id) 'Re-fetch updated
+            AccountService -> AccountFirestore : Get(&accountRequest.Account_id)
             activate AccountFirestore
-            AccountFirestore -->> GetService : finalAccountData / Error
+            AccountFirestore -->> AccountService : finalAccountData / Error
             deactivate AccountFirestore
             
             alt Re-fetch Failed
-                 GetService -->> UpdateService : Error
-                 UpdateService -->> AccountPutHandler : Error (but update was likely successful)
+                 AccountService -->> AccountService : Error
+                 AccountService -->> AccountPutHandler : Error (but update was likely successful)
                  AccountPutHandler -->> Requester : HTTP Error Response
             else Re-fetch Succeeded
-                 GetService -->> UpdateService : finalAccount
-                 UpdateService -->> AccountPutHandler : finalAccount
+                 AccountService -->> AccountService : finalAccount
+                 AccountService -->> AccountPutHandler : finalAccount
                  AccountPutHandler -->> Requester : HTTP 200 OK (finalAccount)
             end
-            deactivate GetService
-            deactivate UpdateService
+            deactivate AccountService
         end
     end
 end
 deactivate AccountPutHandler
+deactivate Requester
 @enduml

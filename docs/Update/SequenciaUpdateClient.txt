@@ -4,8 +4,7 @@ title Update Client - PUT /clients/:client_id
 actor Requester
 boundary ClientPutHandler <<clientHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control UpdateService <<serviceUpdateTypes.go>>
-control GetService <<serviceGetTypes.go>>
+control ClientService <<serviceClient.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
 activate Requester
@@ -20,51 +19,47 @@ deactivate AuthorizeService
 alt Authorization Failed
     ClientPutHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
-    ClientPutHandler -> UpdateService : UpdateClient(clientRequest with Client_id from path)
-    activate UpdateService
-    UpdateService -> GetService : Client(clientRequest.Client_id)
-    activate GetService
-    GetService -> ClientFirestore : Get(&clientRequest.Client_id)
+    ClientPutHandler -> ClientService : UpdateClient(clientRequest with Client_id from path)
+    activate ClientService
+    ClientService -> ClientService : Client(clientRequest.Client_id)
+    ClientService -> ClientFirestore : Get(&clientRequest.Client_id)
     activate ClientFirestore
-    ClientFirestore -->> GetService : existingClientData / Error
+    ClientFirestore -->> ClientService : existingClientData / Error
     deactivate ClientFirestore
     
     alt Get Existing Client Failed
-        GetService -->> UpdateService : Error
-        UpdateService -->> ClientPutHandler : Error
+        ClientService -->> ClientService : Error
+        ClientService -->> ClientPutHandler : Error
         ClientPutHandler -->> Requester : HTTP Error Response
     else Get Existing Client Succeeded
-        GetService -->> UpdateService : clientResponse (existing data)
-        deactivate GetService
-        note right of UpdateService : Updates fields in clientResponse if provided in clientRequest
-        UpdateService -> ClientFirestore : Update(updatedClientResponseAsRequest) ' ClientFirestore.Update expects *ClientRequest
+        ClientService -->> ClientService : clientResponse (existing data)
+        note right of ClientService : Updates fields in clientResponse if provided in clientRequest
+        ClientService -> ClientFirestore : Update(updatedClientResponseAsRequest) ' ClientFirestore.Update expects *ClientRequest
         activate ClientFirestore
-        ClientFirestore -->> UpdateService : nil / Error
+        ClientFirestore -->> ClientService : nil / Error
         deactivate ClientFirestore
         
         alt Update Client Record Failed
-            UpdateService -->> ClientPutHandler : Error
+            ClientService -->> ClientPutHandler : Error
             ClientPutHandler -->> Requester : HTTP Error Response
         else Update Client Record Succeeded
-            UpdateService -> GetService : Client(clientRequest.Client_id) 'Re-fetch updated
-            activate GetService
-            GetService -> ClientFirestore : Get(&clientRequest.Client_id)
+            ClientService -> ClientService : Client(clientRequest.Client_id) 'Re-fetch updated
+            ClientService -> ClientFirestore : Get(&clientRequest.Client_id)
             activate ClientFirestore
-            ClientFirestore -->> GetService : finalClientData / Error
+            ClientFirestore -->> ClientService : finalClientData / Error
             deactivate ClientFirestore
             
             alt Re-fetch Failed
-                 GetService -->> UpdateService : Error
-                 UpdateService -->> ClientPutHandler : Error
+                 ClientService -->> ClientService : Error
+                 ClientService -->> ClientPutHandler : Error
                  ClientPutHandler -->> Requester : HTTP Error Response
             else Re-fetch Succeeded
-                 GetService -->> UpdateService : finalClientResponse
-                 deactivate GetService
-                 UpdateService -->> ClientPutHandler : finalClientResponse
+                 ClientService -->> ClientService : finalClientResponse
+                 ClientService -->> ClientPutHandler : finalClientResponse
                  
                  ClientPutHandler -->> Requester : HTTP 200 OK (finalClientResponse)
             end
-            deactivate UpdateService
+            deactivate ClientService
         end
     end
 end

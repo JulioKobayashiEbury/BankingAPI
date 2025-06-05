@@ -4,8 +4,7 @@ title Client Block - PUT /clients/:client_id/block
 actor Requester
 boundary ClientPutBlockHandler <<clientHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control StatusService <<serviceStatus.go>>
-control GetService <<serviceGetTypes.go>>
+control ClientService <<serviceAccount.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
 Requester -> ClientPutBlockHandler : PUT /Clients/:Client_id/block
@@ -18,37 +17,31 @@ deactivate AuthorizeService
 alt Authorization Failed
     ClientPutBlockHandler --> Requester : HTTP Error Response
 else Authorization Succeeded
-    ClientPutBlockHandler -> ClientFirestore : NewClientFirestore(DatabaseClient)
+    ClientPutBlockHandler -> ClientService : ClientBlock(clientID)
+    activate ClientService
+    ClientService -> ClientService : Client(clientID)
+    ClientService -> ClientFirestore : Get(&clientID)
     activate ClientFirestore
-    ClientFirestore -> ClientPutBlockHandler : client.ClientFirestore
-    ClientPutBlockHandler -> GetService : NewGetService(ClientDatabase, nil, nil)
-    activate GetService
-    GetService -> ClientPutBlockHandler : ServiceGet
-    ClientPutBlockHandler -> StatusService : NewStatusService(nil, nil, ClientDatabase, getService)
-    activate StatusService
-    StatusService -> ClientPutBlockHandler : ServiceStatus
-    ClientPutBlockHandler -> StatusService : ClientBlock(clientID)
-    StatusService -> GetService : Client(clientID)
-    GetService -> ClientFirestore : Get(&clientID)
-    ClientFirestore --> GetService : ClientData / Error
+    ClientFirestore --> ClientService : ClientData / Error
+    deactivate ClientFirestore
     alt Get Client Failed
-        GetService --> StatusService : Error
-        StatusService --> ClientPutBlockHandler : Error
+        ClientService --> ClientService : Error
+        ClientService --> ClientPutBlockHandler : Error
         ClientPutBlockHandler --> Requester : HTTP Error Response
     else Get Client Succeeded
-        GetService --> StatusService : Client
-        deactivate GetService
-        StatusService -> ClientFirestore : Update(Client with Status=false)
-        ClientFirestore --> StatusService : nil / Error
+        ClientService --> ClientService : Client
+        ClientService -> ClientFirestore : Update(Client with Status=false)
+        activate ClientFirestore
+        ClientFirestore --> ClientService : nil / Error
         deactivate ClientFirestore
         alt Update Client Failed
-            StatusService --> ClientPutBlockHandler : Error
+            ClientService --> ClientPutBlockHandler : Error
             ClientPutBlockHandler --> Requester : HTTP Error Response
         else Update Client Succeeded
-            StatusService --> ClientPutBlockHandler : nil
+            ClientService --> ClientPutBlockHandler : nil
             ClientPutBlockHandler --> Requester : HTTP 200 OK (Client Blocked)
         end
-        deactivate StatusService
+        deactivate ClientService
     end
     deactivate ClientPutBlockHandler
 end

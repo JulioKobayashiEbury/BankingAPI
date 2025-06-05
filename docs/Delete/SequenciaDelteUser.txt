@@ -4,7 +4,7 @@ title Delete User - DELETE /users/:user_id
 actor Requester
 boundary UserDeleteHandler <<userHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control DeleteService <<serviceDeleteTypes.go>>
+control UserService <<serviceDeleteTypes.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
 activate Requester 
@@ -20,31 +20,22 @@ deactivate AuthorizeService
 alt Authorization Failed (or user_id mismatch with claims.Id)
     UserDeleteHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
-    UserDeleteHandler -> UserFirestore : userDatabase := NewUserFireStore(DatabaseClient)
+   
+    UserDeleteHandler -> UserService : UserDelete(userIDFromClaims_or_path)
+    activate UserService
+    UserService -> UserFirestore : Delete(&userIDFromClaims_or_path)
     activate UserFirestore
-    UserFirestore -->> UserDeleteHandler : userDatabase
-    deactivate UserFirestore
-    
-    UserDeleteHandler -> DeleteService : deleteService := NewDeleteService(userDatabase, nil, nil)
-    activate DeleteService
-    DeleteService -->> UserDeleteHandler : deleteService
-    deactivate DeleteService
-
-    UserDeleteHandler -> DeleteService : UserDelete(userIDFromClaims_or_path)
-    activate DeleteService
-    DeleteService -> UserFirestore : Delete(&userIDFromClaims_or_path)
-    activate UserFirestore
-    UserFirestore -->> DeleteService : nil / Error
+    UserFirestore -->> UserService : nil / Error
     deactivate UserFirestore
     
     alt Delete User Failed
-        DeleteService -->> UserDeleteHandler : Error
+        UserService -->> UserDeleteHandler : Error
         UserDeleteHandler -->> Requester : HTTP Error Response
     else Delete User Succeeded
-        DeleteService -->> UserDeleteHandler : nil
+        UserService -->> UserDeleteHandler : nil
         UserDeleteHandler -->> Requester : HTTP 200 OK (Message: User deleted)
     end
-    deactivate DeleteService
+    deactivate UserService
 end
 deactivate UserDeleteHandler
 

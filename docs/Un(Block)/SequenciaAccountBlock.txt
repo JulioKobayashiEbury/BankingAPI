@@ -4,12 +4,11 @@ title Account Block - PUT /accounts/:account_id/block
 actor Requester
 boundary AccountPutBlockHandler <<accountHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control StatusService <<serviceStatus.go>>
-control GetService <<serviceGetTypes.go>>
+control AccountService <<serviceAccount.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 
-Requester -> AccountPutBlockHandler : PUT /accounts/:account_id/block
 activate Requester
+Requester -> AccountPutBlockHandler : PUT /accounts/:account_id/block
 activate AccountPutBlockHandler
 AccountPutBlockHandler -> AuthorizeService : Authorize(Cookie)
 activate AuthorizeService
@@ -18,40 +17,34 @@ deactivate AuthorizeService
 alt Authorization Failed
     AccountPutBlockHandler --> Requester : HTTP Error Response
 else Authorization Succeeded
-    AccountPutBlockHandler -> AccountFirestore : NewAccountFirestore(DatabaseClient)
+    AccountPutBlockHandler -> AccountService : AccountBlock(accountID)
+    activate AccountService
+    AccountService -> AccountService : Account(accountID)
+    AccountService -> AccountFirestore : Get(&accountID)
     activate AccountFirestore
-    AccountFirestore -> AccountPutBlockHandler : account.AccountFirestore
-    AccountPutBlockHandler -> GetService : NewGetService(accountDatabase, nil, nil)
-    activate GetService
-    GetService -> AccountPutBlockHandler : ServiceGet
-    AccountPutBlockHandler -> StatusService : NewStatusService(nil, nil, accountDatabase, getService)
-    activate StatusService
-    StatusService -> AccountPutBlockHandler : ServiceStatus
-    AccountPutBlockHandler -> StatusService : AccountBlock(accountID)
-    StatusService -> GetService : Account(accountID)
-    GetService -> AccountFirestore : Get(&accountID)
-    AccountFirestore --> GetService : accountData / Error
+    AccountFirestore --> AccountService : accountData / Error
+    deactivate AccountFirestore
     alt Get Account Failed
-        GetService --> StatusService : Error
-        StatusService --> AccountPutBlockHandler : Error
+        AccountService --> AccountService : Error
+        AccountService --> AccountPutBlockHandler : Error
         AccountPutBlockHandler --> Requester : HTTP Error Response
     else Get Account Succeeded
-        GetService --> StatusService : account
-        deactivate GetService
-        StatusService -> AccountFirestore : Update(account with Status=false)
-        AccountFirestore --> StatusService : nil / Error
+        AccountService --> AccountService : account
+        AccountService -> AccountFirestore : Update(account with Status=false)
+        activate AccountFirestore
+        AccountFirestore --> AccountService : nil / Error
         deactivate AccountFirestore
         alt Update Account Failed
-            StatusService --> AccountPutBlockHandler : Error
+            AccountService --> AccountPutBlockHandler : Error
             AccountPutBlockHandler --> Requester : HTTP Error Response
         else Update Account Succeeded
-            StatusService --> AccountPutBlockHandler : nil
+            AccountService --> AccountPutBlockHandler : nil
             AccountPutBlockHandler --> Requester : HTTP 200 OK (Account Blocked)
         end
-        deactivate StatusService
     end
-    deactivate AccountPutBlockHandler
+    deactivate AccountService
 end
+deactivate AccountPutBlockHandler
 deactivate Requester
 
 @enduml
