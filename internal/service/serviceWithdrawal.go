@@ -11,17 +11,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ServiceWithdrawal interface {
-	ProcessWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest) (*string, *model.Erro)
-}
-
 type withdrawalImpl struct {
 	accountDatabase    model.RepositoryInterface
 	withdrawalDatabase model.RepositoryInterface
 	getService         ServiceGet
 }
 
-func NewWithdrawalService(accountDB model.RepositoryInterface, withdrawalDB model.RepositoryInterface, get ServiceGet) ServiceWithdrawal {
+func NewWithdrawalService(accountDB model.RepositoryInterface, withdrawalDB model.RepositoryInterface, get ServiceGet) WithdrawalService {
 	return withdrawalImpl{
 		accountDatabase:    accountDB,
 		withdrawalDatabase: withdrawalDB,
@@ -29,7 +25,19 @@ func NewWithdrawalService(accountDB model.RepositoryInterface, withdrawalDB mode
 	}
 }
 
-func (withdrawal withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest) (*string, *model.Erro) {
+func (wihdrawal withdrawalImpl) Create(withdrawalRequest *withdrawal.Withdrawal) (*string, *model.Erro) {
+	return nil, nil
+}
+
+func (wihdrawal withdrawalImpl) Delete(*string) *model.Erro {
+	return nil
+}
+
+func (wihdrawal withdrawalImpl) GetAll(*string) ([]*withdrawal.Withdrawal, *model.Erro) {
+	return nil, nil
+}
+
+func (withdrawal withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*string, *model.Erro) {
 	// monta update
 	accountResponse, err := withdrawal.getService.Account(withdrawalRequest.Account_id)
 	if err != nil {
@@ -60,7 +68,7 @@ func (withdrawal withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal
 	return withdrawalID, nil
 }
 
-func verifyWithdrawal(withdrawalRequest *withdrawal.WithdrawalRequest, accountResponse *account.Account) (bool, *model.Erro) {
+func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse *account.Account) (bool, *model.Erro) {
 	if accountResponse.Client_id != withdrawalRequest.Client_id {
 		return false, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
 	}

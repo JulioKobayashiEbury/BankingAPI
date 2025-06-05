@@ -1,9 +1,6 @@
 package service
 
 import (
-	"errors"
-	"net/http"
-
 	"BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/client"
@@ -14,7 +11,7 @@ import (
 
 type ServiceUpdate interface {
 	UpdateAccount(accountRequest *account.Account) (*account.Account, *model.Erro)
-	UpdateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro)
+	UpdateClient(Client *client.Client) (*client.Client, *model.Erro)
 	UpdateUser(userRequest *user.User) (*user.User, *model.Erro)
 }
 
@@ -34,58 +31,27 @@ func NewUpdateService(accountDB model.RepositoryInterface, clientDB model.Reposi
 	}
 }
 
-func (update updateImpl) UpdateAccount(accountRequest *account.Account) (*account.Account, *model.Erro) {
-	accountResponse, err := update.get.Account(accountRequest.Account_id)
+func (update updateImpl) UpdateClient(Client *client.Client) (*client.Client, *model.Erro) {
+	Client, err := update.get.Client(Client.Client_id)
 	if err != nil {
 		return nil, err
 	}
 
-	// verifica valores que foram passados ou não
-	if accountRequest.Account_id == "" {
-		log.Warn().Msg("No account with id: 0 allowed")
-		return nil, &model.Erro{Err: errors.New("Account id invalid"), HttpCode: http.StatusBadRequest}
+	if Client.User_id != "" {
+		Client.User_id = Client.User_id
 	}
-	if accountRequest.Agency_id != 0 {
-		accountResponse.Agency_id = accountRequest.Agency_id
+	if Client.Name != "" {
+		Client.Name = Client.Name
 	}
-	if accountRequest.Client_id != "" {
-		accountResponse.Client_id = accountRequest.Client_id
-	}
-	if accountRequest.User_id != "" {
-		accountResponse.User_id = accountRequest.User_id
+	if Client.Document != "" {
+		Client.Document = Client.Document
 	}
 	// monta struct de update
-
-	if err := update.accountDatabase.Update(accountResponse); err != nil {
+	if err := update.clientDatabase.Update(Client); err != nil {
 		return nil, err
 	}
-
-	log.Info().Msg("Update was succesful (account): " + accountRequest.Account_id)
-
-	return update.get.Account(accountRequest.Account_id)
-}
-
-func (update updateImpl) UpdateClient(clientRequest *client.ClientRequest) (*client.ClientResponse, *model.Erro) {
-	clientResponse, err := update.get.Client(clientRequest.Client_id)
-	if err != nil {
-		return nil, err
-	}
-
-	if clientRequest.User_id != "" {
-		clientResponse.User_id = clientRequest.User_id
-	}
-	if clientRequest.Name != "" {
-		clientResponse.Name = clientRequest.Name
-	}
-	if clientRequest.Document != "" {
-		clientResponse.Document = clientRequest.Document
-	}
-	// monta struct de update
-	if err := update.clientDatabase.Update(clientResponse); err != nil {
-		return nil, err
-	}
-	log.Info().Msg("Update was succesful (client): " + clientRequest.Client_id)
-	return update.get.Client(clientRequest.Client_id)
+	log.Info().Msg("Update was succesful (client): " + Client.Client_id)
+	return update.get.Client(Client.Client_id)
 }
 
 func (update updateImpl) UpdateUser(userRequest *user.User) (*user.User, *model.Erro) {

@@ -26,14 +26,6 @@ func NewDeleteService(userDB model.RepositoryInterface, clientDB model.Repositor
 	}
 }
 
-func (delete deleteImpl) AccountDelete(accountID string) *model.Erro {
-	if err := delete.accountDatabase.Delete(&accountID); err != nil {
-		return err
-	}
-	log.Info().Msg("Account deleted: " + accountID)
-	return nil
-}
-
 func (delete deleteImpl) ClientDelete(clientID string) *model.Erro {
 	if err := delete.clientDatabase.Delete(&clientID); err != nil {
 		return err

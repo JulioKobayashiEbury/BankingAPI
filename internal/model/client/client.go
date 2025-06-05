@@ -2,15 +2,7 @@ package client
 
 import "BankingAPI/internal/model/account"
 
-type ClientRequest struct {
-	Client_id     string `json:"client_id" xml:"client_id"`
-	User_id       string `json:"user_id" xml:"user_id"`
-	Name          string `json:"name" xml:"name"`
-	Document      string `json:"document" xml:"document"`
-	User_password string `json:"user_password" xml:"user_password"`
-}
-
-type ClientResponse struct {
+type Client struct {
 	Client_id     string `json:"client_id" xml:"client_id"`
 	User_id       string `json:"user_id" xml:"user_id"`
 	Name          string `json:"name" xml:"name"`

@@ -7,8 +7,6 @@ import (
 	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/client"
 	"BankingAPI/internal/model/user"
-
-	"github.com/rs/zerolog/log"
 )
 
 type ReportService interface {
@@ -28,45 +26,6 @@ func NewReportService(toGetService ServiceGet, toGetAllService ServiceGetAll) Re
 		getAllService: toGetAllService,
 	}
 }
-
-func (report reportImpl) GenerateReportByAccount(accountID *string) (*account.AccountReport, *model.Erro) {
-	accountInfo, err := report.getService.Account(*accountID)
-	if err != nil {
-		return nil, err
-	}
-	transfers, err := report.getAllService.GetAllTransfersByAccountID(accountID)
-	if err != nil {
-		return nil, err
-	}
-	deposits, err := report.getAllService.GetAllDepositsByAccountID(accountID)
-	if err != nil {
-		return nil, err
-	}
-	withdrawals, err := report.getAllService.GetAllWithdrawalsByAccountID(accountID)
-	if err != nil {
-		return nil, err
-	}
-	automaticDebits, err := report.getAllService.GetAllAutoDebitsByAccountID(accountID)
-	if err != nil {
-		return nil, err
-	}
-	accountReport := account.AccountReport{
-		Account_id:       accountInfo.Account_id,
-		Client_id:        accountInfo.Client_id,
-		Agency_id:        accountInfo.Agency_id,
-		Balance:          accountInfo.Balance,
-		Register_date:    accountInfo.Register_date,
-		Status:           accountInfo.Status,
-		Transfers:        *transfers,
-		Deposits:         *deposits,
-		Withdrawals:      *withdrawals,
-		Automatic_Debits: *automaticDebits,
-		Report_Date:      time.Now().Format(timeLayout),
-	}
-	log.Info().Msg("Report generated for account: " + *accountID)
-	return &accountReport, nil
-}
-
 func (report reportImpl) GenerateReportByClient(clientID *string) (*client.ClientReport, *model.Erro) {
 	clientInfo, err := report.getService.Client(*clientID)
 	if err != nil {

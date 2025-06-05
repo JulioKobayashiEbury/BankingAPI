@@ -77,15 +77,15 @@ func (db depositFirestore) Get(id *string) (interface{}, *model.Erro) {
 		log.Error().Msg("Nil account from snapshot" + *id)
 		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + *id), HttpCode: http.StatusInternalServerError}
 	}
-	depositResponse := DepositResponse{}
-	if err := docSnapshot.DataTo(&depositResponse); err != nil {
+	Deposit := Deposit{}
+	if err := docSnapshot.DataTo(&Deposit); err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &depositResponse, nil
+	return &Deposit, nil
 }
 
 func (db depositFirestore) Update(request interface{}) *model.Erro {
-	depositRequest, ok := request.(*DepositResponse)
+	depositRequest, ok := request.(*Deposit)
 	if !ok {
 		return model.DataTypeWrong
 	}
@@ -121,26 +121,26 @@ func (db depositFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	depositResponseSlice := make([]*DepositResponse, 0, len(docSnapshots))
+	DepositSlice := make([]*Deposit, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		depositReponse := &DepositResponse{}
+		depositReponse := &Deposit{}
 		if err := docSnap.DataTo(&depositReponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
 		depositReponse.Deposit_id = docSnap.Ref.ID
 		// condicional para saber se a transferencia pertence ao account
-		depositResponseSlice = append(depositResponseSlice, depositReponse)
+		DepositSlice = append(DepositSlice, depositReponse)
 	}
-	return &depositResponseSlice, nil
+	return &DepositSlice, nil
 }
 
-func interfaceToDeposit(argument interface{}) (*DepositRequest, *DepositResponse) {
-	if obj, ok := argument.(DepositRequest); ok {
+func interfaceToDeposit(argument interface{}) (*Deposit, *Deposit) {
+	if obj, ok := argument.(Deposit); ok {
 		return &obj, nil
 	}
-	if obj, ok := argument.(DepositResponse); ok {
+	if obj, ok := argument.(Deposit); ok {
 		return nil, &obj
 	}
 	return nil, nil

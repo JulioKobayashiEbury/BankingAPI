@@ -27,7 +27,7 @@ func NewClientFirestore(dbClient *firestore.Client) model.RepositoryInterface {
 }
 
 func (db clientFirestore) Create(request interface{}) (*string, *model.Erro) {
-	clientRequest, ok := request.(ClientRequest)
+	Client, ok := request.(Client)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -35,9 +35,9 @@ func (db clientFirestore) Create(request interface{}) (*string, *model.Erro) {
 	defer ctx.Done()
 
 	entity := map[string]interface{}{
-		"user_id":       clientRequest.User_id,
-		"name":          clientRequest.Name,
-		"document":      clientRequest.Document,
+		"user_id":       Client.User_id,
+		"name":          Client.Name,
+		"document":      Client.Document,
 		"status":        true,
 		"register_date": time.Now().Format(model.TimeLayout),
 	}
@@ -74,16 +74,16 @@ func (db clientFirestore) Get(id *string) (interface{}, *model.Erro) {
 		log.Error().Msg("Nil account from snapshot" + *id)
 		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
 	}
-	clientResponse := ClientResponse{}
-	if err := docSnapshot.DataTo(&clientResponse); err != nil {
+	Client := Client{}
+	if err := docSnapshot.DataTo(&Client); err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	clientResponse.Client_id = docSnapshot.Ref.ID
-	return &clientResponse, nil
+	Client.Client_id = docSnapshot.Ref.ID
+	return &Client, nil
 }
 
 func (db clientFirestore) Update(request interface{}) *model.Erro {
-	clientRequest, ok := request.(*ClientRequest)
+	Client, ok := request.(*Client)
 	if !ok {
 		return model.DataTypeWrong
 	}
@@ -91,13 +91,13 @@ func (db clientFirestore) Update(request interface{}) *model.Erro {
 	defer ctx.Done()
 
 	entity := map[string]interface{}{
-		"user_id":       clientRequest.User_id,
-		"name":          clientRequest.Name,
-		"document":      clientRequest.Document,
+		"user_id":       Client.User_id,
+		"name":          Client.Name,
+		"document":      Client.Document,
 		"status":        true,
 		"register_date": time.Now().Format(model.TimeLayout),
 	}
-	docRef := db.databaseClient.Collection(collection).Doc(clientRequest.Client_id)
+	docRef := db.databaseClient.Collection(collection).Doc(Client.Client_id)
 
 	_, err := docRef.Set(ctx, entity)
 	if err != nil {
@@ -105,7 +105,7 @@ func (db clientFirestore) Update(request interface{}) *model.Erro {
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 
-	log.Info().Msg("Account: " + clientRequest.Client_id + " has been updated")
+	log.Info().Msg("Account: " + Client.Client_id + " has been updated")
 
 	return nil
 }
@@ -120,26 +120,26 @@ func (db clientFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	clientResponseSlice := make([]*ClientResponse, 0, len(docSnapshots))
+	ClientSlice := make([]*Client, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		clientResponse := &ClientResponse{}
-		if err := docSnap.DataTo(&clientResponse); err != nil {
+		Client := &Client{}
+		if err := docSnap.DataTo(&Client); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
-		clientResponse.Client_id = docSnap.Ref.ID
+		Client.Client_id = docSnap.Ref.ID
 		// condicional para saber se a transferencia pertence ao account
-		clientResponseSlice = append(clientResponseSlice, clientResponse)
+		ClientSlice = append(ClientSlice, Client)
 	}
-	return &clientResponseSlice, nil
+	return &ClientSlice, nil
 }
 
-func interfaceToClient(argument interface{}) (*ClientRequest, *ClientResponse) {
-	if obj, ok := argument.(ClientRequest); ok {
+func interfaceToClient(argument interface{}) (*Client, *Client) {
+	if obj, ok := argument.(Client); ok {
 		return &obj, nil
 	}
-	if obj, ok := argument.(ClientResponse); ok {
+	if obj, ok := argument.(Client); ok {
 		return nil, &obj
 	}
 	return nil, nil

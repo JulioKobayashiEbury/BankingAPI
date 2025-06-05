@@ -18,24 +18,24 @@ const (
 	timeLayout = time.RFC3339
 )
 
-type ServiceAutoDebit interface {
-	ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebitRequest) (*automaticdebit.AutomaticDebitResponse, *model.Erro)
-	CheckAutomaticDebits()
-}
-
 type serviceAutoDebitImpl struct {
 	autoDebitFirestore model.RepositoryInterface
-	withdrawalService  ServiceWithdrawal
+	withdrawalService  WithdrawalService
 }
 
-func NewAutoDebitImpl(autodebitDB model.RepositoryInterface, withdrawal ServiceWithdrawal) ServiceAutoDebit {
+func NewAutoDebitImpl(autodebitDB model.RepositoryInterface, withdrawal WithdrawalService) AutomaticDebitService {
 	return serviceAutoDebitImpl{
 		autoDebitFirestore: autodebitDB,
 		withdrawalService:  withdrawal,
 	}
 }
 
-func (debitService serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebitRequest) (*automaticdebit.AutomaticDebitResponse, *model.Erro) {
+func (debitService serviceAutoDebitImpl) Create(*automaticdebit.AutomaticDebit) (*string, *model.Erro)
+func (debitService serviceAutoDebitImpl) Delete(*string) *model.Erro
+func (debitService serviceAutoDebitImpl) GetAll(*string) ([]*automaticdebit.AutomaticDebit, *model.Erro)
+func (debitService serviceAutoDebitImpl) Status(*string, bool) *model.Erro
+
+func (debitService serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
 	if !isValidDate(autoDebit.Expiration_date) {
 		log.Warn().Msg("Invalid date format")
 		return nil, &model.Erro{Err: errors.New("Invalid date format"), HttpCode: http.StatusBadRequest}
@@ -49,7 +49,7 @@ func (debitService serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *aut
 	if err != nil {
 		return nil, err
 	}
-	autoDebitResponse, ok := obj.(automaticdebit.AutomaticDebitResponse)
+	autoDebitResponse, ok := obj.(automaticdebit.AutomaticDebit)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -69,7 +69,7 @@ func (autoDebitService serviceAutoDebitImpl) CheckAutomaticDebits() {
 		log.Error().Msg(err.Err.Error())
 		return
 	}
-	autoDebitList, ok := obj.(*[]*automaticdebit.AutomaticDebitResponse)
+	autoDebitList, ok := obj.(*[]*automaticdebit.AutomaticDebit)
 	if !ok {
 		log.Error().Msg("Error getting automatic debit list as data type returned is wrong")
 		return
@@ -94,7 +94,7 @@ func (autoDebitService serviceAutoDebitImpl) CheckAutomaticDebits() {
 				return
 			} else {
 				if autoDebit.Debit_day == uint16(time.Now().Day()) {
-					_, err := autoDebitService.withdrawalService.ProcessWithdrawal(&withdrawal.WithdrawalRequest{
+					_, err := autoDebitService.withdrawalService.ProcessWithdrawal(&withdrawal.Withdrawal{
 						Account_id: autoDebit.Account_id,
 						Client_id:  autoDebit.Client_id,
 						Agency_id:  autoDebit.Agency_id,

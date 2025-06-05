@@ -29,7 +29,7 @@ func AddClientsEndPoints(server *echo.Echo) {
 }
 
 func ClientPostHandler(c echo.Context) error {
-	var clientInfo client.ClientRequest
+	var clientInfo client.Client
 	if err := c.Bind(&clientInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -42,12 +42,12 @@ func ClientPostHandler(c echo.Context) error {
 
 	serviceGet := service.NewGetService(nil, clientDatabase, userDatabase)
 	serviceCreate := service.NewCreateService(nil, clientDatabase, userDatabase, serviceGet)
-	clientResponse, err := serviceCreate.CreateClient(&clientInfo)
+	Client, err := serviceCreate.CreateClient(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, (*clientResponse))
+	return c.JSON(http.StatusOK, (*Client))
 }
 
 func ClientGetHandler(c echo.Context) error {
@@ -87,7 +87,7 @@ func ClientPutHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var clientInfo client.ClientRequest
+	var clientInfo client.Client
 	if err := c.Bind(&clientInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -99,12 +99,12 @@ func ClientPutHandler(c echo.Context) error {
 	serviceGet := service.NewGetService(nil, clientDatabase, userDatabase)
 	serviceUpdate := service.NewUpdateService(nil, clientDatabase, userDatabase, serviceGet)
 
-	clientResponse, err := serviceUpdate.UpdateClient(&clientInfo)
+	Client, err := serviceUpdate.UpdateClient(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	return c.JSON(http.StatusOK, (*clientResponse))
+	return c.JSON(http.StatusOK, (*Client))
 }
 
 func ClientPutBlockHandler(c echo.Context) error {

@@ -9,13 +9,13 @@ import (
 func TestProcessDeposit(t *testing.T) {
 	type TestDeposit []struct {
 		test     string
-		value    *deposit.DepositRequest
-		expected *deposit.DepositResponse
+		value    *deposit.Deposit
+		expected *deposit.Deposit
 	}
 	tests := TestDeposit{
 		{
 			test: "First deposit",
-			value: &deposit.DepositRequest{
+			value: &deposit.Deposit{
 				Account_id: "accID",
 				Client_id:  "cllID",
 				User_id:    "usrID",
@@ -25,7 +25,7 @@ func TestProcessDeposit(t *testing.T) {
 		},
 		{
 			test: "Second deposit",
-			value: &deposit.DepositRequest{
+			value: &deposit.Deposit{
 				Account_id: "accID2",
 				Client_id:  "cllID2",
 				User_id:    "usrID2",

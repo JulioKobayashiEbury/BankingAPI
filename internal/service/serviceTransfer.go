@@ -9,23 +9,23 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ServiceTransfer interface {
-	ProcessNewTransfer(*transfer.TransferRequest) (*string, *model.Erro)
-}
-
 type transferImpl struct {
 	accountDatabase  model.RepositoryInterface
 	transferDatabase model.RepositoryInterface
 }
 
-func NewTransferService(accountDB model.RepositoryInterface, transferDB model.RepositoryInterface) ServiceTransfer {
+func NewTransferService(accountDB model.RepositoryInterface, transferDB model.RepositoryInterface) TransferService {
 	return transferImpl{
 		accountDatabase:  accountDB,
 		transferDatabase: transferDB,
 	}
 }
 
-func (transfer transferImpl) ProcessNewTransfer(transferRequest *transfer.TransferRequest) (*string, *model.Erro) {
+func (transfer transferImpl) Create(*transfer.Transfer) (*string, *model.Erro)
+func (transfer transferImpl) Delete(*string) *model.Erro
+func (transfer transferImpl) GetAll(*string) ([]*transfer.Transfer, *model.Erro)
+
+func (transfer transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfer) (*string, *model.Erro) {
 	obj, err := transfer.accountDatabase.Get(&transferRequest.Account_to)
 	if err == model.IDnotFound || err != nil {
 		return nil, err

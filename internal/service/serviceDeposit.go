@@ -11,17 +11,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ServiceDeposit interface {
-	ProcessDeposit(depositRequest *deposit.DepositRequest) (*string, *model.Erro)
-}
-
 type depositImpl struct {
 	depositDatabase model.RepositoryInterface
 	accountDatabase model.RepositoryInterface
 	getService      ServiceGet
 }
 
-func NewDepositService(depositDB model.RepositoryInterface, accountDB model.RepositoryInterface, get ServiceGet) ServiceDeposit {
+func NewDepositService(depositDB model.RepositoryInterface, accountDB model.RepositoryInterface, get ServiceGet) DepositService {
 	return depositImpl{
 		depositDatabase: depositDB,
 		accountDatabase: accountDB,
@@ -29,7 +25,11 @@ func NewDepositService(depositDB model.RepositoryInterface, accountDB model.Repo
 	}
 }
 
-func (deposit depositImpl) ProcessDeposit(depositRequest *deposit.DepositRequest) (*string, *model.Erro) {
+func (deposit depositImpl) Create(*deposit.Deposit) (*string, *model.Erro)
+func (deposit depositImpl) Delete(*string) *model.Erro
+func (deposit depositImpl) GetAll(*string) ([]*deposit.Deposit, *model.Erro)
+
+func (deposit depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*string, *model.Erro) {
 	accountRequest, err := deposit.getService.Account(depositRequest.Account_id)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (deposit depositImpl) ProcessDeposit(depositRequest *deposit.DepositRequest
 	return depositID, nil
 }
 
-func verifyDeposit(depositRequest *deposit.DepositRequest, accountResponse *account.Account) (bool, *model.Erro) {
+func verifyDeposit(depositRequest *deposit.Deposit, accountResponse *account.Account) (bool, *model.Erro) {
 	if accountResponse.Client_id != depositRequest.Client_id {
 		return false, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
 	}

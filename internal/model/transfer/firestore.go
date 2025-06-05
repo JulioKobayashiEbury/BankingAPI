@@ -27,7 +27,7 @@ func NewTransferFirestore(dbClient *firestore.Client) model.RepositoryInterface 
 }
 
 func (db transferFirestore) Create(request interface{}) (*string, *model.Erro) {
-	transferRequest, ok := request.(TransferRequest)
+	transferRequest, ok := request.(Transfer)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -75,7 +75,7 @@ func (db transferFirestore) Get(id *string) (interface{}, *model.Erro) {
 		log.Error().Msg("Nil account from snapshot" + *id)
 		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
 	}
-	transferResponse := TransferResponse{}
+	transferResponse := Transfer{}
 	if err := docSnapshot.DataTo(&transferResponse); err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
@@ -83,7 +83,7 @@ func (db transferFirestore) Get(id *string) (interface{}, *model.Erro) {
 }
 
 func (db transferFirestore) Update(request interface{}) *model.Erro {
-	transferRequest, ok := request.(*TransferRequest)
+	transferRequest, ok := request.(*Transfer)
 	if !ok {
 		return model.DataTypeWrong
 	}
@@ -116,10 +116,10 @@ func (db transferFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	transferResponseSlice := make([]*TransferResponse, 0, len(docSnapshots))
+	transferResponseSlice := make([]*Transfer, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		transferResponse := &TransferResponse{}
+		transferResponse := &Transfer{}
 		if err := docSnap.DataTo(&transferResponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

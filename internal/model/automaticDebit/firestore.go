@@ -27,7 +27,7 @@ func NewAutoDebitFirestore(dbClient *firestore.Client) model.RepositoryInterface
 }
 
 func (db autoDebitFirestore) Create(request interface{}) (*string, *model.Erro) {
-	autoDebitRequest, ok := request.(AutomaticDebitRequest)
+	autoDebitRequest, ok := request.(AutomaticDebit)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -79,7 +79,7 @@ func (db autoDebitFirestore) Get(id *string) (interface{}, *model.Erro) {
 		log.Error().Msg("Nil account from snapshot" + *id)
 		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
 	}
-	autoDebitResponse := AutomaticDebitResponse{}
+	autoDebitResponse := AutomaticDebit{}
 	if err := docSnapshot.DataTo(&autoDebitResponse); err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
@@ -88,7 +88,7 @@ func (db autoDebitFirestore) Get(id *string) (interface{}, *model.Erro) {
 }
 
 func (db autoDebitFirestore) Update(request interface{}) *model.Erro {
-	autoDebitRequest, ok := request.(*AutomaticDebitRequest)
+	autoDebitRequest, ok := request.(*AutomaticDebit)
 	if !ok {
 		return model.DataTypeWrong
 	}
@@ -127,10 +127,10 @@ func (db autoDebitFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	autoebitResponseSlice := make([]*AutomaticDebitResponse, 0, len(docSnapshots))
+	autoebitResponseSlice := make([]*AutomaticDebit, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		autodebitReponse := &AutomaticDebitResponse{}
+		autodebitReponse := &AutomaticDebit{}
 		if err := docSnap.DataTo(&autodebitReponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

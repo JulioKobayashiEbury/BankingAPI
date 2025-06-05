@@ -134,7 +134,7 @@ func AccountPutDepositHandler(c echo.Context) error {
 	if _, err := userAuthorization(&c); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var depositRequest deposit.DepositRequest
+	var depositRequest deposit.Deposit
 	if err := c.Bind(&depositRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -159,7 +159,7 @@ func AccountPutWithDrawalHandler(c echo.Context) error {
 	if _, err := userAuthorization(&c); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var withdrawalRequest withdrawal.WithdrawalRequest
+	var withdrawalRequest withdrawal.Withdrawal
 	if err := c.Bind(&withdrawalRequest); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -215,7 +215,7 @@ func AccountPutAutomaticDebit(c echo.Context) error {
 	if _, err := userAuthorization(&c); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var newAutoDebit automaticdebit.AutomaticDebitRequest
+	var newAutoDebit automaticdebit.AutomaticDebit
 	if err := c.Bind(&newAutoDebit); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -241,7 +241,7 @@ func AccountPutTransferHandler(c echo.Context) error {
 	if _, err := userAuthorization(&c); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	var newTransferInfo transfer.TransferRequest
+	var newTransferInfo transfer.Transfer
 	if err := c.Bind(&newTransferInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
