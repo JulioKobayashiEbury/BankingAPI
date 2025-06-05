@@ -1,0 +1,78 @@
+@startuml
+title Process Deposit - PUT /accounts/:account_id/balance/deposit
+
+actor Requester
+boundary AccountPutDepositHandler <<accountHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control DepositService <<serviceDeposit.go>>
+control GetService <<serviceGetTypes.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+entity DepositFirestore <<model/deposit/firestore.go>>
+
+activate Requester
+Requester -> AccountPutDepositHandler : PUT /accounts/:account_id/balance/deposit (Body: DepositRequest)
+activate AccountPutDepositHandler
+AccountPutDepositHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService --> AccountPutDepositHandler : Claims / Error
+deactivate AuthorizeService
+alt Authorization Failed
+    AccountPutDepositHandler --> Requester : HTTP Error Response
+else Authorization Succeeded
+    AccountPutDepositHandler -> AccountFirestore : NewAccountFirestore(DatabaseClient)
+    activate AccountFirestore
+    AccountFirestore -> AccountPutDepositHandler : account.AccountFirestore
+    AccountPutDepositHandler -> DepositFirestore : NewDepositFirestore(DatabaseClient)
+    activate DepositFirestore
+    DepositFirestore -> AccountPutDepositHandler : deposit.DepositFirestore
+    AccountPutDepositHandler -> GetService : NewGetService(accountDatabase, nil, nil)
+    activate GetService
+    GetService -> AccountPutDepositHandler : ServiceGet
+    AccountPutDepositHandler -> DepositService : NewDepositService(depositDatabase, accountDatabase, getService)
+    activate DepositService
+    DepositService -> AccountPutDepositHandler : ServiceDeposit
+    AccountPutDepositHandler -> DepositService : ProcessDeposit(depositRequest)
+    note right of DepositService : depositRequest.Account_id is from path param
+
+    DepositService -> GetService : Account(depositRequest.Account_id)
+    GetService -> AccountFirestore : Get(&depositRequest.Account_id)
+    AccountFirestore --> GetService : accountData / Error
+    alt Get Account Failed
+        GetService --> DepositService : Error
+        DepositService --> AccountPutDepositHandler : Error
+        AccountPutDepositHandler --> Requester : HTTP Error Response
+    else Get Account Succeeded
+        GetService --> DepositService : accountResponse
+        deactivate GetService
+        DepositService -> DepositService : verifyDeposit(depositRequest, accountResponse)
+        alt Verification Failed
+            DepositService --> AccountPutDepositHandler : Error (e.g. Client/User/Agency ID mismatch)
+            AccountPutDepositHandler --> Requester : HTTP Error Response
+        else Verification Succeeded
+            DepositService -> DepositFirestore : Create(depositRequest)
+            DepositFirestore --> DepositService : depositID / Error
+            alt Create Deposit Record Failed
+                DepositService --> AccountPutDepositHandler : Error
+                AccountPutDepositHandler --> Requester : HTTP Error Response
+            else Create Deposit Record Succeeded
+                DepositService -> AccountFirestore : Update(accountResponse with balance + depositRequest.Deposit)
+                AccountFirestore --> DepositService : nil / Error
+                deactivate AccountFirestore
+                alt Update Account Balance Failed (Rollback Create Deposit)
+                    DepositService -> DepositFirestore : Delete(depositID)
+                    DepositFirestore --> DepositService : (ignore error for this rollback attempt)
+                    deactivate DepositFirestore
+                    DepositService --> AccountPutDepositHandler : Error
+                    AccountPutDepositHandler --> Requester : HTTP Error Response
+                else Update Account Balance Succeeded
+                    DepositService --> AccountPutDepositHandler : depositID
+                    deactivate DepositService
+                    AccountPutDepositHandler --> Requester : HTTP 202 Accepted (depositID)
+                end
+                deactivate AccountPutDepositHandler
+            end
+        end
+    end
+end
+deactivate Requester
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+title Get Account - GET /accounts/:account_id
+
+actor Requester
+boundary AccountGetHandler <<accountHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control GetService <<serviceGetTypes.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+
+Requester -> AccountGetHandler : GET /accounts/:account_id
+activate AccountGetHandler
+
+AccountGetHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService -->> AccountGetHandler : Claims / Error
+deactivate AuthorizeService
+
+alt Authorization Failed
+    AccountGetHandler -->> Requester : HTTP Error Response
+else Authorization Succeeded
+    ' Initialize DB
+    AccountGetHandler -> GetService : Account(accountID_from_path)
+    activate GetService
+    GetService -> AccountFirestore : Get(&accountID_from_path)
+    activate AccountFirestore
+    AccountFirestore -->> GetService : accountData / Error
+    deactivate AccountFirestore
+    
+    alt Get Account Failed
+        GetService -->> AccountGetHandler : Error
+        AccountGetHandler -->> Requester : HTTP Error Response
+    else Get Account Succeeded
+        GetService -->> AccountGetHandler : accountResponse
+        AccountGetHandler -->> Requester : HTTP 200 OK (accountResponse)
+    end
+    deactivate GetService
+end
+deactivate AccountGetHandler
+@enduml

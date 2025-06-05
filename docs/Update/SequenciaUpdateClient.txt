@@ -1,0 +1,73 @@
+@startuml
+title Update Client - PUT /clients/:client_id
+
+actor Requester
+boundary ClientPutHandler <<clientHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control UpdateService <<serviceUpdateTypes.go>>
+control GetService <<serviceGetTypes.go>>
+entity ClientFirestore <<model/client/firestore.go>>
+
+activate Requester
+Requester -> ClientPutHandler : PUT /clients/:client_id (Body: ClientRequest Info)
+activate ClientPutHandler
+
+ClientPutHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService -->> ClientPutHandler : Claims / Error
+deactivate AuthorizeService
+
+alt Authorization Failed
+    ClientPutHandler -->> Requester : HTTP Error Response
+else Authorization Succeeded
+    ClientPutHandler -> UpdateService : UpdateClient(clientRequest with Client_id from path)
+    activate UpdateService
+    UpdateService -> GetService : Client(clientRequest.Client_id)
+    activate GetService
+    GetService -> ClientFirestore : Get(&clientRequest.Client_id)
+    activate ClientFirestore
+    ClientFirestore -->> GetService : existingClientData / Error
+    deactivate ClientFirestore
+    
+    alt Get Existing Client Failed
+        GetService -->> UpdateService : Error
+        UpdateService -->> ClientPutHandler : Error
+        ClientPutHandler -->> Requester : HTTP Error Response
+    else Get Existing Client Succeeded
+        GetService -->> UpdateService : clientResponse (existing data)
+        deactivate GetService
+        note right of UpdateService : Updates fields in clientResponse if provided in clientRequest
+        UpdateService -> ClientFirestore : Update(updatedClientResponseAsRequest) ' ClientFirestore.Update expects *ClientRequest
+        activate ClientFirestore
+        ClientFirestore -->> UpdateService : nil / Error
+        deactivate ClientFirestore
+        
+        alt Update Client Record Failed
+            UpdateService -->> ClientPutHandler : Error
+            ClientPutHandler -->> Requester : HTTP Error Response
+        else Update Client Record Succeeded
+            UpdateService -> GetService : Client(clientRequest.Client_id) 'Re-fetch updated
+            activate GetService
+            GetService -> ClientFirestore : Get(&clientRequest.Client_id)
+            activate ClientFirestore
+            ClientFirestore -->> GetService : finalClientData / Error
+            deactivate ClientFirestore
+            
+            alt Re-fetch Failed
+                 GetService -->> UpdateService : Error
+                 UpdateService -->> ClientPutHandler : Error
+                 ClientPutHandler -->> Requester : HTTP Error Response
+            else Re-fetch Succeeded
+                 GetService -->> UpdateService : finalClientResponse
+                 deactivate GetService
+                 UpdateService -->> ClientPutHandler : finalClientResponse
+                 
+                 ClientPutHandler -->> Requester : HTTP 200 OK (finalClientResponse)
+            end
+            deactivate UpdateService
+        end
+    end
+end
+deactivate ClientPutHandler
+deactivate Requester
+@enduml

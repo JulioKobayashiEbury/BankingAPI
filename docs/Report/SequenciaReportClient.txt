@@ -1,0 +1,62 @@
+@startuml
+title Generate Client Report - GET /clients/:client_id/report
+
+actor Requester
+boundary ClientGetReportHandler <<clientHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control ReportService <<serviceReports.go>>
+control GetService <<serviceGetTypes.go>>
+control GetAllService <<serviceGetTypes.go>>
+entity ClientFirestore <<model/client/firestore.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+' Other DBs for full service init (User, Transfer, Deposit, Withdrawal, AutoDebit)
+
+Requester -> ClientGetReportHandler : GET /clients/:client_id/report
+activate ClientGetReportHandler
+
+ClientGetReportHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService -->> ClientGetReportHandler : Claims / Error
+deactivate AuthorizeService
+
+alt Authorization Failed
+    ClientGetReportHandler -->> Requester : HTTP Error Response
+else Authorization Succeeded
+    ' Initialize DBs (simplified for brevity)
+    ClientGetReportHandler -> ReportService : GenerateReportByClient(clientID_from_path)
+    activate ReportService
+    ReportService -> GetService : Client(clientID)
+    activate GetService
+    GetService -> ClientFirestore : Get(&clientID)
+    activate ClientFirestore
+    ClientFirestore -->> GetService : clientInfo / Error
+    deactivate ClientFirestore
+    
+    alt Get ClientInfo Failed
+        GetService -->> ReportService : Error
+        ReportService -->> ClientGetReportHandler : Error
+        ClientGetReportHandler -->> Requester : HTTP Error Response
+    else Get ClientInfo Succeeded
+        GetService -->> ReportService : clientInfo
+        deactivate GetService
+        ReportService -> GetAllService : GetAccountsByClientID(clientID)
+        activate GetAllService
+        GetAllService -> AccountFirestore : GetAll()
+        activate AccountFirestore
+        AccountFirestore -->> GetAllService : allAccounts / Error
+        deactivate AccountFirestore
+        note right of GetAllService : Filters accounts by clientID
+        GetAllService -->> ReportService : accounts / Error
+        deactivate GetAllService
+        alt Get Accounts Failed
+            ReportService -->> ClientGetReportHandler : Error
+            ClientGetReportHandler -->> Requester : HTTP Error Response
+        else Get Accounts Succeeded
+            ReportService -->> ClientGetReportHandler : clientReport
+            ClientGetReportHandler -->> Requester : HTTP 200 OK (clientReport)
+        end
+    end
+    deactivate ReportService
+end
+deactivate ClientGetReportHandler
+@enduml

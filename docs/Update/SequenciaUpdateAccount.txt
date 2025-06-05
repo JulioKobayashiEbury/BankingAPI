@@ -1,0 +1,69 @@
+@startuml
+title Update Account - PUT /accounts/:account_id
+
+actor Requester
+boundary AccountPutHandler <<accountHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control UpdateService <<serviceUpdateTypes.go>>
+control GetService <<serviceGetTypes.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+
+Requester -> AccountPutHandler : PUT /accounts/:account_id (Body: Account Info)
+activate AccountPutHandler
+
+AccountPutHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService -->> AccountPutHandler : Claims / Error
+deactivate AuthorizeService
+
+alt Authorization Failed
+    AccountPutHandler -->> Requester : HTTP Error Response
+else Authorization Succeeded
+
+    AccountPutHandler -> UpdateService : UpdateAccount(accountRequest with Account_id from path)
+    activate UpdateService
+    UpdateService -> GetService : Account(accountRequest.Account_id)
+    activate GetService
+    GetService -> AccountFirestore : Get(&accountRequest.Account_id)
+    activate AccountFirestore
+    AccountFirestore -->> GetService : existingAccountData / Error
+    deactivate AccountFirestore
+    
+    alt Get Existing Account Failed
+        GetService -->> UpdateService : Error
+        UpdateService -->> AccountPutHandler : Error
+        AccountPutHandler -->> Requester : HTTP Error Response
+    else Get Existing Account Succeeded
+        GetService -->> UpdateService : accountResponse (existing data)
+        note right of UpdateService : Updates fields in accountResponse if provided in accountRequest
+        UpdateService -> AccountFirestore : Update(updatedAccountResponse)
+        activate AccountFirestore
+        AccountFirestore -->> UpdateService : nil / Error
+        deactivate AccountFirestore
+        
+        alt Update Account Record Failed
+            UpdateService -->> AccountPutHandler : Error
+            AccountPutHandler -->> Requester : HTTP Error Response
+        else Update Account Record Succeeded
+            UpdateService -> GetService : Account(accountRequest.Account_id) 'Re-fetch updated
+            GetService -> AccountFirestore : Get(&accountRequest.Account_id)
+            activate AccountFirestore
+            AccountFirestore -->> GetService : finalAccountData / Error
+            deactivate AccountFirestore
+            
+            alt Re-fetch Failed
+                 GetService -->> UpdateService : Error
+                 UpdateService -->> AccountPutHandler : Error (but update was likely successful)
+                 AccountPutHandler -->> Requester : HTTP Error Response
+            else Re-fetch Succeeded
+                 GetService -->> UpdateService : finalAccount
+                 UpdateService -->> AccountPutHandler : finalAccount
+                 AccountPutHandler -->> Requester : HTTP 200 OK (finalAccount)
+            end
+            deactivate GetService
+            deactivate UpdateService
+        end
+    end
+end
+deactivate AccountPutHandler
+@enduml

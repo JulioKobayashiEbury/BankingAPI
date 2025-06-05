@@ -1,0 +1,63 @@
+@startuml
+title Generate User Report - GET /users/:user_id/report
+
+actor Requester
+boundary UserGetReportHandler <<userHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control ReportService <<serviceReports.go>>
+control GetService <<serviceGetTypes.go>>
+control GetAllService <<serviceGetTypes.go>>
+entity UserFirestore <<model/user/firestore.go>>
+entity ClientFirestore <<model/client/firestore.go>>
+' Other DBs for full service init (Account, Transfer, Deposit, Withdrawal, AutoDebit)
+
+Requester -> UserGetReportHandler : GET /users/:user_id/report
+activate UserGetReportHandler
+
+UserGetReportHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService -->> UserGetReportHandler : Claims (userIDFromClaims) / Error
+deactivate AuthorizeService
+
+alt Authorization Failed (or user_id mismatch with claims.Id)
+    UserGetReportHandler -->> Requester : HTTP Error Response
+else Authorization Succeeded
+    ' Initialize DBs (simplified for brevity)
+    UserGetReportHandler -> ReportService : GenerateReportByUser(userIDFromClaims_or_path)
+    activate ReportService
+    ReportService -> GetService : User(userID)
+    activate GetService
+    GetService -> UserFirestore : Get(&userID)
+    activate UserFirestore
+    UserFirestore -->> GetService : userInfo / Error
+    deactivate UserFirestore
+    
+    alt Get UserInfo Failed
+        GetService -->> ReportService : Error
+        ReportService -->> UserGetReportHandler : Error
+        UserGetReportHandler -->> Requester : HTTP Error Response
+    else Get UserInfo Succeeded
+        GetService -->> ReportService : userInfo
+        deactivate GetService
+        ReportService -> GetAllService : GetClientsByUserID(userID)
+        activate GetAllService
+        GetAllService -> ClientFirestore : GetAll()
+        activate ClientFirestore
+        ClientFirestore -->> GetAllService : allClients / Error
+        deactivate ClientFirestore
+        note right of GetAllService : Filters clients by userID
+        GetAllService -->> ReportService : clients / Error
+        deactivate GetAllService
+        
+        alt Get Clients Failed
+            ReportService -->> UserGetReportHandler : Error
+            UserGetReportHandler -->> Requester : HTTP Error Response
+        else Get Clients Succeeded
+            ReportService -->> UserGetReportHandler : userReport
+            UserGetReportHandler -->> Requester : HTTP 200 OK (userReport)
+        end
+    end
+    deactivate ReportService
+end
+deactivate UserGetReportHandler
+@enduml

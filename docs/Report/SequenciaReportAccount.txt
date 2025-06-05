@@ -1,0 +1,106 @@
+@startuml
+title Generate Account Report - GET /accounts/report/:account_id
+
+actor Requester
+boundary AccountGetReportHandler <<accountHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control ReportService <<serviceReports.go>>
+control GetService <<serviceGetTypes.go>>
+control GetAllService <<serviceGetTypes.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+entity TransferFirestore <<model/transfer/firestore.go>>
+entity DepositFirestore <<model/deposit/firestore.go>>
+entity WithdrawalFirestore <<model/withdrawal/firestore.go>>
+entity AutoDebitFirestore <<model/automaticDebit/firestore.go>>
+
+Requester -> AccountGetReportHandler : GET /accounts/report/:account_id
+activate AccountGetReportHandler
+
+AccountGetReportHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService -->> AccountGetReportHandler : Claims / Error
+deactivate AuthorizeService
+
+alt Authorization Failed
+    AccountGetReportHandler -->> Requester : HTTP Error Response
+else Authorization Succeeded
+    ' Initialize DBs (simplified for brevity, showing one activation for the group)
+    AccountGetReportHandler -> ReportService : GenerateReportByAccount(accountID_from_path)
+    activate ReportService
+    ReportService -> GetService : Account(accountID)
+    activate GetService
+    GetService -> AccountFirestore : Get(&accountID)
+    activate AccountFirestore
+    AccountFirestore -->> GetService : accountInfo / Error
+    deactivate AccountFirestore
+    
+    alt Get AccountInfo Failed
+        GetService -->> ReportService : Error
+        ReportService -->> AccountGetReportHandler : Error
+        AccountGetReportHandler -->> Requester : HTTP Error Response
+    else Get AccountInfo Succeeded
+        GetService -->> ReportService : accountInfo
+        deactivate GetService
+        
+        ReportService -> GetAllService : GetAllTransfersByAccountID(accountID)
+        activate GetAllService
+        GetAllService -> TransferFirestore : GetAll()
+        activate TransferFirestore
+        TransferFirestore -->> GetAllService : allTransfers / Error
+        deactivate TransferFirestore
+        note right of GetAllService : Filters transfers by accountID
+        GetAllService -->> ReportService : transfers / Error
+        
+        alt Get Transfers Failed
+            ReportService -->> AccountGetReportHandler : Error
+            AccountGetReportHandler -->> Requester : HTTP Error Response
+        else Get Transfers Succeeded
+            ReportService -> GetAllService : GetAllDepositsByAccountID(accountID)
+            GetAllService -> DepositFirestore : GetAll()
+            activate DepositFirestore
+            DepositFirestore -->> GetAllService : allDeposits / Error
+            deactivate DepositFirestore
+            note right of GetAllService : Filters deposits by accountID
+            GetAllService -->> ReportService : deposits / Error
+            
+            alt Get Deposits Failed
+                ReportService -->> AccountGetReportHandler : Error
+                AccountGetReportHandler -->> Requester : HTTP Error Response
+            else Get Deposits Succeeded
+                 ReportService -> GetAllService : GetAllWithdrawalsByAccountID(accountID)
+                 GetAllService -> WithdrawalFirestore : GetAll()
+                 activate WithdrawalFirestore
+                 WithdrawalFirestore -->> GetAllService : allWithdrawals / Error
+                 deactivate WithdrawalFirestore
+                 note right of GetAllService : Filters withdrawals by accountID
+                 GetAllService -->> ReportService : withdrawals / Error
+                 
+                 alt Get Withdrawals Failed
+                    ReportService -->> AccountGetReportHandler : Error
+                    AccountGetReportHandler -->> Requester : HTTP Error Response
+                 else Get Withdrawals Succeeded
+                    ReportService -> GetAllService : GetAllAutoDebitsByAccountID(accountID)
+                    GetAllService -> AutoDebitFirestore : GetAll()
+                    activate AutoDebitFirestore
+                    AutoDebitFirestore -->> GetAllService : allAutoDebits / Error
+                    deactivate AutoDebitFirestore
+                    note right of GetAllService : Filters autoDebits by accountID
+                    GetAllService -->> ReportService : automaticDebits / Error
+                    
+                    alt Get AutoDebits Failed
+                        ReportService -->> AccountGetReportHandler : Error
+                        AccountGetReportHandler -->> Requester : HTTP Error Response
+                    else Get AutoDebits Succeeded
+                        ReportService -->> AccountGetReportHandler : accountReport
+                        AccountGetReportHandler -->> Requester : HTTP 200 OK (accountReport)
+                    end
+                    deactivate GetAllService
+                 end
+            end
+        end
+        
+    end
+    deactivate ReportService
+end
+deactivate AccountGetReportHandler
+@enduml

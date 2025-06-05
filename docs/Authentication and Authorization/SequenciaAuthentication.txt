@@ -1,0 +1,47 @@
+@startuml
+title User Authentication - PUT /users/auth
+
+actor Requester
+boundary UserAuthHandler <<userHandler.go>>
+control AuthService <<serviceAuthenticate.go>>
+entity UserFirestore <<model/user/firestore.go>>
+
+Requester -> UserAuthHandler : PUT /users/auth (Body: User_id, Password)
+activate UserAuthHandler
+
+UserAuthHandler -> AuthService : Authenticate(&userInfo.User_id, &userInfo.Password, "users")
+activate AuthService
+AuthService -> UserFirestore : Get(&userInfo.User_id)
+activate UserFirestore
+UserFirestore -->> AuthService : userAuthData / Error
+deactivate UserFirestore
+
+alt Get User Failed or User Not Found
+    AuthService -->> UserAuthHandler : false, Error
+    UserAuthHandler -->> Requester : HTTP Error Response
+else Get User Succeeded
+    AuthService -> AuthService : Compare userInfo.Password with userAuthData.Password
+    alt Password Mismatch
+        AuthService -->> AuthService : false
+        AuthService -->> UserAuthHandler : false, Error (Password is wrong / Credentials not valid)
+        UserAuthHandler -->> Requester : HTTP Error Response (StatusUnauthorized or BadRequest)
+    else Password Match
+        AuthService -->> AuthService : true
+        AuthService -->> UserAuthHandler : true, nil
+        
+        UserAuthHandler -> AuthService : GenerateToken(&userInfo.User_id)
+        ' AuthService was already active for Authenticate, can reuse or reactivate for GenerateToken
+        ' For clarity, let's assume GenerateToken is a distinct activation phase if preferred
+        AuthService -->> UserAuthHandler : cookie_ptr / Error
+        
+        alt Token Generation Failed
+            UserAuthHandler -->> Requester : HTTP Error Response
+        else Token Generation Succeeded
+            UserAuthHandler -> UserAuthHandler : c.SetCookie(cookie_ptr)
+            UserAuthHandler -->> Requester : HTTP 202 Accepted (Message: User Authorized)
+        end
+    end
+    deactivate AuthService
+end
+deactivate UserAuthHandler
+@enduml 

@@ -1,0 +1,57 @@
+@startuml
+title Client UnBlock - PUT /clients/:client_id/unblock
+
+actor Requester
+boundary ClientPutBlockHandler <<clientHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control StatusService <<serviceStatus.go>>
+control GetService <<serviceGetTypes.go>>
+entity ClientFirestore <<model/client/firestore.go>>
+
+Requester -> ClientPutBlockHandler : PUT /Clients/:Client_id/unblock
+activate Requester
+activate ClientPutBlockHandler
+ClientPutBlockHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService --> ClientPutBlockHandler : Claims / Error
+deactivate AuthorizeService
+alt Authorization Failed
+    ClientPutBlockHandler --> Requester : HTTP Error Response
+else Authorization Succeeded
+    ClientPutBlockHandler -> ClientFirestore : NewClientFirestore(DatabaseClient)
+    activate ClientFirestore
+    ClientFirestore -> ClientPutBlockHandler : client.ClientFirestore
+    ClientPutBlockHandler -> GetService : NewGetService(ClientDatabase, nil, nil)
+    activate GetService
+    GetService -> ClientPutBlockHandler : ServiceGet
+    ClientPutBlockHandler -> StatusService : NewStatusService(nil, nil, ClientDatabase, getService)
+    activate StatusService
+    StatusService -> ClientPutBlockHandler : ServiceStatus
+    ClientPutBlockHandler -> StatusService : ClientBlock(clientID)
+    StatusService -> GetService : Client(clientID)
+    GetService -> ClientFirestore : Get(&clientID)
+    ClientFirestore --> GetService : ClientData / Error
+    alt Get Client Failed
+        GetService --> StatusService : Error
+        StatusService --> ClientPutBlockHandler : Error
+        ClientPutBlockHandler --> Requester : HTTP Error Response
+    else Get Client Succeeded
+        GetService --> StatusService : Client
+        deactivate GetService
+        StatusService -> ClientFirestore : Update(Client with Status=false)
+        ClientFirestore --> StatusService : nil / Error
+        deactivate ClientFirestore
+        alt Update Client Failed
+            StatusService --> ClientPutBlockHandler : Error
+            ClientPutBlockHandler --> Requester : HTTP Error Response
+        else Update Client Succeeded
+            StatusService --> ClientPutBlockHandler : nil
+            ClientPutBlockHandler --> Requester : HTTP 200 OK (Client Blocked)
+        end
+        deactivate StatusService
+    end
+    deactivate ClientPutBlockHandler
+end
+deactivate Requester
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+title Get Client - GET /clients/:client_id
+
+actor Requester
+boundary ClientGetHandler <<clientHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control GetService <<serviceGetTypes.go>>
+entity ClientFirestore <<model/client/firestore.go>>
+
+Requester -> ClientGetHandler : GET /clients/:client_id
+activate ClientGetHandler
+
+ClientGetHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService -->> ClientGetHandler : Claims / Error
+deactivate AuthorizeService
+
+alt Authorization Failed
+    ClientGetHandler -->> Requester : HTTP Error Response
+else Authorization Succeeded
+    ' Initialize DBs
+    ClientGetHandler -> GetService : Client(clientID_from_path)
+    activate GetService
+    GetService -> ClientFirestore : Get(&clientID_from_path)
+    activate ClientFirestore
+    ClientFirestore -->> GetService : clientData / Error
+    deactivate ClientFirestore
+    
+    alt Get Client Failed
+        GetService -->> ClientGetHandler : Error
+        ClientGetHandler -->> Requester : HTTP Error Response
+    else Get Client Succeeded
+        GetService -->> ClientGetHandler : clientResponse
+        ClientGetHandler -->> Requester : HTTP 200 OK (clientResponse)
+    end
+    deactivate GetService
+end
+deactivate ClientGetHandler
+@enduml

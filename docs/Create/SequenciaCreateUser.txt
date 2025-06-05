@@ -1,0 +1,52 @@
+@startuml
+title Create User - POST /users
+
+actor Requester
+boundary UserPostHandler <<userHandler.go>>
+control CreateService <<serviceCreateTypes.go>>
+control GetService <<serviceGetTypes.go>>
+entity UserFirestore <<model/user/firestore.go>>
+
+activate Requester
+Requester -> UserPostHandler : POST /users (Body: User Info)
+activate UserPostHandler
+
+UserPostHandler -> CreateService : CreateUser(userRequest)
+activate CreateService
+
+alt Missing Credentials (Name, Document, or Password)
+    CreateService -->> UserPostHandler : Error (Missing credentials)
+    UserPostHandler -->> Requester : HTTP Error Response
+else
+    CreateService -> UserFirestore : Create(userRequest)
+    activate UserFirestore
+    UserFirestore -->> CreateService : userID_ptr / Error
+    deactivate UserFirestore
+    
+    alt Create User Record Failed
+        CreateService -->> UserPostHandler : Error
+        UserPostHandler -->> Requester : HTTP Error Response
+    else Create User Record Succeeded
+        CreateService -> GetService : User(*userID_ptr)
+        activate GetService
+        GetService -> UserFirestore : Get(*userID_ptr)
+        activate UserFirestore
+        UserFirestore -->> GetService : createdUserData / Error
+        deactivate UserFirestore
+        
+        alt Get Created User Failed
+            GetService -->> CreateService : Error
+            CreateService -->> UserPostHandler : Error
+            UserPostHandler -->> Requester : HTTP Error Response
+        else Get Created User Succeeded
+            GetService -->> CreateService : createdUser
+            CreateService -->> UserPostHandler : createdUser
+            UserPostHandler -->> Requester : HTTP 201 Created (createdUser)
+        end
+        deactivate GetService
+        deactivate CreateService
+    end
+end
+deactivate UserPostHandler
+deactivate Requester
+@enduml

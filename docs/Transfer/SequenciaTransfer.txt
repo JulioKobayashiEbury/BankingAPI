@@ -1,0 +1,81 @@
+@startuml
+title Process New Transfer - PUT /accounts/:account_id/transfer
+
+actor Requester
+boundary AccountPutTransferHandler <<accountHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control TransferService <<serviceTransfer.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+entity TransferFirestore <<model/transfer/firestore.go>>
+
+activate Requester
+Requester -> AccountPutTransferHandler : PUT /accounts/:account_id/transfer (Body: TransferRequest)
+activate AccountPutTransferHandler
+AccountPutTransferHandler -> AuthorizeService : Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService --> AccountPutTransferHandler : Claims / Error
+deactivate AuthorizeService
+alt Authorization Failed
+    AccountPutTransferHandler --> Requester : HTTP Error Response
+else Authorization Succeeded
+    AccountPutTransferHandler -> AccountFirestore : NewAccountFirestore(DatabaseClient)
+    activate AccountFirestore
+    AccountFirestore -> AccountPutTransferHandler : account.AccountFirestore
+    AccountPutTransferHandler -> TransferFirestore : NewTransferFirestore(DatabaseClient)
+    activate TransferFirestore
+    TransferFirestore -> AccountPutTransferHandler : transfer.TransferFirestore
+    AccountPutTransferHandler -> TransferService : NewTransferService(accountDatabase, transferDatabase)
+    activate TransferService
+    TransferService -> AccountPutTransferHandler : ServiceTransfer
+    AccountPutTransferHandler -> TransferService : ProcessNewTransfer(transferRequest)
+    note right of TransferService : transferRequest.Account_id is from path param
+
+    TransferService -> AccountFirestore : Get(&transferRequest.Account_to)
+    AccountFirestore --> TransferService : accountToData / Error
+    alt Get AccountTo Failed
+        TransferService --> AccountPutTransferHandler : Error
+        AccountPutTransferHandler --> Requester : HTTP Error Response
+    else Get AccountTo Succeeded
+        TransferService -> AccountFirestore : Get(&transferRequest.Account_id)
+        AccountFirestore --> TransferService : accountFromData / Error
+        alt Get AccountFrom Failed
+            TransferService --> AccountPutTransferHandler : Error
+            AccountPutTransferHandler --> Requester : HTTP Error Response
+        else Get AccountFrom Succeeded
+            TransferService -> TransferFirestore : Create(transferRequest)
+            TransferFirestore --> TransferService : transferID / Error
+            alt Create Transfer Record Failed
+                TransferService --> AccountPutTransferHandler : Error
+                AccountPutTransferHandler --> Requester : HTTP Error Response
+            else Create Transfer Record Succeeded
+                TransferService -> AccountFirestore : Update(accountTo with updated balance)
+                AccountFirestore --> TransferService : nil / Error
+                alt Update AccountTo Failed (Rollback Create Transfer)
+                    TransferService -> TransferFirestore : Delete(transferID)
+                    TransferFirestore --> TransferService : (ignore error for this rollback attempt)
+                    TransferService --> AccountPutTransferHandler : Error
+                    AccountPutTransferHandler --> Requester : HTTP Error Response
+                else Update AccountTo Succeeded
+                    TransferService -> AccountFirestore : Update(accountFrom with updated balance)
+                    AccountFirestore --> TransferService : nil / Error
+                    alt Update AccountFrom Failed (Rollback AccountTo and Create Transfer)
+                        TransferService -> AccountFirestore : Update(accountTo with original balance) 'Rollback AccountTo
+                        AccountFirestore --> TransferService : (ignore error for this rollback attempt)
+                        TransferService -> TransferFirestore : Delete(transferID) 'Rollback Transfer
+                        TransferFirestore --> TransferService : (ignore error for this rollback attempt)
+                        deactivate TransferFirestore
+                        TransferService --> AccountPutTransferHandler : Error
+                        AccountPutTransferHandler --> Requester : HTTP Error Response
+                    else Update AccountFrom Succeeded
+                        TransferService --> AccountPutTransferHandler : transferID
+                        deactivate TransferService
+                        AccountPutTransferHandler --> Requester : HTTP 200 OK (transferID)
+                        deactivate AccountPutTransferHandler
+                    end
+                end
+            end
+        end
+    end
+end
+deactivate Requester
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+title Create Client - POST /clients
+
+actor Requester
+boundary ClientPostHandler <<clientHandler.go>>
+control CreateService <<serviceCreateTypes.go>>
+control GetService <<serviceGetTypes.go>>
+entity UserFirestore <<model/user/firestore.go>>
+entity ClientFirestore <<model/client/firestore.go>>
+
+activate Requester
+
+Requester -> ClientPostHandler : POST /clients (Body: ClientRequest Info)
+activate ClientPostHandler
+
+ClientPostHandler -> CreateService : CreateClient(clientRequest)
+activate CreateService
+
+alt Missing Credentials (User_id, Document, or Name)
+    CreateService -->> ClientPostHandler : Error (Missing credentials for creating client)
+    ClientPostHandler -->> Requester : HTTP Error Response
+else
+    CreateService -> UserFirestore : Get(&clientRequest.User_id)
+    activate UserFirestore
+    UserFirestore -->> CreateService : userData / Error (IDnotFound or other)
+    deactivate UserFirestore
+    
+    alt User Not Found or Error
+        CreateService -->> ClientPostHandler : Error
+        ClientPostHandler -->> Requester : HTTP Error Response
+    else User Exists
+        CreateService -> ClientFirestore : Create(clientRequest)
+        activate ClientFirestore
+        ClientFirestore -->> CreateService : clientID_ptr / Error
+        deactivate ClientFirestore
+        
+        alt Create Client Record Failed
+            CreateService -->> ClientPostHandler : Error
+            ClientPostHandler -->> Requester : HTTP Error Response
+        else Create Client Record Succeeded
+            CreateService -> GetService : Client(*clientID_ptr)
+            activate GetService
+            GetService -> ClientFirestore : Get(*clientID_ptr)
+            activate ClientFirestore
+            ClientFirestore -->> GetService : createdClientData / Error
+            deactivate ClientFirestore
+            
+            alt Get Created Client Failed
+                GetService -->> CreateService : Error
+                CreateService -->> ClientPostHandler : Error
+                ClientPostHandler -->> Requester : HTTP Error Response
+            else Get Created Client Succeeded
+                GetService -->> CreateService : createdClientResponse
+                CreateService -->> ClientPostHandler : createdClientResponse
+                ClientPostHandler -->> Requester : HTTP 200 OK (createdClientResponse)
+            end
+            deactivate GetService
+            deactivate CreateService
+
+        end
+    end
+end
+deactivate ClientPostHandler
+deactivate Requester
+@enduml
