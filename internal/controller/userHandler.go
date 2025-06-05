@@ -40,8 +40,11 @@ func UserPostHandler(c echo.Context) error {
 
 	userDatabase := user.NewUserFireStore(DatabaseClient)
 
+	//passar esse nil é correto? eu deveria instanciar outros FirestoreEntities?
+	//se sim, posso instanciar globalmente no contexto do User? ou controller?
 	serviceGet := service.NewGetService(nil, nil, userDatabase)
 	serviceCreate := service.NewCreateService(nil, nil, userDatabase, serviceGet)
+
 	userResponse, err := serviceCreate.CreateUser(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())

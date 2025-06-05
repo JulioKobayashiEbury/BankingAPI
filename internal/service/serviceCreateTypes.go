@@ -48,7 +48,7 @@ func (create createImpl) CreateAccount(accountRequest *account.Account) (*accoun
 		return nil, err
 	}
 
-	accountID, err := create.accountDatabase.Create(*accountRequest)
+	accountID, err := create.accountDatabase.Create(accountRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (create createImpl) CreateClient(clientRequest *client.ClientRequest) (*cli
 	}
 	// verify user id exists, PERMISSION MUST BE of user to create
 	log.Info().Msg("Client created: " + clientRequest.Client_id)
-	clientID, err := create.clientDatabase.Create(*clientRequest)
+	clientID, err := create.clientDatabase.Create(clientRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (create createImpl) CreateUser(userRequest *user.User) (*user.User, *model.
 		log.Warn().Msg("Missing credentials on creating user")
 		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
 	}
-	userID, err := create.userDatabase.Create(*userRequest)
+	userID, err := create.userDatabase.Create(userRequest)
 	if err != nil {
 		return nil, err
 	}

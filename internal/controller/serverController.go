@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	documentLenghtIdeal = 11
+	documentLenghtIdeal = 14
 	maxNameLenght       = 30
 )
 

@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var ErrRepositoryNotSet = &model.Erro{Err: errors.New("Repository needed not set"), HttpCode: http.StatusInternalServerError}
+var ErrRepositoryNotSet = &model.Erro{Err: errors.New("repository needed not set"), HttpCode: http.StatusInternalServerError}
 
 type ServiceGet interface {
 	Account(accountID string) (*account.Account, *model.Erro)
