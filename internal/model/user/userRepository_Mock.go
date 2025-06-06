@@ -12,25 +12,24 @@ Update(interface{}) *Erro
 GetAll() (interface{}, *Erro)
 */
 
-var singleton *MockUserRepository
+var singleton *model.RepositoryInterface
 
 type MockUserRepository struct {
 	UserMap *map[string]User
 }
 
-func NewMockUserRepository() *MockUserRepository {
+func NewMockUserRepository() model.RepositoryInterface {
 	if singleton != nil {
-		return singleton
+		return *singleton
 	}
 	userMap := make(map[string]User)
-	singleton = &MockUserRepository{
+	*singleton = MockUserRepository{
 		UserMap: &userMap,
 	}
-	return singleton
+	return *singleton
 }
 
 func (m MockUserRepository) Create(request interface{}) (*string, *model.Erro) {
-
 	userRequest, ok := request.(*User)
 	if !ok {
 		return nil, model.DataTypeWrong
