@@ -1,12 +1,13 @@
 package service
 
 import (
-	model "BankingAPI/internal/model"
-	"BankingAPI/internal/model/account"
 	"errors"
 	"net/http"
 	"strconv"
 	"time"
+
+	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
 
 	"github.com/rs/zerolog/log"
 )
@@ -16,21 +17,15 @@ type accountServiceImpl struct {
 	clientService   ClientService
 	accountDatabase model.RepositoryInterface
 
-	transferService       TransferService
-	depositService        DepositService
-	withdrawalService     WithdrawalService
-	automaticDebitService AutomaticDebitService
+	getFilteredService GetFilteredService
 }
 
-func NewAccountService(ad model.RepositoryInterface, us UserService, cs ClientService, ts TransferService, ds DepositService, ws WithdrawalService, ads AutomaticDebitService) AccountService {
+func NewAccountService(ad model.RepositoryInterface, us UserService, cs ClientService, getFilteredServe GetFilteredService) AccountService {
 	return accountServiceImpl{
-		accountDatabase:       ad,
-		userService:           us,
-		clientService:         cs,
-		transferService:       ts,
-		depositService:        ds,
-		withdrawalService:     ws,
-		automaticDebitService: ads,
+		accountDatabase:    ad,
+		userService:        us,
+		clientService:      cs,
+		getFilteredService: getFilteredServe,
 	}
 }
 
@@ -101,26 +96,12 @@ func (service accountServiceImpl) Update(accountRequest *account.Account) (*acco
 	return service.Get(&accountRequest.Account_id)
 }
 
-func (service accountServiceImpl) GetAccountsByClientID(clientID *string) (*[]account.Account, *model.Erro) {
-	accountSlice, err := service.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	clientAccountsSlice := make([]account.Account, 0, len(*accountSlice))
-	for _, accounts := range *accountSlice {
-		if accounts.Client_id == *clientID {
-			clientAccountsSlice = append(clientAccountsSlice, *accounts)
-		}
-	}
-	return &clientAccountsSlice, nil
-}
-
-func (service accountServiceImpl) GetAll() (*[]*account.Account, *model.Erro) {
+func (service accountServiceImpl) GetAll() (*[]account.Account, *model.Erro) {
 	obj, err := service.accountDatabase.GetAll()
 	if err != nil {
 		return nil, err
 	}
-	accountSlice, ok := obj.(*[]*account.Account)
+	accountSlice, ok := obj.(*[]account.Account)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -141,7 +122,7 @@ func (service accountServiceImpl) Status(accountID *string, status bool) *model.
 		return err
 	}
 	account.Status = status
-	if _, err := service.Update(account); err != nil {
+	if err := service.accountDatabase.Update(account); err != nil {
 		return err
 	}
 	log.Info().Msg("Account status changed: " + *accountID + " to " + strconv.FormatBool(status))
@@ -153,19 +134,19 @@ func (service accountServiceImpl) Report(accountID *string) (*account.AccountRep
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := service.transferService.GetAllTransfersByAccountID(accountID)
+	transfers, err := service.getFilteredService.GetAllTransfersByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := service.depositService.GetAllDepositsByAccountID(accountID)
+	deposits, err := service.getFilteredService.GetAllDepositsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	withdrawals, err := service.withdrawalService.GetAllWithdrawalsByAccountID(accountID)
+	withdrawals, err := service.getFilteredService.GetAllWithdrawalsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	automaticDebits, err := service.automaticDebitService.GetAllAutoDebitsByAccountID(accountID)
+	automaticDebits, err := service.getFilteredService.GetAllAutoDebitsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}

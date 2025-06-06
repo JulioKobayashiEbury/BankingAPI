@@ -98,7 +98,7 @@ func (db userFirestore) Update(request interface{}) *model.Erro {
 		"document":      userRequest.Document,
 		"password":      userRequest.Password,
 		"register_date": time.Now().Format(model.TimeLayout),
-		"status":        true,
+		"status":        userRequest.Status,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(userRequest.User_id)
 	_, err := docRef.Set(ctx, entity)
@@ -122,10 +122,10 @@ func (db userFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	userResponseSlice := make([]*User, 0, len(docSnapshots))
+	userResponseSlice := make([]User, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		userResponse := &User{}
+		userResponse := User{}
 		if err := docSnap.DataTo(&userResponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

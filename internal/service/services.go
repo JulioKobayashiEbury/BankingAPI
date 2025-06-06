@@ -11,12 +11,23 @@ import (
 	"BankingAPI/internal/model/withdrawal"
 )
 
+type ServicesList struct {
+	UserService           UserService
+	ClientService         ClientService
+	AccountService        AccountService
+	WithdrawalService     WithdrawalService
+	DepositService        DepositService
+	AutomaticdebitService AutomaticDebitService
+	TransferService       TransferService
+	GetFilteredService    GetFilteredService
+}
+
 type UserService interface {
 	Create(*user.User) (*string, *model.Erro)
 	Delete(*string) *model.Erro
 	Get(*string) (*user.User, *model.Erro)
-	Update(*user.User) *model.Erro
-	GetAll() ([]*user.User, *model.Erro)
+	Update(*user.User) (*user.User, *model.Erro)
+	GetAll() (*[]user.User, *model.Erro)
 	Status(*string, bool) *model.Erro
 	Report(*string) (*user.UserReport, *model.Erro)
 }
@@ -25,11 +36,10 @@ type ClientService interface {
 	Create(*client.Client) (*string, *model.Erro)
 	Delete(*string) *model.Erro
 	Get(*string) (*client.Client, *model.Erro)
-	Update(*client.Client) *model.Erro
-	GetAll() ([]*client.Client, *model.Erro)
+	Update(*client.Client) (*client.Client, *model.Erro)
+	GetAll() (*[]client.Client, *model.Erro)
 	Status(*string, bool) *model.Erro
 	Report(*string) (*client.ClientReport, *model.Erro)
-	GetClientsByUserID(userID *string) (*[]client.Client, *model.Erro)
 }
 
 type AccountService interface {
@@ -37,8 +47,7 @@ type AccountService interface {
 	Delete(*string) *model.Erro
 	Get(*string) (*account.Account, *model.Erro)
 	Update(*account.Account) (*account.Account, *model.Erro)
-	GetAll() (*[]*account.Account, *model.Erro)
-	GetAccountsByClientID(clientID *string) (*[]account.Account, *model.Erro)
+	GetAll() (*[]account.Account, *model.Erro)
 	Status(*string, bool) *model.Erro
 	Report(*string) (*account.AccountReport, *model.Erro)
 }
@@ -46,33 +55,38 @@ type AccountService interface {
 type WithdrawalService interface {
 	Create(*withdrawal.Withdrawal) (*string, *model.Erro)
 	Delete(*string) *model.Erro
-	GetAll(*string) ([]*withdrawal.Withdrawal, *model.Erro)
+	GetAll() (*[]withdrawal.Withdrawal, *model.Erro)
 	ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*string, *model.Erro)
-	GetAllWithdrawalsByAccountID(accountID *string) (*[]withdrawal.Withdrawal, *model.Erro)
 }
 
 type DepositService interface {
 	Create(*deposit.Deposit) (*string, *model.Erro)
 	Delete(*string) *model.Erro
-	GetAll(*string) ([]*deposit.Deposit, *model.Erro)
+	GetAll() (*[]deposit.Deposit, *model.Erro)
 	ProcessDeposit(depositRequest *deposit.Deposit) (*string, *model.Erro)
-	GetAllDepositsByAccountID(accountID *string) (*[]deposit.Deposit, *model.Erro)
 }
 
 type AutomaticDebitService interface {
 	Create(*automaticdebit.AutomaticDebit) (*string, *model.Erro)
 	Delete(*string) *model.Erro
-	GetAll(*string) ([]*automaticdebit.AutomaticDebit, *model.Erro)
+	GetAll() (*[]automaticdebit.AutomaticDebit, *model.Erro)
 	ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
 	CheckAutomaticDebits()
 	Status(*string, bool) *model.Erro
-	GetAllAutoDebitsByAccountID(accountID *string) (*[]automaticdebit.AutomaticDebit, *model.Erro)
 }
 
 type TransferService interface {
 	Create(*transfer.Transfer) (*string, *model.Erro)
 	Delete(*string) *model.Erro
-	GetAll(*string) ([]*transfer.Transfer, *model.Erro)
+	GetAll() (*[]transfer.Transfer, *model.Erro)
 	ProcessNewTransfer(*transfer.Transfer) (*string, *model.Erro)
+}
+
+type GetFilteredService interface {
 	GetAllTransfersByAccountID(accountID *string) (*[]transfer.Transfer, *model.Erro)
+	GetAllAutoDebitsByAccountID(accountID *string) (*[]automaticdebit.AutomaticDebit, *model.Erro)
+	GetAllDepositsByAccountID(accountID *string) (*[]deposit.Deposit, *model.Erro)
+	GetAllWithdrawalsByAccountID(accountID *string) (*[]withdrawal.Withdrawal, *model.Erro)
+	GetClientsByUserID(userID *string) (*[]client.Client, *model.Erro)
+	GetAccountsByClientID(clientID *string) (*[]account.Account, *model.Erro)
 }

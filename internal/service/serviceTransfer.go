@@ -3,67 +3,81 @@ package service
 import (
 	"BankingAPI/internal/model"
 
-	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/transfer"
 
 	"github.com/rs/zerolog/log"
 )
 
 type transferImpl struct {
-	accountDatabase  model.RepositoryInterface
 	transferDatabase model.RepositoryInterface
+	accountService   AccountService
 }
 
-func NewTransferService(accountDB model.RepositoryInterface, transferDB model.RepositoryInterface) TransferService {
+func NewTransferService(transferDB model.RepositoryInterface, accountServe AccountService) TransferService {
 	return transferImpl{
-		accountDatabase:  accountDB,
 		transferDatabase: transferDB,
+		accountService:   accountServe,
 	}
 }
 
-func (transfer transferImpl) Create(*transfer.Transfer) (*string, *model.Erro)
-func (transfer transferImpl) Delete(*string) *model.Erro
-func (transfer transferImpl) GetAll(*string) ([]*transfer.Transfer, *model.Erro)
+func (service transferImpl) Create(transferRequest *transfer.Transfer) (*string, *model.Erro) {
+	transferID, err := service.transferDatabase.Create(transferRequest)
+	if err != nil {
+		return nil, err
+	}
+	return transferID, nil
+}
 
-func (transfer transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfer) (*string, *model.Erro) {
-	obj, err := transfer.accountDatabase.Get(&transferRequest.Account_to)
-	if err == model.IDnotFound || err != nil {
+func (service transferImpl) Delete(id *string) *model.Erro {
+	if err := service.transferDatabase.Delete(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (service transferImpl) GetAll() (*[]transfer.Transfer, *model.Erro) {
+	obj, err := service.transferDatabase.GetAll()
+	if err != nil {
 		return nil, err
 	}
-	accountTo, ok := obj.(*account.Account)
+	transfers, ok := obj.(*[]transfer.Transfer)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
-	obj, err = transfer.accountDatabase.Get(&transferRequest.Account_id)
+	return transfers, nil
+}
+
+func (service transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfer) (*string, *model.Erro) {
+	accountTo, err := service.accountService.Get(&transferRequest.Account_to)
 	if err == model.IDnotFound || err != nil {
 		return nil, err
 	}
-	accountFrom, ok := obj.(*account.Account)
-	if !ok {
-		return nil, model.DataTypeWrong
+	accountFrom, err := service.accountService.Get(&transferRequest.Account_id)
+	if err == model.IDnotFound || err != nil {
+		return nil, err
 	}
 
 	accountTo.Balance += transferRequest.Value
 	accountFrom.Balance -= transferRequest.Value
 
-	transferID, err := transfer.transferDatabase.Create(transferRequest)
+	transferID, err := service.Create(transferRequest)
 	if err != nil {
 		return nil, err
 	}
-	if err := transfer.accountDatabase.Update(accountTo); err != nil {
-		if err := transfer.transferDatabase.Delete(transferID); err != nil {
+	if _, err := service.accountService.Update(accountTo); err != nil {
+		if err := service.Delete(transferID); err != nil {
 			return nil, err
 		}
 		log.Error().Msg("Update Account Receiving Transfer failed, transfer canceled")
 		return nil, err
 	}
 
-	if err := transfer.accountDatabase.Update(accountFrom); err != nil {
+	if _, err := service.accountService.Update(accountFrom); err != nil {
 		accountTo.Balance -= transferRequest.Value
-		if err := transfer.accountDatabase.Update(accountTo); err != nil {
+		if _, err := service.accountService.Update(accountTo); err != nil {
 			return nil, err
 		}
-		if err := transfer.transferDatabase.Delete(transferID); err != nil {
+		if err := service.Delete(transferID); err != nil {
 			return nil, err
 		}
 		log.Error().Msg("Update Account Sending Transfer failed, transfer canceled")

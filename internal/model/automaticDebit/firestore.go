@@ -127,10 +127,10 @@ func (db autoDebitFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	autoebitResponseSlice := make([]*AutomaticDebit, 0, len(docSnapshots))
+	autoebitResponseSlice := make([]AutomaticDebit, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		autodebitReponse := &AutomaticDebit{}
+		autodebitReponse := AutomaticDebit{}
 		if err := docSnap.DataTo(&autodebitReponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

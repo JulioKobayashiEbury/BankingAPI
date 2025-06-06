@@ -101,7 +101,7 @@ func (db accountFirestore) Update(request interface{}) *model.Erro {
 		"agency_id":     accountRequest.Agency_id,
 		"balance":       0.0,
 		"register_date": time.Now().Format(model.TimeLayout),
-		"status":        true,
+		"status":        accountRequest.Status,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(accountRequest.Account_id)
 	_, err := docRef.Set(ctx, entity)
@@ -124,10 +124,10 @@ func (db accountFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	accountResponseSlice := make([]*Account, 0, len(docSnapshots))
+	accountResponseSlice := make([]Account, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		accountResponse := &Account{}
+		accountResponse := Account{}
 		if err := docSnap.DataTo(&accountResponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

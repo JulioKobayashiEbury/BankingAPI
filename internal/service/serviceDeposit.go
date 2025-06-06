@@ -13,24 +13,45 @@ import (
 
 type depositImpl struct {
 	depositDatabase model.RepositoryInterface
-	accountDatabase model.RepositoryInterface
-	getService      ServiceGet
+	accountService  AccountService
 }
 
-func NewDepositService(depositDB model.RepositoryInterface, accountDB model.RepositoryInterface, get ServiceGet) DepositService {
+func NewDepositService(depositDB model.RepositoryInterface, accountServe AccountService) DepositService {
 	return depositImpl{
 		depositDatabase: depositDB,
-		accountDatabase: accountDB,
-		getService:      get,
+		accountService:  accountServe,
 	}
 }
 
-func (deposit depositImpl) Create(*deposit.Deposit) (*string, *model.Erro)
-func (deposit depositImpl) Delete(*string) *model.Erro
-func (deposit depositImpl) GetAll(*string) ([]*deposit.Deposit, *model.Erro)
+func (service depositImpl) Create(depositRequest *deposit.Deposit) (*string, *model.Erro) {
+	depositID, err := service.depositDatabase.Create(depositRequest)
+	if err != nil {
+		return nil, err
+	}
+	return depositID, nil
+}
 
-func (deposit depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*string, *model.Erro) {
-	accountRequest, err := deposit.getService.Account(depositRequest.Account_id)
+func (service depositImpl) Delete(id *string) *model.Erro {
+	if err := service.depositDatabase.Delete(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (service depositImpl) GetAll() (*[]deposit.Deposit, *model.Erro) {
+	obj, err := service.depositDatabase.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	deposits, ok := obj.(*[]deposit.Deposit)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	return deposits, nil
+}
+
+func (service depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*string, *model.Erro) {
+	accountRequest, err := service.accountService.Get(&depositRequest.Account_id)
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +60,13 @@ func (deposit depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*str
 	}
 	accountRequest.Balance = accountRequest.Balance + depositRequest.Deposit
 
-	depositID, err := deposit.depositDatabase.Create(depositRequest)
+	depositID, err := service.Create(depositRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := deposit.accountDatabase.Update(accountRequest); err != nil {
-		if err := deposit.depositDatabase.Delete(depositID); err != nil {
+	if _, err := service.accountService.Update(accountRequest); err != nil {
+		if err := service.Delete(depositID); err != nil {
 			log.Panic().Msg("Error deleting deposit after update failure: " + err.Err.Error())
 		}
 		return nil, err

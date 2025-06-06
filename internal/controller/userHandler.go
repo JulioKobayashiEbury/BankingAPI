@@ -4,13 +4,7 @@ import (
 	"net/http"
 
 	"BankingAPI/internal/model"
-	"BankingAPI/internal/model/account"
-	automaticdebit "BankingAPI/internal/model/automaticDebit"
-	"BankingAPI/internal/model/client"
-	"BankingAPI/internal/model/deposit"
-	"BankingAPI/internal/model/transfer"
 	"BankingAPI/internal/model/user"
-	"BankingAPI/internal/model/withdrawal"
 	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
@@ -38,14 +32,7 @@ func UserPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-
-	//passar esse nil é correto? eu deveria instanciar outros FirestoreEntities?
-	//se sim, posso instanciar globalmente no contexto do User? ou controller?
-	serviceGet := service.NewGetService(nil, nil, userDatabase)
-	serviceCreate := service.NewCreateService(nil, nil, userDatabase, serviceGet)
-
-	userResponse, err := serviceCreate.CreateUser(&userInfo)
+	userResponse, err := Services.UserService.Create(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -82,40 +69,31 @@ func UserAuthHandler(c echo.Context) error {
 }
 
 func UserPutBlockHandler(c echo.Context) error {
-	userID, err := userAuthorization(&c)
+	userID, err := internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	userDatabase := user.NewUserFireStore(DatabaseClient)
 
-	serviceGet := service.NewGetService(nil, nil, userDatabase)
-	serviceStatus := service.NewStatusService(userDatabase, nil, nil, serviceGet)
-
-	if err := serviceStatus.UserBlock(*userID); err != nil {
+	if err := Services.UserService.Status(userID, false); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Blocked"})
 }
 
 func UserPutUnBlockHandler(c echo.Context) error {
-	userID, err := userAuthorization(&c)
+	userID, err := internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-
-	serviceGet := service.NewGetService(nil, nil, userDatabase)
-	serviceStatus := service.NewStatusService(userDatabase, nil, nil, serviceGet)
-
-	if err := serviceStatus.UserUnBlock(*userID); err != nil {
+	if err := Services.UserService.Status(userID, true); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Unblocked"})
 }
 
 func UserPutHandler(c echo.Context) error {
-	userID, err := userAuthorization(&c)
+	userID, err := internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -125,13 +103,8 @@ func UserPutHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-
-	serviceGet := service.NewGetService(nil, nil, userDatabase)
-	serviceUpdate := service.NewUpdateService(nil, nil, userDatabase, serviceGet)
-
 	userInfo.User_id = *userID
-	userResponse, err := serviceUpdate.UpdateUser(&userInfo)
+	userResponse, err := Services.UserService.Update(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -139,14 +112,12 @@ func UserPutHandler(c echo.Context) error {
 }
 
 func UserGetHandler(c echo.Context) error {
-	userID, err := userAuthorization(&c)
+	userID, err := internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-	serviceGet := service.NewGetService(nil, nil, userDatabase)
 
-	userResponse, err := serviceGet.User(*userID)
+	userResponse, err := Services.UserService.Get(userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -155,15 +126,12 @@ func UserGetHandler(c echo.Context) error {
 }
 
 func UserDeleteHandler(c echo.Context) error {
-	userID, err := userAuthorization(&c)
+	userID, err := internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-	serviceDelete := service.NewDeleteService(userDatabase, nil, nil)
-
-	if err := serviceDelete.UserDelete(*userID); err != nil {
+	if err := Services.UserService.Delete(userID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -171,32 +139,19 @@ func UserDeleteHandler(c echo.Context) error {
 }
 
 func UserGetReportHandler(c echo.Context) error {
-	userID, err := userAuthorization(&c)
+	userID, err := internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	autodebitDatabase := automaticdebit.NewAutoDebitFirestore(DatabaseClient)
-	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(DatabaseClient)
-	depositDatabase := deposit.NewDepositFirestore(DatabaseClient)
-	transferDatabase := transfer.NewTransferFirestore(DatabaseClient)
-	accountDatabase := account.NewAccountFirestore(DatabaseClient)
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-
-	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
-	serviceGetAll := service.NewGetAllService(autodebitDatabase, withdrawalDatabase, depositDatabase, transferDatabase, accountDatabase, clientDatabase)
-
-	serviceReport := service.NewReportService(serviceGet, serviceGetAll)
-
-	userReport, err := serviceReport.GenerateReportByUser(userID)
+	userReport, err := Services.UserService.Report(userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, (*userReport))
 }
 
-func userAuthorization(c *echo.Context) (*string, *model.Erro) {
+func internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
 	claims, err := service.Authorize((*c).Cookie("Token"))
 	if err != nil {
 		if err.Err == http.ErrNoCookie {
@@ -205,13 +160,23 @@ func userAuthorization(c *echo.Context) (*string, *model.Erro) {
 		return nil, err
 	}
 	var userID string
-	if (*c).Path() == "/users/:user_id" {
-		log.Debug().Msg("Entering users path...")
-		userID = (*c).Param("user_id")
-		if (*claims).Id != userID {
-			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: http.StatusBadRequest}
-		}
+
+	log.Debug().Msg("Entering users path...")
+	userID = (*c).Param("user_id")
+	if (*claims).Id != userID {
+		return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: http.StatusBadRequest}
 	}
 
 	return &userID, nil
+}
+
+func externalUserAuthorization(c *echo.Context) *model.Erro {
+	_, err := service.Authorize((*c).Cookie("Token"))
+	if err != nil {
+		if err.Err == http.ErrNoCookie {
+			return &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
+		}
+		return err
+	}
+	return nil
 }

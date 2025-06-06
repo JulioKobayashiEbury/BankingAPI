@@ -1,61 +1,60 @@
 @startuml
-title Generate User Report - GET /users/:user_id/report
+title Generate User Report - GET /users/report/:user_id
 
 actor Requester
 boundary UserGetReportHandler <<userHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control ReportService <<serviceReports.go>>
 control UserService <<serviceUser.go>>
-control ClientService <<serviceClient.go>>
+control GetFilteredService <<serviceGetFiltered.go>>
 entity UserFirestore <<model/user/firestore.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
-Requester -> UserGetReportHandler : GET /users/:user_id/report
+Requester -> UserGetReportHandler : GET /users/report/:user_id
 activate UserGetReportHandler
 
-UserGetReportHandler -> AuthorizeService : Authorize(Cookie)
+UserGetReportHandler -> AuthorizeService : Authorize(Cookie, userID_from_path)
 activate AuthorizeService
-AuthorizeService -->> UserGetReportHandler : Claims (userIDFromClaims) / Error
+AuthorizeService -->> UserGetReportHandler : Claims / Error
 deactivate AuthorizeService
 
-alt Authorization Failed (or user_id mismatch with claims.Id)
+alt Authorization Failed
     UserGetReportHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
-    UserGetReportHandler -> ReportService : GenerateReportByUser(userIDFromClaims_or_path)
-    activate ReportService
-    ReportService -> UserService : User(userID)
+    UserGetReportHandler -> UserService : Report(userID_from_path)
+    activate UserService
+
+    UserService -> UserService : Get(userID)
     activate UserService
     UserService -> UserFirestore : Get(&userID)
     activate UserFirestore
     UserFirestore -->> UserService : userInfo / Error
     deactivate UserFirestore
-    
+    deactivate UserService
+
     alt Get UserInfo Failed
-        UserService -->> ReportService : Error
-        ReportService -->> UserGetReportHandler : Error
+        UserService -->> UserGetReportHandler : Error
         UserGetReportHandler -->> Requester : HTTP Error Response
     else Get UserInfo Succeeded
-        UserService -->> ReportService : userInfo
-        deactivate UserService
-        ReportService -> ClientService : GetClientsByUserID(userID)
-        activate ClientService
-        ClientService -> ClientFirestore : GetAll()
+        UserService -> GetFilteredService : GetClientsByUserID(userID)
+        activate GetFilteredService
+        GetFilteredService -> ClientFirestore : GetAll()
         activate ClientFirestore
-        ClientFirestore -->> ClientService : allClients / Error
+        ClientFirestore -->> GetFilteredService : allClients / Error
         deactivate ClientFirestore
-        note right of ClientService : Filters clients by userID
-        ClientService -->> ReportService : clients / Error
-        deactivate ClientService
-        
+        note right of GetFilteredService : Filters clients by userID
+        GetFilteredService -->> UserService : clients / Error
+        deactivate GetFilteredService
+
         alt Get Clients Failed
-            ReportService -->> UserGetReportHandler : Error
+            UserService -->> UserGetReportHandler : Error
             UserGetReportHandler -->> Requester : HTTP Error Response
         else Get Clients Succeeded
-            ReportService -->> UserGetReportHandler : userReport
+            note right of UserService : Assembles UserReport
+            UserService -->> UserGetReportHandler : userReport
             UserGetReportHandler -->> Requester : HTTP 200 OK (userReport)
         end
     end
-    deactivate ReportService
+    deactivate UserService
 end
 deactivate UserGetReportHandler
 @enduml

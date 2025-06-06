@@ -12,13 +12,13 @@ const (
 )
 
 type RepositoryList struct {
-	UserDatabase    RepositoryInterface
-	ClientDatabase  RepositoryInterface
-	AccountDatabase RepositoryInterface
-	AutomaticDebit  RepositoryInterface
-	Deposit         RepositoryInterface
-	Transfer        RepositoryInterface
-	Withdrawal      RepositoryInterface
+	UserDatabase           RepositoryInterface
+	ClientDatabase         RepositoryInterface
+	AccountDatabase        RepositoryInterface
+	AutomaticDebitDatabase RepositoryInterface
+	DepositDatabase        RepositoryInterface
+	TransferDatabase       RepositoryInterface
+	WithdrawalDatabase     RepositoryInterface
 }
 
 type StandartResponse struct {

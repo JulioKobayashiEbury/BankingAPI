@@ -1,17 +1,15 @@
 @startuml
-title Generate Client Report - GET /clients/:client_id/report
+title Generate Client Report - GET /clients/report/:client_id
 
 actor Requester
 boundary ClientGetReportHandler <<clientHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
-control ReportService <<serviceReports.go>>
 control ClientService <<serviceClient.go>>
-control AccountService <<serviceAccount.go>>
+control GetFilteredService <<serviceGetFiltered.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 entity AccountFirestore <<model/account/firestore.go>>
-' Other DBs for full service init (User, Transfer, Deposit, Withdrawal, AutoDebit)
 
-Requester -> ClientGetReportHandler : GET /clients/:client_id/report
+Requester -> ClientGetReportHandler : GET /clients/report/:client_id
 activate ClientGetReportHandler
 
 ClientGetReportHandler -> AuthorizeService : Authorize(Cookie)
@@ -22,41 +20,41 @@ deactivate AuthorizeService
 alt Authorization Failed
     ClientGetReportHandler -->> Requester : HTTP Error Response
 else Authorization Succeeded
-    ' Initialize DBs (simplified for brevity)
-    ClientGetReportHandler -> ReportService : GenerateReportByClient(clientID_from_path)
-    activate ReportService
-    ReportService -> ClientService : Client(clientID)
+    ClientGetReportHandler -> ClientService : Report(clientID_from_path)
+    activate ClientService
+
+    ClientService -> ClientService : Get(clientID)
     activate ClientService
     ClientService -> ClientFirestore : Get(&clientID)
     activate ClientFirestore
     ClientFirestore -->> ClientService : clientInfo / Error
     deactivate ClientFirestore
-    
+    deactivate ClientService
+
     alt Get ClientInfo Failed
-        ClientService -->> ReportService : Error
-        ReportService -->> ClientGetReportHandler : Error
+        ClientService -->> ClientGetReportHandler : Error
         ClientGetReportHandler -->> Requester : HTTP Error Response
     else Get ClientInfo Succeeded
-        ClientService -->> ReportService : clientInfo
-        deactivate ClientService
-        ReportService -> AccountService : GetAccountsByClientID(clientID)
-        activate AccountService
-        AccountService -> AccountFirestore : GetAll()
+        ClientService -> GetFilteredService : GetAccountsByClientID(clientID)
+        activate GetFilteredService
+        GetFilteredService -> AccountFirestore : GetAll()
         activate AccountFirestore
-        AccountFirestore -->> AccountService : allAccounts / Error
+        AccountFirestore -->> GetFilteredService : allAccounts / Error
         deactivate AccountFirestore
-        note right of AccountService : Filters accounts by clientID
-        AccountService -->> ReportService : accounts / Error
-        deactivate AccountService
+        note right of GetFilteredService : Filters accounts by clientID
+        GetFilteredService -->> ClientService : accounts / Error
+        deactivate GetFilteredService
+
         alt Get Accounts Failed
-            ReportService -->> ClientGetReportHandler : Error
+            ClientService -->> ClientGetReportHandler : Error
             ClientGetReportHandler -->> Requester : HTTP Error Response
         else Get Accounts Succeeded
-            ReportService -->> ClientGetReportHandler : clientReport
+            note right of ClientService : Assembles ClientReport
+            ClientService -->> ClientGetReportHandler : clientReport
             ClientGetReportHandler -->> Requester : HTTP 200 OK (clientReport)
         end
     end
-    deactivate ReportService
+    deactivate ClientService
 end
 deactivate ClientGetReportHandler
 @enduml

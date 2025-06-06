@@ -3,14 +3,7 @@ package controller
 import (
 	"net/http"
 
-	"BankingAPI/internal/model/account"
-	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/model/client"
-	"BankingAPI/internal/model/deposit"
-	"BankingAPI/internal/model/transfer"
-	"BankingAPI/internal/model/user"
-	"BankingAPI/internal/model/withdrawal"
-	"BankingAPI/internal/service"
 
 	model "BankingAPI/internal/model"
 
@@ -37,12 +30,8 @@ func ClientPostHandler(c echo.Context) error {
 	if len(clientInfo.Document) != documentLenghtIdeal || len(clientInfo.Name) > maxNameLenght {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
-	userDatabase := user.NewUserFireStore(DatabaseClient)
 
-	serviceGet := service.NewGetService(nil, clientDatabase, userDatabase)
-	serviceCreate := service.NewCreateService(nil, clientDatabase, userDatabase, serviceGet)
-	Client, err := serviceCreate.CreateClient(&clientInfo)
+	Client, err := Services.ClientService.Create(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -51,15 +40,13 @@ func ClientPostHandler(c echo.Context) error {
 }
 
 func ClientGetHandler(c echo.Context) error {
-	_, err := userAuthorization(&c)
+	err := externalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
 
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
-	serviceGet := service.NewGetService(nil, clientDatabase, nil)
-	clientInfo, err := serviceGet.Client(clientID)
+	clientInfo, err := Services.ClientService.Get(&clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -68,14 +55,13 @@ func ClientGetHandler(c echo.Context) error {
 }
 
 func ClientDeleteHandler(c echo.Context) error {
-	_, err := userAuthorization(&c)
+	err := externalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
-	serviceDelete := service.NewDeleteService(nil, clientDatabase, nil)
-	if err := serviceDelete.ClientDelete(clientID); err != nil {
+
+	if err := Services.ClientService.Delete(&clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -83,7 +69,7 @@ func ClientDeleteHandler(c echo.Context) error {
 }
 
 func ClientPutHandler(c echo.Context) error {
-	_, err := userAuthorization(&c)
+	err := externalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -93,13 +79,8 @@ func ClientPutHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	clientInfo.Client_id = c.Param("client_id")
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
 
-	serviceGet := service.NewGetService(nil, clientDatabase, userDatabase)
-	serviceUpdate := service.NewUpdateService(nil, clientDatabase, userDatabase, serviceGet)
-
-	Client, err := serviceUpdate.UpdateClient(&clientInfo)
+	Client, err := Services.ClientService.Update(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -108,15 +89,13 @@ func ClientPutHandler(c echo.Context) error {
 }
 
 func ClientPutBlockHandler(c echo.Context) error {
-	_, err := userAuthorization(&c)
+	err := externalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
-	serviceGet := service.NewGetService(nil, clientDatabase, nil)
-	serviceStatus := service.NewStatusService(nil, clientDatabase, nil, serviceGet)
-	if err := serviceStatus.ClientBlock(clientID); err != nil {
+
+	if err := Services.ClientService.Status(&clientID, false); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -124,15 +103,13 @@ func ClientPutBlockHandler(c echo.Context) error {
 }
 
 func ClientPutUnBlockHandler(c echo.Context) error {
-	_, err := userAuthorization(&c)
+	err := externalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
-	serviceGet := service.NewGetService(nil, clientDatabase, nil)
-	serviceStatus := service.NewStatusService(nil, clientDatabase, nil, serviceGet)
-	if err := serviceStatus.ClientUnBlock(clientID); err != nil {
+
+	if err := Services.ClientService.Status(&clientID, true); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -140,26 +117,13 @@ func ClientPutUnBlockHandler(c echo.Context) error {
 }
 
 func ClientGetReportHandler(c echo.Context) error {
-	_, err := userAuthorization(&c)
+	err := externalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	clientID := c.Param("client_id")
 
-	autodebitDatabase := automaticdebit.NewAutoDebitFirestore(DatabaseClient)
-	withdrawalDatabase := withdrawal.NewWithdrawalFirestore(DatabaseClient)
-	depositDatabase := deposit.NewDepositFirestore(DatabaseClient)
-	transferDatabase := transfer.NewTransferFirestore(DatabaseClient)
-	accountDatabase := account.NewAccountFirestore(DatabaseClient)
-	clientDatabase := client.NewClientFirestore(DatabaseClient)
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-
-	serviceGet := service.NewGetService(accountDatabase, clientDatabase, userDatabase)
-	serviceGetAll := service.NewGetAllService(autodebitDatabase, withdrawalDatabase, depositDatabase, transferDatabase, accountDatabase, clientDatabase)
-
-	serviceReport := service.NewReportService(serviceGet, serviceGetAll)
-
-	clientReport, err := serviceReport.GenerateReportByClient(&clientID)
+	clientReport, err := Services.ClientService.Report(&clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}

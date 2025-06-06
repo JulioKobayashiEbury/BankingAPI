@@ -121,10 +121,10 @@ func (db depositFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	DepositSlice := make([]*Deposit, 0, len(docSnapshots))
+	DepositSlice := make([]Deposit, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		depositReponse := &Deposit{}
+		depositReponse := Deposit{}
 		if err := docSnap.DataTo(&depositReponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
