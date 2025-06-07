@@ -16,8 +16,6 @@ import (
 
 const collection = "accounts"
 
-var accountDatabase model.RepositoryInterface
-
 type accountFirestore struct {
 	databaseClient *firestore.Client
 }
