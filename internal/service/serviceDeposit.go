@@ -23,12 +23,16 @@ func NewDepositService(depositDB model.RepositoryInterface, accountServe Account
 	}
 }
 
-func (service depositImpl) Create(depositRequest *deposit.Deposit) (*string, *model.Erro) {
-	depositID, err := service.depositDatabase.Create(depositRequest)
+func (service depositImpl) Create(depositRequest *deposit.Deposit) (*deposit.Deposit, *model.Erro) {
+	obj, err := service.depositDatabase.Create(depositRequest)
 	if err != nil {
 		return nil, err
 	}
-	return depositID, nil
+	depositResponse, ok := obj.(*deposit.Deposit)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	return depositResponse, nil
 }
 
 func (service depositImpl) Delete(id *string) *model.Erro {
@@ -60,19 +64,19 @@ func (service depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*str
 	}
 	accountRequest.Balance = accountRequest.Balance + depositRequest.Deposit
 
-	depositID, err := service.Create(depositRequest)
+	depositResponse, err := service.Create(depositRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	if _, err := service.accountService.Update(accountRequest); err != nil {
-		if err := service.Delete(depositID); err != nil {
+		if err := service.Delete(&depositResponse.Deposit_id); err != nil {
 			log.Panic().Msg("Error deleting deposit after update failure: " + err.Err.Error())
 		}
 		return nil, err
 	}
 	log.Info().Msg("Deposit created: " + depositRequest.Account_id)
-	return depositID, nil
+	return &depositResponse.Deposit_id, nil
 }
 
 func verifyDeposit(depositRequest *deposit.Deposit, accountResponse *account.Account) (bool, *model.Erro) {

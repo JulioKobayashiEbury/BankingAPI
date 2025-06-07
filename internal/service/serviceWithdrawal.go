@@ -23,12 +23,16 @@ func NewWithdrawalService(withdrawalDB model.RepositoryInterface, accountServe A
 	}
 }
 
-func (service withdrawalImpl) Create(withdrawalRequest *withdrawal.Withdrawal) (*string, *model.Erro) {
-	withdrawalID, err := service.withdrawalDatabase.Create(withdrawalRequest)
+func (service withdrawalImpl) Create(withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
+	obj, err := service.withdrawalDatabase.Create(withdrawalRequest)
 	if err != nil {
 		return nil, err
 	}
-	return withdrawalID, nil
+	withdrawalResponse, ok := obj.(*withdrawal.Withdrawal)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	return withdrawalResponse, nil
 }
 
 func (service withdrawalImpl) Delete(id *string) *model.Erro {
@@ -61,7 +65,7 @@ func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Wi
 		return nil, err
 	}
 
-	withdrawalID, err := service.Create(withdrawalRequest)
+	withdrawalResponse, err := service.Create(withdrawalRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +73,7 @@ func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Wi
 	accountResponse.Balance = accountResponse.Balance - withdrawalRequest.Withdrawal
 
 	if _, err := service.accountService.Update(accountResponse); err != nil {
-		if err := service.Delete(withdrawalID); err != nil {
+		if err := service.Delete(&withdrawalResponse.Withdrawal_id); err != nil {
 			log.Error().Msg("Account and Withdrawals DB changes failed during processing withdrawal")
 			return nil, err
 		}
@@ -78,7 +82,7 @@ func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Wi
 	}
 
 	log.Info().Msg("Succesful Withdrawal: " + withdrawalRequest.Account_id)
-	return withdrawalID, nil
+	return &withdrawalResponse.Withdrawal_id, nil
 }
 
 func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse *account.Account) (bool, *model.Erro) {

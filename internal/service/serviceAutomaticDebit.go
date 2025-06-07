@@ -30,12 +30,16 @@ func NewAutoDebit(autodebitDB model.RepositoryInterface, withdrawal WithdrawalSe
 	}
 }
 
-func (service serviceAutoDebitImpl) Create(autodebitRequest *automaticdebit.AutomaticDebit) (*string, *model.Erro) {
-	autodebitID, err := service.autoDebitFirestore.Create(autodebitRequest)
+func (service serviceAutoDebitImpl) Create(autodebitRequest *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
+	obj, err := service.autoDebitFirestore.Create(autodebitRequest)
 	if err != nil {
 		return nil, err
 	}
-	return autodebitID, nil
+	automaticDebit, ok := obj.(*automaticdebit.AutomaticDebit)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	return automaticDebit, nil
 }
 
 func (service serviceAutoDebitImpl) Delete(id *string) *model.Erro {
@@ -93,20 +97,16 @@ func (service serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *automati
 		log.Warn().Msg("Invalid date format")
 		return nil, &model.Erro{Err: errors.New("Invalid date format"), HttpCode: http.StatusBadRequest}
 	}
-	responseID, err := service.autoDebitFirestore.Create(autoDebit)
+	obj, err := service.autoDebitFirestore.Create(autoDebit)
 	if err != nil {
 		return nil, err
 	}
-	log.Info().Msg("Automatic debit created: " + *responseID)
-	obj, err := service.autoDebitFirestore.Get(responseID)
-	if err != nil {
-		return nil, err
-	}
-	autoDebitResponse, ok := obj.(automaticdebit.AutomaticDebit)
+	autodebitResponse, ok := obj.(*automaticdebit.AutomaticDebit)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
-	return &autoDebitResponse, nil
+	log.Info().Msg("Automatic debit created: " + autodebitResponse.Debit_id)
+	return autodebitResponse, nil
 }
 
 func isValidDate(date string) bool {

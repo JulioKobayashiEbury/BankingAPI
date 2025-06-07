@@ -20,12 +20,16 @@ func NewTransferService(transferDB model.RepositoryInterface, accountServe Accou
 	}
 }
 
-func (service transferImpl) Create(transferRequest *transfer.Transfer) (*string, *model.Erro) {
-	transferID, err := service.transferDatabase.Create(transferRequest)
+func (service transferImpl) Create(transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro) {
+	obj, err := service.transferDatabase.Create(transferRequest)
 	if err != nil {
 		return nil, err
 	}
-	return transferID, nil
+	transferResponse, ok := obj.(*transfer.Transfer)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	return transferResponse, nil
 }
 
 func (service transferImpl) Delete(id *string) *model.Erro {
@@ -60,12 +64,12 @@ func (service transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfe
 	accountTo.Balance += transferRequest.Value
 	accountFrom.Balance -= transferRequest.Value
 
-	transferID, err := service.Create(transferRequest)
+	transferResponse, err := service.Create(transferRequest)
 	if err != nil {
 		return nil, err
 	}
 	if _, err := service.accountService.Update(accountTo); err != nil {
-		if err := service.Delete(transferID); err != nil {
+		if err := service.Delete(&transferResponse.Transfer_id); err != nil {
 			return nil, err
 		}
 		log.Error().Msg("Update Account Receiving Transfer failed, transfer canceled")
@@ -77,11 +81,11 @@ func (service transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfe
 		if _, err := service.accountService.Update(accountTo); err != nil {
 			return nil, err
 		}
-		if err := service.Delete(transferID); err != nil {
+		if err := service.Delete(&transferResponse.Transfer_id); err != nil {
 			return nil, err
 		}
 		log.Error().Msg("Update Account Sending Transfer failed, transfer canceled")
 	}
-	log.Info().Msg("Transfer was succesful: " + *transferID + " to " + transferRequest.Account_to)
-	return transferID, nil
+	log.Info().Msg("Transfer was succesful: " + transferRequest.Transfer_id + " to " + transferRequest.Account_to)
+	return &transferResponse.Transfer_id, nil
 }

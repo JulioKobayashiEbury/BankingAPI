@@ -26,7 +26,7 @@ func NewClientFirestore(dbclient *firestore.Client) model.RepositoryInterface {
 	}
 }
 
-func (db clientFirestore) Create(request interface{}) (*string, *model.Erro) {
+func (db clientFirestore) Create(request interface{}) (interface{}, *model.Erro) {
 	client, ok := request.(*Client)
 	if !ok {
 		return nil, model.DataTypeWrong
@@ -46,7 +46,7 @@ func (db clientFirestore) Create(request interface{}) (*string, *model.Erro) {
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &docRef.ID, nil
+	return db.Get(&docRef.ID)
 }
 
 func (db clientFirestore) Delete(id *string) *model.Erro {

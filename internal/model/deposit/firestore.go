@@ -26,7 +26,7 @@ func NewDepositFirestore(dbClient *firestore.Client) model.RepositoryInterface {
 	}
 }
 
-func (db depositFirestore) Create(request interface{}) (*string, *model.Erro) {
+func (db depositFirestore) Create(request interface{}) (interface{}, *model.Erro) {
 	depositRequest, _ := interfaceToDeposit(request)
 	if depositRequest == nil {
 		return nil, model.DataTypeWrong
@@ -48,7 +48,7 @@ func (db depositFirestore) Create(request interface{}) (*string, *model.Erro) {
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &docRef.ID, nil
+	return db.Get(&docRef.ID)
 }
 
 func (db depositFirestore) Delete(id *string) *model.Erro {

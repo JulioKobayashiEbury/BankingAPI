@@ -22,14 +22,14 @@ const (
 )
 
 var (
-	ResquestNotSet     = &Erro{Err: errors.New("Request value not set"), HttpCode: http.StatusInternalServerError}
-	FailCreatingClient = &Erro{Err: errors.New("Failed to create DB client"), HttpCode: http.StatusInternalServerError}
-	IDnotFound         = &Erro{Err: errors.New("Id not founc"), HttpCode: http.StatusBadRequest}
-	DataTypeWrong      = &Erro{Err: errors.New("Invalid argument passed"), HttpCode: http.StatusBadRequest}
+	ResquestNotSet     = &Erro{Err: errors.New("Repository Error: Request value not set"), HttpCode: http.StatusInternalServerError}
+	FailCreatingClient = &Erro{Err: errors.New("Repository Error: Failed to create DB client"), HttpCode: http.StatusInternalServerError}
+	IDnotFound         = &Erro{Err: errors.New("Repository Error: Id not founc"), HttpCode: http.StatusBadRequest}
+	DataTypeWrong      = &Erro{Err: errors.New("Repository Error: Invalid argument passed"), HttpCode: http.StatusBadRequest}
 )
 
 type RepositoryInterface interface {
-	Create(interface{}) (*string, *Erro)
+	Create(interface{}) (interface{}, *Erro)
 	Delete(*string) *Erro
 	Get(id *string) (interface{}, *Erro)
 	Update(interface{}) *Erro

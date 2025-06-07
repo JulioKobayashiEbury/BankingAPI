@@ -26,7 +26,7 @@ func NewAutoDebitFirestore(dbClient *firestore.Client) model.RepositoryInterface
 	}
 }
 
-func (db autoDebitFirestore) Create(request interface{}) (*string, *model.Erro) {
+func (db autoDebitFirestore) Create(request interface{}) (interface{}, *model.Erro) {
 	autoDebitRequest, ok := request.(AutomaticDebit)
 	if !ok {
 		return nil, model.DataTypeWrong

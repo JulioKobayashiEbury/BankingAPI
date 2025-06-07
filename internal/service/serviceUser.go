@@ -23,18 +23,22 @@ func NewUserService(userRepo model.RepositoryInterface, getFilteredServe GetFilt
 	}
 }
 
-func (service userServiceImpl) Create(userRequest *user.User) (*string, *model.Erro) {
+func (service userServiceImpl) Create(userRequest *user.User) (*user.User, *model.Erro) {
 	if userRequest.Name == "" || userRequest.Document == "" || userRequest.Password == "" {
 		log.Warn().Msg("Missing credentials on creating user")
 		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
 	}
-	userID, err := service.userDatabase.Create(userRequest)
+	obj, err := service.userDatabase.Create(userRequest)
 	if err != nil {
 		return nil, err
 	}
+	userResponse, ok := obj.(*user.User)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
 
-	log.Info().Msg("User created: " + *userID)
-	return userID, nil
+	log.Info().Msg("User created: " + userResponse.User_id)
+	return userResponse, nil
 }
 
 func (service userServiceImpl) Delete(id *string) *model.Erro {

@@ -29,7 +29,7 @@ func NewAccountService(ad model.RepositoryInterface, us UserService, cs ClientSe
 	}
 }
 
-func (service accountServiceImpl) Create(accountRequest *account.Account) (*string, *model.Erro) {
+func (service accountServiceImpl) Create(accountRequest *account.Account) (*account.Account, *model.Erro) {
 	if accountRequest.User_id == "" || accountRequest.Client_id == "" {
 		log.Warn().Msg("Missing credentials on creating account")
 		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
@@ -43,13 +43,17 @@ func (service accountServiceImpl) Create(accountRequest *account.Account) (*stri
 		return nil, err
 	}
 
-	accountID, err := service.accountDatabase.Create(accountRequest)
+	obj, err := service.accountDatabase.Create(accountRequest)
 	if err != nil {
 		return nil, err
 	}
+	accountResponse, ok := obj.(*account.Account)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
 
 	log.Info().Msg("Account created")
-	return accountID, nil
+	return accountResponse, nil
 }
 
 func (service accountServiceImpl) Get(accountID *string) (*account.Account, *model.Erro) {

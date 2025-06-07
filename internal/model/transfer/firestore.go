@@ -26,7 +26,7 @@ func NewTransferFirestore(dbClient *firestore.Client) model.RepositoryInterface 
 	}
 }
 
-func (db transferFirestore) Create(request interface{}) (*string, *model.Erro) {
+func (db transferFirestore) Create(request interface{}) (interface{}, *model.Erro) {
 	transferRequest, ok := request.(Transfer)
 	if !ok {
 		return nil, model.DataTypeWrong
@@ -46,7 +46,7 @@ func (db transferFirestore) Create(request interface{}) (*string, *model.Erro) {
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &docRef.ID, nil
+	return db.Get(&docRef.ID)
 }
 
 func (db transferFirestore) Delete(id *string) *model.Erro {

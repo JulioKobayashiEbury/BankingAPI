@@ -28,7 +28,7 @@ func NewAccountFirestore(dbClient *firestore.Client) model.RepositoryInterface {
 	}
 }
 
-func (db accountFirestore) Create(request interface{}) (*string, *model.Erro) {
+func (db accountFirestore) Create(request interface{}) (interface{}, *model.Erro) {
 	accountRequest, ok := request.(*Account)
 	if !ok {
 		return nil, model.DataTypeWrong
@@ -49,7 +49,7 @@ func (db accountFirestore) Create(request interface{}) (*string, *model.Erro) {
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &docRef.ID, nil
+	return db.Get(&docRef.ID)
 }
 
 func (db accountFirestore) Delete(id *string) *model.Erro {

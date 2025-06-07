@@ -23,7 +23,7 @@ type ServicesList struct {
 }
 
 type UserService interface {
-	Create(*user.User) (*string, *model.Erro)
+	Create(*user.User) (*user.User, *model.Erro)
 	Delete(*string) *model.Erro
 	Get(*string) (*user.User, *model.Erro)
 	Update(*user.User) (*user.User, *model.Erro)
@@ -33,7 +33,7 @@ type UserService interface {
 }
 
 type ClientService interface {
-	Create(*client.Client) (*string, *model.Erro)
+	Create(*client.Client) (*client.Client, *model.Erro)
 	Delete(*string) *model.Erro
 	Get(*string) (*client.Client, *model.Erro)
 	Update(*client.Client) (*client.Client, *model.Erro)
@@ -43,7 +43,7 @@ type ClientService interface {
 }
 
 type AccountService interface {
-	Create(*account.Account) (*string, *model.Erro)
+	Create(*account.Account) (*account.Account, *model.Erro)
 	Delete(*string) *model.Erro
 	Get(*string) (*account.Account, *model.Erro)
 	Update(*account.Account) (*account.Account, *model.Erro)
@@ -53,21 +53,21 @@ type AccountService interface {
 }
 
 type WithdrawalService interface {
-	Create(*withdrawal.Withdrawal) (*string, *model.Erro)
+	Create(*withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
 	Delete(*string) *model.Erro
 	GetAll() (*[]withdrawal.Withdrawal, *model.Erro)
 	ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*string, *model.Erro)
 }
 
 type DepositService interface {
-	Create(*deposit.Deposit) (*string, *model.Erro)
+	Create(*deposit.Deposit) (*deposit.Deposit, *model.Erro)
 	Delete(*string) *model.Erro
 	GetAll() (*[]deposit.Deposit, *model.Erro)
 	ProcessDeposit(depositRequest *deposit.Deposit) (*string, *model.Erro)
 }
 
 type AutomaticDebitService interface {
-	Create(*automaticdebit.AutomaticDebit) (*string, *model.Erro)
+	Create(*automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
 	Delete(*string) *model.Erro
 	GetAll() (*[]automaticdebit.AutomaticDebit, *model.Erro)
 	ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
@@ -76,7 +76,7 @@ type AutomaticDebitService interface {
 }
 
 type TransferService interface {
-	Create(*transfer.Transfer) (*string, *model.Erro)
+	Create(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
 	Delete(*string) *model.Erro
 	GetAll() (*[]transfer.Transfer, *model.Erro)
 	ProcessNewTransfer(*transfer.Transfer) (*string, *model.Erro)

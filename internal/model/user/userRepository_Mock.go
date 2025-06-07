@@ -29,7 +29,7 @@ func NewMockUserRepository() model.RepositoryInterface {
 	return *singleton
 }
 
-func (m MockUserRepository) Create(request interface{}) (*string, *model.Erro) {
+func (m MockUserRepository) Create(request interface{}) (interface{}, *model.Erro) {
 	userRequest, ok := request.(*User)
 	if !ok {
 		return nil, model.DataTypeWrong
@@ -45,7 +45,7 @@ func (m MockUserRepository) Create(request interface{}) (*string, *model.Erro) {
 		}
 	*/
 	(*m.UserMap)[userRequest.User_id] = *userRequest
-	return &userRequest.User_id, nil
+	return &userRequest, nil
 }
 
 func (m MockUserRepository) Delete(id *string) *model.Erro {

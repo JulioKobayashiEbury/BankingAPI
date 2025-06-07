@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"BankingAPI/internal/model"
+	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/client"
 
 	"github.com/rs/zerolog/log"
@@ -25,22 +25,26 @@ func NewClientService(clientDB model.RepositoryInterface, userServe UserService,
 	}
 }
 
-func (service clientServiceImpl) Create(client *client.Client) (*string, *model.Erro) {
-	if client.User_id == "" || client.Document == "" || client.Name == "" {
+func (service clientServiceImpl) Create(clientRequest *client.Client) (*client.Client, *model.Erro) {
+	if clientRequest.User_id == "" || clientRequest.Document == "" || clientRequest.Name == "" {
 		log.Warn().Msg("Missing credentials on creating client")
 		return nil, &model.Erro{Err: errors.New("Missing credentials for creating client"), HttpCode: http.StatusBadRequest}
 	}
 
-	if _, err := service.userService.Get(&client.User_id); err == model.IDnotFound || err != nil {
+	if _, err := service.userService.Get(&clientRequest.User_id); err == model.IDnotFound || err != nil {
 		return nil, err
 	}
 	// verify user id exists, PERMISSION MUST BE of user to create
-	log.Info().Msg("Client created: " + client.Client_id)
-	clientID, err := service.clientDatabase.Create(client)
+	obj, err := service.clientDatabase.Create(clientRequest)
 	if err != nil {
 		return nil, err
 	}
-	return clientID, nil
+	clientResponse, ok := obj.(*client.Client)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	log.Info().Msg("Client created: " + clientResponse.Client_id)
+	return clientResponse, nil
 }
 
 func (service clientServiceImpl) Delete(id *string) *model.Erro {
