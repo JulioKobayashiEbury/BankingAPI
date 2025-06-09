@@ -102,8 +102,8 @@ func (db accountFirestore) Update(request interface{}) *model.Erro {
 		"status":        accountRequest.Status,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(accountRequest.Account_id)
-	_, err := docRef.Set(ctx, entity)
-	if err != nil {
+
+	if _, err := docRef.Set(ctx, entity); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}

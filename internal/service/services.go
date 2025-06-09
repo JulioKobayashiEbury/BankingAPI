@@ -1,6 +1,9 @@
 package service
 
 import (
+	"errors"
+	"net/http"
+
 	"BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
@@ -10,6 +13,8 @@ import (
 	"BankingAPI/internal/model/user"
 	"BankingAPI/internal/model/withdrawal"
 )
+
+var ErrorMissingCredentials = &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
 
 type ServicesList struct {
 	UserService           UserService

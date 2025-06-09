@@ -18,7 +18,7 @@ var jwtKey = []byte("bankingapi-key")
 
 type Authentication interface {
 	Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro)
-	GenerateToken(typeID *string) (*http.Cookie, *model.Erro)
+	GenerateToken(typeID *string) (*string, *model.Erro)
 }
 
 type auth struct {
@@ -48,7 +48,7 @@ func (a auth) Authenticate(typeID *string, password *string, collection string) 
 	return true, nil
 }
 
-func (a auth) GenerateToken(typeID *string) (*http.Cookie, *model.Erro) {
+func (a auth) GenerateToken(typeID *string) (*string, *model.Erro) {
 	expirationTime := time.Now().Add(time.Minute * expirationMin)
 	Claim := &model.Claims{
 		Id: (*typeID),
@@ -62,9 +62,6 @@ func (a auth) GenerateToken(typeID *string) (*http.Cookie, *model.Erro) {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	log.Info().Msg("Authenticated entrance: " + *typeID)
-	return &http.Cookie{
-		Name:    "Token",
-		Value:   tokenString,
-		Expires: expirationTime,
-	}, nil
+
+	return &tokenString, nil
 }

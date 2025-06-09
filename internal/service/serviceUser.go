@@ -1,8 +1,6 @@
 package service
 
 import (
-	"errors"
-	"net/http"
 	"time"
 
 	"BankingAPI/internal/model"
@@ -25,8 +23,8 @@ func NewUserService(userRepo model.RepositoryInterface, getFilteredServe GetFilt
 
 func (service userServiceImpl) Create(userRequest *user.User) (*user.User, *model.Erro) {
 	if userRequest.Name == "" || userRequest.Document == "" || userRequest.Password == "" {
-		log.Warn().Msg("Missing credentials on creating user")
-		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
+		log.Warn().Msg("Missing informations on creating user")
+		return nil, ErrorMissingCredentials
 	}
 	obj, err := service.userDatabase.Create(userRequest)
 	if err != nil {
@@ -76,6 +74,7 @@ func (service userServiceImpl) Update(userRequest *user.User) (*user.User, *mode
 	if userRequest.Password != "" {
 		userResponse.Password = userRequest.Password
 	}
+
 	// monta struct de updat
 
 	if err := service.userDatabase.Update(userResponse); err != nil {

@@ -27,7 +27,7 @@ func NewAutoDebitFirestore(dbClient *firestore.Client) model.RepositoryInterface
 }
 
 func (db autoDebitFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	autoDebitRequest, ok := request.(AutomaticDebit)
+	autoDebitRequest, ok := request.(*AutomaticDebit)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -106,8 +106,8 @@ func (db autoDebitFirestore) Update(request interface{}) *model.Erro {
 		"register_date":   time.Now().Format(model.TimeLayout),
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(autoDebitRequest.Debit_id)
-	_, err := docRef.Set(ctx, entity)
-	if err != nil {
+
+	if _, err := docRef.Set(ctx, entity); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}

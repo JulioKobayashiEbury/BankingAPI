@@ -159,6 +159,3 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 
 	}
 }
-
-func moveToExpiredDebits() {
-}

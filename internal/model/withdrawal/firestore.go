@@ -27,7 +27,7 @@ func NewWithdrawalFirestore(dbClient *firestore.Client) model.RepositoryInterfac
 }
 
 func (db withdrawalFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	Withdrawal, ok := request.(Withdrawal)
+	Withdrawal, ok := request.(*Withdrawal)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
@@ -129,7 +129,6 @@ func (db withdrawalFirestore) GetAll() (interface{}, *model.Erro) {
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
 		Withdrawal.Withdrawal_id = docSnap.Ref.ID
-		// condicional para saber se a transferencia pertence ao account
 		WithdrawalSlice = append(WithdrawalSlice, Withdrawal)
 	}
 

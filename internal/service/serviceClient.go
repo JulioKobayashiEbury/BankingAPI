@@ -1,8 +1,6 @@
 package service
 
 import (
-	"errors"
-	"net/http"
 	"time"
 
 	model "BankingAPI/internal/model"
@@ -28,7 +26,7 @@ func NewClientService(clientDB model.RepositoryInterface, userServe UserService,
 func (service clientServiceImpl) Create(clientRequest *client.Client) (*client.Client, *model.Erro) {
 	if clientRequest.User_id == "" || clientRequest.Document == "" || clientRequest.Name == "" {
 		log.Warn().Msg("Missing credentials on creating client")
-		return nil, &model.Erro{Err: errors.New("Missing credentials for creating client"), HttpCode: http.StatusBadRequest}
+		return nil, ErrorMissingCredentials
 	}
 
 	if _, err := service.userService.Get(&clientRequest.User_id); err == model.IDnotFound || err != nil {

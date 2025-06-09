@@ -99,8 +99,7 @@ func (db clientFirestore) Update(request interface{}) *model.Erro {
 	}
 	docRef := db.databaseclient.Collection(collection).Doc(client.Client_id)
 
-	_, err := docRef.Set(ctx, entity)
-	if err != nil {
+	if _, err := docRef.Set(ctx, entity); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
@@ -129,7 +128,6 @@ func (db clientFirestore) GetAll() (interface{}, *model.Erro) {
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 		}
 		client.Client_id = docSnap.Ref.ID
-		// condicional para saber se a transferencia pertence ao account
 		clientSlice = append(clientSlice, client)
 	}
 	return &clientSlice, nil

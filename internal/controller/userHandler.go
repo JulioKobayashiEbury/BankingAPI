@@ -57,14 +57,14 @@ func UserAuthHandler(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "Credentials not valid")
 	}
 
-	cookie, err := serviceAuthenticate.GenerateToken(&(userInfo.User_id))
+	tokenString, err := serviceAuthenticate.GenerateToken(&(userInfo.User_id))
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	// usar isso ao invés de cookie?
 	// c.Response().Header().Set(echo.HeaderAuthorization, token)
 
-	c.SetCookie(cookie)
+	c.Response().Header().Set(echo.HeaderAuthorization, "Bearer "+*tokenString)
 	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "User Authorized"})
 }
 
@@ -152,7 +152,9 @@ func UserGetReportHandler(c echo.Context) error {
 }
 
 func internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
-	claims, err := service.Authorize((*c).Cookie("Token"))
+	authorizationHeader := (*c).Request().Header.Get(echo.HeaderAuthorization)
+
+	claims, err := service.Authorize(&authorizationHeader)
 	if err != nil {
 		if err.Err == http.ErrNoCookie {
 			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
@@ -164,15 +166,15 @@ func internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
 	log.Debug().Msg("Entering users path...")
 	userID = (*c).Param("user_id")
 	if (*claims).Id != userID {
-		return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: http.StatusBadRequest}
+		return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: http.StatusUnauthorized}
 	}
 
 	return &userID, nil
 }
 
 func externalUserAuthorization(c *echo.Context) *model.Erro {
-	_, err := service.Authorize((*c).Cookie("Token"))
-	if err != nil {
+	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
+	if _, err := service.Authorize(&authorizationHeader); err != nil {
 		if err.Err == http.ErrNoCookie {
 			return &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
 		}

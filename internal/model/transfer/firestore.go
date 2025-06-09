@@ -27,7 +27,7 @@ func NewTransferFirestore(dbClient *firestore.Client) model.RepositoryInterface 
 }
 
 func (db transferFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	transferRequest, ok := request.(Transfer)
+	transferRequest, ok := request.(*Transfer)
 	if !ok {
 		return nil, model.DataTypeWrong
 	}
