@@ -54,7 +54,7 @@ func (service depositImpl) GetAll() (*[]deposit.Deposit, *model.Erro) {
 	return deposits, nil
 }
 
-func (service depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*string, *model.Erro) {
+func (service depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*deposit.Deposit, *model.Erro) {
 	accountRequest, err := service.accountService.Get(&depositRequest.Account_id)
 	if err != nil {
 		return nil, err
@@ -75,8 +75,8 @@ func (service depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*str
 		}
 		return nil, err
 	}
-	log.Info().Msg("Deposit created: " + depositRequest.Account_id)
-	return &depositResponse.Deposit_id, nil
+	log.Info().Msg("Deposit created: " + depositResponse.Deposit_id)
+	return depositResponse, nil
 }
 
 func verifyDeposit(depositRequest *deposit.Deposit, accountResponse *account.Account) (bool, *model.Erro) {

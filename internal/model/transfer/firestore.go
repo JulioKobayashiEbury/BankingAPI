@@ -79,6 +79,9 @@ func (db transferFirestore) Get(id *string) (interface{}, *model.Erro) {
 	if err := docSnapshot.DataTo(&transferResponse); err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+
+	transferResponse.Transfer_id = docSnapshot.Ref.ID
+
 	return &transferResponse, nil
 }
 
@@ -94,7 +97,7 @@ func (db transferFirestore) Update(request interface{}) *model.Erro {
 		"account_id":    transferRequest.Account_id,
 		"account_to":    transferRequest.Account_to,
 		"value":         transferRequest.Value,
-		"register_date": time.Now().Format(model.TimeLayout),
+		"register_date": transferRequest.Register_date,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(transferRequest.Transfer_id)
 	_, err := docRef.Set(ctx, entity)

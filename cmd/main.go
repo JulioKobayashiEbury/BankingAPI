@@ -48,7 +48,7 @@ func main() {
 			))
 		*/
 		gocron.CronJob(
-			"*/1 * * * *",
+			"*/2 * * * *",
 			false,
 		),
 		gocron.NewTask(

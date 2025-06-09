@@ -95,7 +95,7 @@ func (db clientFirestore) Update(request interface{}) *model.Erro {
 		"name":          client.Name,
 		"document":      client.Document,
 		"status":        client.Status,
-		"register_date": time.Now().Format(model.TimeLayout),
+		"register_date": client.Register_date,
 	}
 	docRef := db.databaseclient.Collection(collection).Doc(client.Client_id)
 

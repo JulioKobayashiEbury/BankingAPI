@@ -54,7 +54,7 @@ func (service withdrawalImpl) GetAll() (*[]withdrawal.Withdrawal, *model.Erro) {
 	return withdrawals, nil
 }
 
-func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*string, *model.Erro) {
+func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
 	// monta update
 	accountResponse, err := service.accountService.Get(&withdrawalRequest.Account_id)
 	if err != nil {
@@ -81,8 +81,8 @@ func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Wi
 		return nil, err
 	}
 
-	log.Info().Msg("Succesful Withdrawal: " + withdrawalRequest.Account_id)
-	return &withdrawalResponse.Withdrawal_id, nil
+	log.Info().Msg("Succesful Withdrawal: " + withdrawalResponse.Account_id)
+	return withdrawalResponse, nil
 }
 
 func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse *account.Account) (bool, *model.Erro) {
@@ -93,8 +93,7 @@ func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse 
 	if accountResponse.Agency_id != withdrawalRequest.Agency_id {
 		return false, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
-	accountResponse.Balance = (accountResponse.Balance - withdrawalRequest.Withdrawal)
-	if accountResponse.Balance < 0.0 {
+	if accountResponse.Balance-withdrawalRequest.Withdrawal < 0.0 {
 		return false, &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
 	}
 	return true, nil

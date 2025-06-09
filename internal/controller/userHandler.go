@@ -29,6 +29,7 @@ func UserPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	if (len(userInfo.Document) != documentLenghtIdeal) || (len(userInfo.Name) > maxNameLenght) {
+		log.Warn().Msg("User parameters are not ideal for creating user")
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
@@ -170,15 +171,4 @@ func internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
 	}
 
 	return &userID, nil
-}
-
-func externalUserAuthorization(c *echo.Context) *model.Erro {
-	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
-	if _, err := service.Authorize(&authorizationHeader); err != nil {
-		if err.Err == http.ErrNoCookie {
-			return &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
-		}
-		return err
-	}
-	return nil
 }

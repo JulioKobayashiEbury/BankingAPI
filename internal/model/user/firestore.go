@@ -97,7 +97,7 @@ func (db userFirestore) Update(request interface{}) *model.Erro {
 		"name":          userRequest.Name,
 		"document":      userRequest.Document,
 		"password":      userRequest.Password,
-		"register_date": time.Now().Format(model.TimeLayout),
+		"register_date": userRequest.Register_date,
 		"status":        userRequest.Status,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(userRequest.User_id)

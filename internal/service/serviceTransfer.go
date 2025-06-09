@@ -51,7 +51,7 @@ func (service transferImpl) GetAll() (*[]transfer.Transfer, *model.Erro) {
 	return transfers, nil
 }
 
-func (service transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfer) (*string, *model.Erro) {
+func (service transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro) {
 	accountTo, err := service.accountService.Get(&transferRequest.Account_to)
 	if err == model.IDnotFound || err != nil {
 		return nil, err
@@ -87,5 +87,5 @@ func (service transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfe
 		log.Error().Msg("Update Account Sending Transfer failed, transfer canceled")
 	}
 	log.Info().Msg("Transfer was succesful: " + transferRequest.Transfer_id + " to " + transferRequest.Account_to)
-	return &transferResponse.Transfer_id, nil
+	return transferResponse, nil
 }

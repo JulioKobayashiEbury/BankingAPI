@@ -61,14 +61,14 @@ type WithdrawalService interface {
 	Create(*withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
 	Delete(*string) *model.Erro
 	GetAll() (*[]withdrawal.Withdrawal, *model.Erro)
-	ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*string, *model.Erro)
+	ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
 }
 
 type DepositService interface {
 	Create(*deposit.Deposit) (*deposit.Deposit, *model.Erro)
 	Delete(*string) *model.Erro
 	GetAll() (*[]deposit.Deposit, *model.Erro)
-	ProcessDeposit(depositRequest *deposit.Deposit) (*string, *model.Erro)
+	ProcessDeposit(depositRequest *deposit.Deposit) (*deposit.Deposit, *model.Erro)
 }
 
 type AutomaticDebitService interface {
@@ -84,7 +84,7 @@ type TransferService interface {
 	Create(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
 	Delete(*string) *model.Erro
 	GetAll() (*[]transfer.Transfer, *model.Erro)
-	ProcessNewTransfer(*transfer.Transfer) (*string, *model.Erro)
+	ProcessNewTransfer(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
 }
 
 type GetFilteredService interface {

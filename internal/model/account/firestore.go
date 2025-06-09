@@ -97,8 +97,8 @@ func (db accountFirestore) Update(request interface{}) *model.Erro {
 		"client_id":     accountRequest.Client_id,
 		"user_id":       accountRequest.User_id,
 		"agency_id":     accountRequest.Agency_id,
-		"balance":       0.0,
-		"register_date": time.Now().Format(model.TimeLayout),
+		"balance":       accountRequest.Balance,
+		"register_date": accountRequest.Register_date,
 		"status":        accountRequest.Status,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(accountRequest.Account_id)

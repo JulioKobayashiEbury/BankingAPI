@@ -133,7 +133,7 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 				log.Error().Msg(err.Error())
 				return
 			}
-			if expirationDate.Unix() > time.Now().Unix() {
+			if expirationDate.Unix() < time.Now().Unix() {
 				if err := service.Status(&autoDebit.Debit_id, false); err != nil {
 					log.Error().Msg("Failed to update automatic debit status to expired")
 					return

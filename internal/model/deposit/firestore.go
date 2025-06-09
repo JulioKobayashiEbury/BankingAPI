@@ -36,12 +36,13 @@ func (db depositFirestore) Create(request interface{}) (interface{}, *model.Erro
 	defer ctx.Done()
 
 	entity := map[string]interface{}{
-		"account_id":      depositRequest.Account_id,
-		"client_id":       depositRequest.Client_id,
-		"agency_id":       depositRequest.Agency_id,
-		"deposit":         depositRequest.Deposit,
-		"status":          true,
-		"withdrawal_date": time.Now().Format(model.TimeLayout),
+		"account_id":   depositRequest.Account_id,
+		"client_id":    depositRequest.Client_id,
+		"agency_id":    depositRequest.Agency_id,
+		"user_id":      depositRequest.User_id,
+		"deposit":      depositRequest.Deposit,
+		"status":       true,
+		"deposit_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
 	if err != nil {
@@ -77,11 +78,13 @@ func (db depositFirestore) Get(id *string) (interface{}, *model.Erro) {
 		log.Error().Msg("Nil account from snapshot" + *id)
 		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + *id), HttpCode: http.StatusInternalServerError}
 	}
-	Deposit := Deposit{}
-	if err := docSnapshot.DataTo(&Deposit); err != nil {
+	deposit := Deposit{}
+	if err := docSnapshot.DataTo(&deposit); err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &Deposit, nil
+	deposit.Deposit_id = docSnapshot.Ref.ID
+	log.Info().Msg("Deposit: " + deposit.Deposit_id + " has been retrieved")
+	return &deposit, nil
 }
 
 func (db depositFirestore) Update(request interface{}) *model.Erro {
@@ -93,12 +96,13 @@ func (db depositFirestore) Update(request interface{}) *model.Erro {
 	defer ctx.Done()
 
 	entity := map[string]interface{}{
-		"account_id":      depositRequest.Account_id,
-		"client_id":       depositRequest.Client_id,
-		"agency_id":       depositRequest.Agency_id,
-		"deposit":         depositRequest.Deposit,
-		"status":          true,
-		"withdrawal_date": time.Now().Format(model.TimeLayout),
+		"account_id":   depositRequest.Account_id,
+		"client_id":    depositRequest.Client_id,
+		"agency_id":    depositRequest.Agency_id,
+		"user_id":      depositRequest.User_id,
+		"deposit":      depositRequest.Deposit,
+		"status":       true,
+		"deposit_date": depositRequest.Deposit_date,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(depositRequest.Deposit_id)
 	_, err := docRef.Set(ctx, entity)

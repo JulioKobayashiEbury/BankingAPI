@@ -6,39 +6,39 @@ boundary UserAuthHandler <<userHandler.go>>
 control AuthService <<serviceAuthenticate.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
-Requester -> UserAuthHandler : PUT /users/auth (Body: User_id, Password)
+Requester -> UserAuthHandler : 1. PUT /users/auth (Body: User_id, Password)
 activate UserAuthHandler
 
-UserAuthHandler -> AuthService : Authenticate(&userInfo.User_id, &userInfo.Password, "users")
+UserAuthHandler -> AuthService : 2. Authenticate(&userInfo.User_id, &userInfo.Password, "users")
 activate AuthService
-AuthService -> UserFirestore : Get(&userInfo.User_id)
+AuthService -> UserFirestore : 3. Get(&userInfo.User_id)
 activate UserFirestore
-UserFirestore -->> AuthService : userAuthData / Error
+UserFirestore -->> AuthService : 4. userAuthData / Error
 deactivate UserFirestore
 
 alt Get User Failed or User Not Found
-    AuthService -->> UserAuthHandler : false, Error
-    UserAuthHandler -->> Requester : HTTP Error Response
+    AuthService -->> UserAuthHandler : 5. false, Error
+    UserAuthHandler -->> Requester : 6. HTTP Error Response
 else Get User Succeeded
-    AuthService -> AuthService : Compare userInfo.Password with userAuthData.Password
+    AuthService -> AuthService : 5. Compare userInfo.Password with userAuthData.Password
     alt Password Mismatch
-        AuthService -->> AuthService : false
-        AuthService -->> UserAuthHandler : false, Error (Password is wrong / Credentials not valid)
-        UserAuthHandler -->> Requester : HTTP Error Response (StatusUnauthorized or BadRequest)
+        AuthService -->> AuthService : 6. false
+        AuthService -->> UserAuthHandler : 7. false, Error (Password is wrong / Credentials not valid)
+        UserAuthHandler -->> Requester : 8. HTTP Error Response (StatusUnauthorized or BadRequest)
     else Password Match
-        AuthService -->> AuthService : true
-        AuthService -->> UserAuthHandler : true, nil
+        AuthService -->> AuthService : 6. true
+        AuthService -->> UserAuthHandler : 7. true, nil
         
-        UserAuthHandler -> AuthService : GenerateToken(&userInfo.User_id)
+        UserAuthHandler -> AuthService : 8. GenerateToken(&userInfo.User_id)
         ' AuthService was already active for Authenticate, can reuse or reactivate for GenerateToken
         ' For clarity, let's assume GenerateToken is a distinct activation phase if preferred
-        AuthService -->> UserAuthHandler : cookie_ptr / Error
+        AuthService -->> UserAuthHandler : 9. cookie_ptr / Error
         
         alt Token Generation Failed
-            UserAuthHandler -->> Requester : HTTP Error Response
+            UserAuthHandler -->> Requester : 10. HTTP Error Response
         else Token Generation Succeeded
-            UserAuthHandler -> UserAuthHandler : c.SetCookie(cookie_ptr)
-            UserAuthHandler -->> Requester : HTTP 202 Accepted (Message: User Authorized)
+            UserAuthHandler -> UserAuthHandler : 10. c.SetCookie(cookie_ptr)
+            UserAuthHandler -->> Requester : 11. HTTP 202 Accepted (Message: User Authorized)
         end
     end
     deactivate AuthService

@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"BankingAPI/internal/model/client"
+	"BankingAPI/internal/service"
 
 	model "BankingAPI/internal/model"
 
@@ -22,11 +24,22 @@ func AddClientsEndPoints(server *echo.Echo) {
 }
 
 func ClientPostHandler(c echo.Context) error {
+	userID, err := authorizationForClientEndpoints(&c, nil)
+	if err != nil {
+		c.JSON(err.HttpCode, err.Err.Error())
+	}
+
 	var clientInfo client.Client
 	if err := c.Bind(&clientInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
+
+	if *userID != clientInfo.User_id {
+		log.Warn().Msg("User ID does not match with clients User ID")
+		return c.JSON(http.StatusForbidden, model.StandartResponse{Message: "User ID does not match with clients User ID"})
+	}
+
 	if len(clientInfo.Document) != documentLenghtIdeal || len(clientInfo.Name) > maxNameLenght {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
@@ -40,11 +53,10 @@ func ClientPostHandler(c echo.Context) error {
 }
 
 func ClientGetHandler(c echo.Context) error {
-	err := externalUserAuthorization(&c)
-	if err != nil {
+	clientID := c.Param("client_id")
+	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	clientID := c.Param("client_id")
 
 	clientInfo, err := Services.ClientService.Get(&clientID)
 	if err != nil {
@@ -55,11 +67,10 @@ func ClientGetHandler(c echo.Context) error {
 }
 
 func ClientDeleteHandler(c echo.Context) error {
-	err := externalUserAuthorization(&c)
-	if err != nil {
+	clientID := c.Param("client_id")
+	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	clientID := c.Param("client_id")
 
 	if err := Services.ClientService.Delete(&clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -69,17 +80,17 @@ func ClientDeleteHandler(c echo.Context) error {
 }
 
 func ClientPutHandler(c echo.Context) error {
-	err := externalUserAuthorization(&c)
-	if err != nil {
+	clientID := c.Param("client_id")
+	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
+
 	var clientInfo client.Client
 	if err := c.Bind(&clientInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	clientInfo.Client_id = c.Param("client_id")
-
+	clientInfo.Client_id = clientID
 	Client, err := Services.ClientService.Update(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -89,11 +100,10 @@ func ClientPutHandler(c echo.Context) error {
 }
 
 func ClientPutBlockHandler(c echo.Context) error {
-	err := externalUserAuthorization(&c)
-	if err != nil {
+	clientID := c.Param("client_id")
+	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	clientID := c.Param("client_id")
 
 	if err := Services.ClientService.Status(&clientID, false); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -103,11 +113,10 @@ func ClientPutBlockHandler(c echo.Context) error {
 }
 
 func ClientPutUnBlockHandler(c echo.Context) error {
-	err := externalUserAuthorization(&c)
-	if err != nil {
+	clientID := c.Param("client_id")
+	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	clientID := c.Param("client_id")
 
 	if err := Services.ClientService.Status(&clientID, true); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -117,15 +126,42 @@ func ClientPutUnBlockHandler(c echo.Context) error {
 }
 
 func ClientGetReportHandler(c echo.Context) error {
-	err := externalUserAuthorization(&c)
-	if err != nil {
+	clientID := c.Param("client_id")
+	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	clientID := c.Param("client_id")
 
 	clientReport, err := Services.ClientService.Report(&clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, (*clientReport))
+}
+
+func authorizationForClientEndpoints(c *echo.Context, clientID *string) (*string, *model.Erro) {
+	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
+
+	claims, err := service.Authorize(&authorizationHeader)
+	if err != nil {
+		if err.Err == http.ErrNoCookie {
+			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
+		}
+		return nil, err
+	}
+
+	if clientID == nil {
+		return &claims.Id, nil
+	}
+
+	account, err := Services.AccountService.Get(clientID)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.User_id != claims.Id {
+		log.Error().Msg("User ID does not match with accounts User ID")
+		return nil, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
+	}
+
+	return nil, nil
 }

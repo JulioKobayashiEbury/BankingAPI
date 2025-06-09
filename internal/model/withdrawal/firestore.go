@@ -60,6 +60,7 @@ func (db withdrawalFirestore) Delete(id *string) *model.Erro {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
+
 	return nil
 }
 
@@ -76,15 +77,18 @@ func (db withdrawalFirestore) Get(id *string) (interface{}, *model.Erro) {
 		log.Error().Msg("Nil account from snapshot" + *id)
 		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
 	}
-	Withdrawal := Withdrawal{}
-	if err := docSnapshot.DataTo(&Withdrawal); err != nil {
+	withdrawal := Withdrawal{}
+	if err := docSnapshot.DataTo(&withdrawal); err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &Withdrawal, nil
+
+	withdrawal.Withdrawal_id = docSnapshot.Ref.ID
+
+	return &withdrawal, nil
 }
 
 func (db withdrawalFirestore) Update(request interface{}) *model.Erro {
-	Withdrawal, ok := request.(*Withdrawal)
+	withdrawal, ok := request.(*Withdrawal)
 	if !ok {
 		return model.DataTypeWrong
 	}
@@ -92,20 +96,20 @@ func (db withdrawalFirestore) Update(request interface{}) *model.Erro {
 	defer ctx.Done()
 
 	entity := map[string]interface{}{
-		"account_id":      Withdrawal.Account_id,
-		"client_id":       Withdrawal.Client_id,
-		"agency_id":       Withdrawal.Agency_id,
-		"withdrawal":      Withdrawal.Withdrawal,
+		"account_id":      withdrawal.Account_id,
+		"client_id":       withdrawal.Client_id,
+		"agency_id":       withdrawal.Agency_id,
+		"withdrawal":      withdrawal.Withdrawal,
 		"status":          true,
-		"withdrawal_date": time.Now().Format(model.TimeLayout),
+		"withdrawal_date": withdrawal.Withdrawal_date,
 	}
-	docRef := db.databaseClient.Collection(collection).Doc(Withdrawal.Withdrawal_id)
+	docRef := db.databaseClient.Collection(collection).Doc(withdrawal.Withdrawal_id)
 	_, err := docRef.Set(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	log.Info().Msg("Account: " + Withdrawal.Withdrawal_id + " has been updated")
+	log.Info().Msg("Account: " + withdrawal.Withdrawal_id + " has been updated")
 
 	return nil
 }

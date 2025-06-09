@@ -89,6 +89,9 @@ func (service accountServiceImpl) Update(accountRequest *account.Account) (*acco
 	if accountRequest.User_id != "" {
 		accountResponse.User_id = accountRequest.User_id
 	}
+	if accountRequest.Balance != accountResponse.Balance {
+		accountResponse.Balance = accountRequest.Balance
+	}
 	// monta struct de update
 
 	if err := service.accountDatabase.Update(accountResponse); err != nil {

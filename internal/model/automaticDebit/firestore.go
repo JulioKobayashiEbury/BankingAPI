@@ -50,7 +50,7 @@ func (db autoDebitFirestore) Create(request interface{}) (interface{}, *model.Er
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return &docRef.ID, nil
+	return db.Get(&docRef.ID)
 }
 
 func (db autoDebitFirestore) Delete(id *string) *model.Erro {
@@ -103,7 +103,7 @@ func (db autoDebitFirestore) Update(request interface{}) *model.Erro {
 		"debit_day":       autoDebitRequest.Debit_day,
 		"expiration_date": autoDebitRequest.Expiration_date,
 		"status":          true,
-		"register_date":   time.Now().Format(model.TimeLayout),
+		"register_date":   autoDebitRequest.Register_date,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(autoDebitRequest.Debit_id)
 
