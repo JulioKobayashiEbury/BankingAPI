@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"BankingAPI/internal/controller"
+	"BankingAPI/internal/model/user"
 
 	"cloud.google.com/go/firestore"
 	"github.com/go-co-op/gocron/v2"
@@ -33,6 +34,8 @@ func init() {
 
 	controller.InstantiateRepo()
 	controller.InstantiateServices()
+
+	createAdminUser()
 }
 
 func main() {
@@ -71,4 +74,30 @@ func main() {
 		os.Exit(0)
 	}()
 	controller.Server()
+}
+
+func createAdminUser() {
+	allUsers, err := controller.Services.UserService.GetAll()
+	if err != nil {
+		return
+	}
+
+	for _, user := range *allUsers {
+		if user.Name == "admin" {
+			log.Info().Msg("Admin user already exists with ID: " + user.User_id)
+			return
+		}
+	}
+
+	userResponse, err := controller.Services.UserService.Create(&user.User{
+		Name:     "admin",
+		Document: "00000000000000",
+		Password: "admin",
+	})
+	if err != nil {
+		log.Error().Msg(err.Err.Error())
+		return
+	}
+	log.Info().Msg("Admin user created with ID: " + userResponse.User_id)
+	return
 }

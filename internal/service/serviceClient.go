@@ -49,7 +49,7 @@ func (service clientServiceImpl) Delete(id *string) *model.Erro {
 	if err := service.clientDatabase.Delete(id); err != nil {
 		return err
 	}
-	log.Info().Msg("Account deleted: " + *id)
+	log.Info().Msg("Client deleted: " + *id)
 	return nil
 }
 

@@ -23,6 +23,10 @@ func AddUsersEndPoints(server *echo.Echo) {
 }
 
 func UserPostHandler(c echo.Context) error {
+	if _, err := internalUserAuthorization(&c); err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+
 	var userInfo user.User
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
@@ -165,7 +169,16 @@ func internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
 	var userID string
 
 	log.Debug().Msg("Entering users path...")
+
+	userResponse, err := Services.UserService.Get(&claims.Id)
+	if err != nil {
+		return nil, err
+	}
 	userID = (*c).Param("user_id")
+	if userResponse.Name == "admin" {
+		return &userID, nil
+	}
+
 	if (*claims).Id != userID {
 		return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: http.StatusUnauthorized}
 	}
