@@ -4,12 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	model "BankingAPI/internal/model"
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/model/withdrawal"
 
+	"github.com/go-co-op/gocron/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -158,4 +162,41 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 		}
 
 	}
+}
+
+func (service serviceAutoDebitImpl) Scheduled() {
+	scheduler, err := gocron.NewScheduler()
+	if err != nil {
+		return
+	}
+
+	job, err := scheduler.NewJob(
+		/*
+			gocron.DailyJob(1, gocron.NewAtTimes(
+				gocron.NewAtTime(10, 00, 00)
+			))
+		*/
+		gocron.CronJob(
+			"*/2 * * * *",
+			false,
+		),
+		gocron.NewTask(
+			service.CheckAutomaticDebits,
+		),
+		gocron.WithName("Checking Automatic Debits"),
+	)
+	if err != nil {
+		return
+	}
+	scheduler.Start()
+	log.Info().Msg(job.ID().String())
+	fmt.Print("Scheduler running...")
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		log.Info().Msg("Interruption signal received, terminating gracefully...")
+		scheduler.Shutdown()
+		os.Exit(0)
+	}()
 }

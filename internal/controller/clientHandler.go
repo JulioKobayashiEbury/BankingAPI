@@ -13,18 +13,38 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func AddClientsEndPoints(server *echo.Echo) {
-	server.POST("/clients", ClientPostHandler)
-	server.GET("/clients/:client_id", ClientGetHandler)
-	server.GET("/clients/:client_id/report", ClientGetReportHandler)
-	server.DELETE("/clients/:client_id", ClientDeleteHandler)
-	server.PUT("/clients/:client_id", ClientPutHandler)
-	server.PUT("/clients/:client_id/block", ClientPutBlockHandler)
-	server.PUT("/clients/:client_id/unblock", ClientPutUnBlockHandler)
+type ClientHandler interface {
+	ClientPostHandler(c echo.Context) error
+	ClientGetHandler(c echo.Context) error
+	ClientDeleteHandler(c echo.Context) error
+	ClientPutHandler(c echo.Context) error
+	ClientPutBlockHandler(c echo.Context) error
+	ClientPutUnBlockHandler(c echo.Context) error
+	ClientGetReportHandler(c echo.Context) error
 }
 
-func ClientPostHandler(c echo.Context) error {
-	userID, err := authorizationForClientEndpoints(&c, nil)
+type clientHandlerImpl struct {
+	clientService service.ClientService
+}
+
+func NewClientHandler(clientService service.ClientService) ClientHandler {
+	return clientHandlerImpl{
+		clientService: clientService,
+	}
+}
+
+func AddClientsEndPoints(server *echo.Echo, h ClientHandler) {
+	server.POST("/clients", h.ClientPostHandler)
+	server.GET("/clients/:client_id", h.ClientGetHandler)
+	server.GET("/clients/:client_id/report", h.ClientGetReportHandler)
+	server.DELETE("/clients/:client_id", h.ClientDeleteHandler)
+	server.PUT("/clients/:client_id", h.ClientPutHandler)
+	server.PUT("/clients/:client_id/block", h.ClientPutBlockHandler)
+	server.PUT("/clients/:client_id/unblock", h.ClientPutUnBlockHandler)
+}
+
+func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {
+	userID, err := h.authorizationForClientEndpoints(&c, nil)
 	if err != nil {
 		c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -44,7 +64,7 @@ func ClientPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	Client, err := Services.ClientService.Create(&clientInfo)
+	Client, err := h.clientService.Create(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -52,13 +72,13 @@ func ClientPostHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, (*Client))
 }
 
-func ClientGetHandler(c echo.Context) error {
+func (h clientHandlerImpl) ClientGetHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
+	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	clientInfo, err := Services.ClientService.Get(&clientID)
+	clientInfo, err := h.clientService.Get(&clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -66,22 +86,22 @@ func ClientGetHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, (*clientInfo))
 }
 
-func ClientDeleteHandler(c echo.Context) error {
+func (h clientHandlerImpl) ClientDeleteHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
+	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.ClientService.Delete(&clientID); err != nil {
+	if err := h.clientService.Delete(&clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Client deleted seccesfully"})
 }
 
-func ClientPutHandler(c echo.Context) error {
+func (h clientHandlerImpl) ClientPutHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
+	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -91,7 +111,7 @@ func ClientPutHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	clientInfo.Client_id = clientID
-	Client, err := Services.ClientService.Update(&clientInfo)
+	Client, err := h.clientService.Update(&clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -99,53 +119,50 @@ func ClientPutHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, (*Client))
 }
 
-func ClientPutBlockHandler(c echo.Context) error {
+func (h clientHandlerImpl) ClientPutBlockHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
+	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.ClientService.Status(&clientID, false); err != nil {
+	if err := h.clientService.Status(&clientID, false); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Client Blocked"})
 }
 
-func ClientPutUnBlockHandler(c echo.Context) error {
+func (h clientHandlerImpl) ClientPutUnBlockHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
+	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.ClientService.Status(&clientID, true); err != nil {
+	if err := h.clientService.Status(&clientID, true); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Client Unblocked"})
 }
 
-func ClientGetReportHandler(c echo.Context) error {
+func (h clientHandlerImpl) ClientGetReportHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	if _, err := authorizationForClientEndpoints(&c, &clientID); err != nil {
+	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	clientReport, err := Services.ClientService.Report(&clientID)
+	clientReport, err := h.clientService.Report(&clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, (*clientReport))
 }
 
-func authorizationForClientEndpoints(c *echo.Context, clientID *string) (*string, *model.Erro) {
+func (h clientHandlerImpl) authorizationForClientEndpoints(c *echo.Context, clientID *string) (*string, *model.Erro) {
 	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
 
 	claims, err := service.Authorize(&authorizationHeader)
 	if err != nil {
-		if err.Err == http.ErrNoCookie {
-			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
-		}
 		return nil, err
 	}
 
@@ -153,12 +170,12 @@ func authorizationForClientEndpoints(c *echo.Context, clientID *string) (*string
 		return &claims.Id, nil
 	}
 
-	account, err := Services.AccountService.Get(clientID)
+	client, err := h.clientService.Get(clientID)
 	if err != nil {
 		return nil, err
 	}
 
-	if account.User_id != claims.Id {
+	if client.User_id != claims.Id {
 		log.Error().Msg("User ID does not match with accounts User ID")
 		return nil, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
 	}

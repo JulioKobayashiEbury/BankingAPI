@@ -16,11 +16,6 @@ const expirationMin = 30
 
 var jwtKey = []byte("bankingapi-key")
 
-type Authentication interface {
-	Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro)
-	GenerateToken(typeID *string) (*string, *model.Erro)
-}
-
 type auth struct {
 	userDatabase model.RepositoryInterface
 }

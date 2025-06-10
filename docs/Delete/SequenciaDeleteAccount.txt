@@ -9,32 +9,32 @@ entity AccountFirestore <<model/account/firestore.go>>
 
 activate Requester
 
-Requester -> AccountDeleteHandler : DELETE /accounts/:account_id
+Requester -> AccountDeleteHandler : 1. DELETE /accounts/:account_id
 
 activate AccountDeleteHandler
 
-AccountDeleteHandler -> AuthorizeService : Authorize(Cookie)
+AccountDeleteHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> AccountDeleteHandler : Claims / Error
+AuthorizeService -->> AccountDeleteHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    AccountDeleteHandler -->> Requester : HTTP Error Response
+    AccountDeleteHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
 
-    AccountDeleteHandler -> AccountService : AccountDelete(accountID_from_path)
+    AccountDeleteHandler -> AccountService : 4. AccountDelete(accountID_from_path)
     activate AccountService
-    AccountService -> AccountFirestore : Delete(&accountID_from_path)
+    AccountService -> AccountFirestore : 5. Delete(&accountID_from_path)
     activate AccountFirestore
-    AccountFirestore -->> AccountService : nil / Error
+    AccountFirestore -->> AccountService : 6. nil / Error
     deactivate AccountFirestore
     
     alt Delete Account Failed
-        AccountService -->> AccountDeleteHandler : Error
-        AccountDeleteHandler -->> Requester : HTTP Error Response
+        AccountService -->> AccountDeleteHandler : 7. Error
+        AccountDeleteHandler -->> Requester : 8. HTTP Error Response
     else Delete Account Succeeded
-        AccountService -->> AccountDeleteHandler : nil
-        AccountDeleteHandler -->> Requester : HTTP 200 OK (Message: Account Deleted)
+        AccountService -->> AccountDeleteHandler : 7. nil
+        AccountDeleteHandler -->> Requester : 8. bHTTP 200 OK (Message: Account Deleted)
     end
     deactivate AccountService
 end

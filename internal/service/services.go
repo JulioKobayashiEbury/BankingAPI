@@ -25,6 +25,12 @@ type ServicesList struct {
 	AutomaticdebitService AutomaticDebitService
 	TransferService       TransferService
 	GetFilteredService    GetFilteredService
+	AuthenticationService Authentication
+}
+
+type Authentication interface {
+	Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro)
+	GenerateToken(typeID *string) (*string, *model.Erro)
 }
 
 type UserService interface {
@@ -60,6 +66,7 @@ type AccountService interface {
 type WithdrawalService interface {
 	Create(*withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
 	Delete(*string) *model.Erro
+	Get(*string) (*withdrawal.Withdrawal, *model.Erro)
 	GetAll() (*[]withdrawal.Withdrawal, *model.Erro)
 	ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
 }
@@ -67,6 +74,7 @@ type WithdrawalService interface {
 type DepositService interface {
 	Create(*deposit.Deposit) (*deposit.Deposit, *model.Erro)
 	Delete(*string) *model.Erro
+	Get(*string) (*deposit.Deposit, *model.Erro)
 	GetAll() (*[]deposit.Deposit, *model.Erro)
 	ProcessDeposit(depositRequest *deposit.Deposit) (*deposit.Deposit, *model.Erro)
 }
@@ -74,15 +82,18 @@ type DepositService interface {
 type AutomaticDebitService interface {
 	Create(*automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
 	Delete(*string) *model.Erro
+	Get(*string) (*automaticdebit.AutomaticDebit, *model.Erro)
 	GetAll() (*[]automaticdebit.AutomaticDebit, *model.Erro)
 	ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
 	CheckAutomaticDebits()
 	Status(*string, bool) *model.Erro
+	Scheduled()
 }
 
 type TransferService interface {
 	Create(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
 	Delete(*string) *model.Erro
+	Get(id *string) (*transfer.Transfer, *model.Erro)
 	GetAll() (*[]transfer.Transfer, *model.Erro)
 	ProcessNewTransfer(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
 }

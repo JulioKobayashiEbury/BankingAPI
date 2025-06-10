@@ -39,6 +39,20 @@ func (service transferImpl) Delete(id *string) *model.Erro {
 	return nil
 }
 
+func (service transferImpl) Get(id *string) (*transfer.Transfer, *model.Erro) {
+	obj, err := service.transferDatabase.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	transferResposne, ok := obj.(*transfer.Transfer)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	return transferResposne, nil
+}
+
 func (service transferImpl) GetAll() (*[]transfer.Transfer, *model.Erro) {
 	obj, err := service.transferDatabase.GetAll()
 	if err != nil {

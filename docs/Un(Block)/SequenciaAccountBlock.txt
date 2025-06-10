@@ -8,38 +8,38 @@ control AccountService <<serviceAccount.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 
 activate Requester
-Requester -> AccountPutBlockHandler : PUT /accounts/:account_id/block
+Requester -> AccountPutBlockHandler : 1. PUT /accounts/:account_id/block
 activate AccountPutBlockHandler
-AccountPutBlockHandler -> AuthorizeService : Authorize(Cookie)
+AccountPutBlockHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService --> AccountPutBlockHandler : Claims / Error
+AuthorizeService --> AccountPutBlockHandler : 3. Claims / Error
 deactivate AuthorizeService
 alt Authorization Failed
-    AccountPutBlockHandler --> Requester : HTTP Error Response
+    AccountPutBlockHandler --> Requester : 4. HTTP Error Response
 else Authorization Succeeded
-    AccountPutBlockHandler -> AccountService : AccountBlock(accountID)
+    AccountPutBlockHandler -> AccountService : 4. AccountBlock(accountID)
     activate AccountService
-    AccountService -> AccountService : Account(accountID)
-    AccountService -> AccountFirestore : Get(&accountID)
+    AccountService -> AccountService : 5. Account(accountID)
+    AccountService -> AccountFirestore : 6. Get(&accountID)
     activate AccountFirestore
-    AccountFirestore --> AccountService : accountData / Error
+    AccountFirestore --> AccountService : 7. accountData / Error
     deactivate AccountFirestore
     alt Get Account Failed
-        AccountService --> AccountService : Error
-        AccountService --> AccountPutBlockHandler : Error
-        AccountPutBlockHandler --> Requester : HTTP Error Response
+        AccountService --> AccountService : 8. Error
+        AccountService --> AccountPutBlockHandler : 9. Error
+        AccountPutBlockHandler --> Requester : 10. HTTP Error Response
     else Get Account Succeeded
-        AccountService --> AccountService : account
-        AccountService -> AccountFirestore : Update(account with Status=false)
+        AccountService --> AccountService : 8. account
+        AccountService -> AccountFirestore : 9. Update(account with Status=false)
         activate AccountFirestore
-        AccountFirestore --> AccountService : nil / Error
+        AccountFirestore --> AccountService : 10. nil / Error
         deactivate AccountFirestore
         alt Update Account Failed
-            AccountService --> AccountPutBlockHandler : Error
-            AccountPutBlockHandler --> Requester : HTTP Error Response
+            AccountService --> AccountPutBlockHandler : 11. Error
+            AccountPutBlockHandler --> Requester : 12. HTTP Error Response
         else Update Account Succeeded
-            AccountService --> AccountPutBlockHandler : nil
-            AccountPutBlockHandler --> Requester : HTTP 200 OK (Account Blocked)
+            AccountService --> AccountPutBlockHandler : 11. nil
+            AccountPutBlockHandler --> Requester : 12. HTTP 200 OK (Account Blocked)
         end
     end
     deactivate AccountService

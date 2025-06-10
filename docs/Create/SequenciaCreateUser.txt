@@ -7,39 +7,39 @@ control UserService <<serviceUser.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
 activate Requester
-Requester -> UserPostHandler : POST /users (Body: User Info)
+Requester -> UserPostHandler : 1. POST /users (Body: User Info)
 activate UserPostHandler
 
-UserPostHandler -> UserService : CreateUser(userRequest)
+UserPostHandler -> UserService : 2. CreateUser(userRequest)
 activate UserService
 
 alt Missing Credentials (Name, Document, or Password)
-    UserService -->> UserPostHandler : Error (Missing credentials)
-    UserPostHandler -->> Requester : HTTP Error Response
+    UserService -->> UserPostHandler : 3. Error (Missing credentials)
+    UserPostHandler -->> Requester : 4. HTTP Error Response
 else
-    UserService -> UserFirestore : Create(userRequest)
+    UserService -> UserFirestore : 3. Create(userRequest)
     activate UserFirestore
-    UserFirestore -->> UserService : userID_ptr / Error
+    UserFirestore -->> UserService : 4. userID_ptr / Error
     deactivate UserFirestore
     
     alt Create User Record Failed
-        UserService -->> UserPostHandler : Error
-        UserPostHandler -->> Requester : HTTP Error Response
+        UserService -->> UserPostHandler : 5. Error
+        UserPostHandler -->> Requester : 6. HTTP Error Response
     else Create User Record Succeeded
-        UserService -> UserService : User(*userID_ptr)
-        UserService -> UserFirestore : Get(*userID_ptr)
+        UserService -> UserService : 5. User(*userID_ptr)
+        UserService -> UserFirestore : 6. Get(*userID_ptr)
         activate UserFirestore
-        UserFirestore -->> UserService : createdUserData / Error
+        UserFirestore -->> UserService : 7. createdUserData / Error
         deactivate UserFirestore
         
         alt Get Created User Failed
-            UserService -->> UserService : Error
-            UserService -->> UserPostHandler : Error
-            UserPostHandler -->> Requester : HTTP Error Response
+            UserService -->> UserService : 8. Error
+            UserService -->> UserPostHandler : 9. Error
+            UserPostHandler -->> Requester : 10. HTTP Error Response
         else Get Created User Succeeded
-            UserService -->> UserService : createdUser
-            UserService -->> UserPostHandler : createdUser
-            UserPostHandler -->> Requester : HTTP 201 Created (createdUser)
+            UserService -->> UserService : 8. createdUser
+            UserService -->> UserPostHandler : 9. createdUser
+            UserPostHandler -->> Requester : 10. HTTP 201 Created (createdUser)
         end
     end
 end

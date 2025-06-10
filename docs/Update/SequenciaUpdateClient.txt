@@ -8,56 +8,56 @@ control ClientService <<serviceClient.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
 activate Requester
-Requester -> ClientPutHandler : PUT /clients/:client_id (Body: ClientRequest Info)
+Requester -> ClientPutHandler : 1. PUT /clients/:client_id (Body: ClientRequest Info)
 activate ClientPutHandler
 
-ClientPutHandler -> AuthorizeService : Authorize(Cookie)
+ClientPutHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> ClientPutHandler : Claims / Error
+AuthorizeService -->> ClientPutHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    ClientPutHandler -->> Requester : HTTP Error Response
+    ClientPutHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
-    ClientPutHandler -> ClientService : UpdateClient(clientRequest with Client_id from path)
+    ClientPutHandler -> ClientService : 4. UpdateClient(clientRequest with Client_id from path)
     activate ClientService
-    ClientService -> ClientService : Client(clientRequest.Client_id)
-    ClientService -> ClientFirestore : Get(&clientRequest.Client_id)
+    ClientService -> ClientService : 5. Client(clientRequest.Client_id)
+    ClientService -> ClientFirestore : 6. Get(&clientRequest.Client_id)
     activate ClientFirestore
-    ClientFirestore -->> ClientService : existingClientData / Error
+    ClientFirestore -->> ClientService : 7. existingClientData / Error
     deactivate ClientFirestore
     
     alt Get Existing Client Failed
-        ClientService -->> ClientService : Error
-        ClientService -->> ClientPutHandler : Error
-        ClientPutHandler -->> Requester : HTTP Error Response
+        ClientService -->> ClientService : 8. Error
+        ClientService -->> ClientPutHandler : 9. Error
+        ClientPutHandler -->> Requester : 10. HTTP Error Response
     else Get Existing Client Succeeded
-        ClientService -->> ClientService : clientResponse (existing data)
+        ClientService -->> ClientService : 8. clientResponse (existing data)
         note right of ClientService : Updates fields in clientResponse if provided in clientRequest
-        ClientService -> ClientFirestore : Update(updatedClientResponseAsRequest) ' ClientFirestore.Update expects *ClientRequest
+        ClientService -> ClientFirestore : 9. Update(updatedClientResponseAsRequest) ' ClientFirestore.Update expects *ClientRequest
         activate ClientFirestore
-        ClientFirestore -->> ClientService : nil / Error
+        ClientFirestore -->> ClientService : 10. nil / Error
         deactivate ClientFirestore
         
         alt Update Client Record Failed
-            ClientService -->> ClientPutHandler : Error
-            ClientPutHandler -->> Requester : HTTP Error Response
+            ClientService -->> ClientPutHandler : 11. Error
+            ClientPutHandler -->> Requester : 12. HTTP Error Response
         else Update Client Record Succeeded
-            ClientService -> ClientService : Client(clientRequest.Client_id) 'Re-fetch updated
-            ClientService -> ClientFirestore : Get(&clientRequest.Client_id)
+            ClientService -> ClientService : 11. Client(clientRequest.Client_id) 'Re-fetch updated
+            ClientService -> ClientFirestore : 12. Get(&clientRequest.Client_id)
             activate ClientFirestore
-            ClientFirestore -->> ClientService : finalClientData / Error
+            ClientFirestore -->> ClientService : 13. finalClientData / Error
             deactivate ClientFirestore
             
             alt Re-fetch Failed
-                 ClientService -->> ClientService : Error
-                 ClientService -->> ClientPutHandler : Error
-                 ClientPutHandler -->> Requester : HTTP Error Response
+                 ClientService -->> ClientService : 14. Error
+                 ClientService -->> ClientPutHandler : 15. Error
+                 ClientPutHandler -->> Requester : 16. HTTP Error Response
             else Re-fetch Succeeded
-                 ClientService -->> ClientService : finalClientResponse
-                 ClientService -->> ClientPutHandler : finalClientResponse
+                 ClientService -->> ClientService : 14. finalClientResponse
+                 ClientService -->> ClientPutHandler : 15. finalClientResponse
                  
-                 ClientPutHandler -->> Requester : HTTP 200 OK (finalClientResponse)
+                 ClientPutHandler -->> Requester : 16. HTTP 200 OK (finalClientResponse)
             end
             deactivate ClientService
         end

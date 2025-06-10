@@ -8,56 +8,56 @@ control AccountService <<serviceAccount.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 
 activate Requester
-Requester -> AccountPutHandler : PUT /accounts/:account_id (Body: Account Info)
+Requester -> AccountPutHandler : 1. PUT /accounts/:account_id (Body: Account Info)
 activate AccountPutHandler
 
-AccountPutHandler -> AuthorizeService : Authorize(Cookie)
+AccountPutHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> AccountPutHandler : Claims / Error
+AuthorizeService -->> AccountPutHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    AccountPutHandler -->> Requester : HTTP Error Response
+    AccountPutHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
 
-    AccountPutHandler -> AccountService : UpdateAccount(accountRequest with Account_id from path)
+    AccountPutHandler -> AccountService : 4. UpdateAccount(accountRequest with Account_id from path)
     activate AccountService
-    AccountService -> AccountService : Account(accountRequest.Account_id)
-    AccountService -> AccountFirestore : Get(&accountRequest.Account_id)
+    AccountService -> AccountService : 5. Account(accountRequest.Account_id)
+    AccountService -> AccountFirestore : 6. Get(&accountRequest.Account_id)
     activate AccountFirestore
-    AccountFirestore -->> AccountService : existingAccountData / Error
+    AccountFirestore -->> AccountService : 7. existingAccountData / Error
     deactivate AccountFirestore
     
     alt Get Existing Account Failed
-        AccountService -->> AccountService : Error
-        AccountService -->> AccountPutHandler : Error
-        AccountPutHandler -->> Requester : HTTP Error Response
+        AccountService -->> AccountService : 8. Error
+        AccountService -->> AccountPutHandler : 9. Error
+        AccountPutHandler -->> Requester : 10. HTTP Error Response
     else Get Existing Account Succeeded
-        AccountService -->> AccountService : accountResponse (existing data)
+        AccountService -->> AccountService : 8. accountResponse (existing data)
         note right of AccountService : Updates fields in accountResponse if provided in accountRequest
-        AccountService -> AccountFirestore : Update(updatedAccountResponse)
+        AccountService -> AccountFirestore : 9. Update(updatedAccountResponse)
         activate AccountFirestore
-        AccountFirestore -->> AccountService : nil / Error
+        AccountFirestore -->> AccountService : 10. nil / Error
         deactivate AccountFirestore
         
         alt Update Account Record Failed
-            AccountService -->> AccountPutHandler : Error
-            AccountPutHandler -->> Requester : HTTP Error Response
+            AccountService -->> AccountPutHandler : 11. Error
+            AccountPutHandler -->> Requester : 12. HTTP Error Response
         else Update Account Record Succeeded
-            AccountService -> AccountService : Account(accountRequest.Account_id) 'Re-fetch updated
-            AccountService -> AccountFirestore : Get(&accountRequest.Account_id)
+            AccountService -> AccountService : 11. Account(accountRequest.Account_id) 'Re-fetch updated
+            AccountService -> AccountFirestore : 12. Get(&accountRequest.Account_id)
             activate AccountFirestore
-            AccountFirestore -->> AccountService : finalAccountData / Error
+            AccountFirestore -->> AccountService : 13. finalAccountData / Error
             deactivate AccountFirestore
             
             alt Re-fetch Failed
-                 AccountService -->> AccountService : Error
-                 AccountService -->> AccountPutHandler : Error (but update was likely successful)
-                 AccountPutHandler -->> Requester : HTTP Error Response
+                 AccountService -->> AccountService : 14. Error
+                 AccountService -->> AccountPutHandler : 15. Error (but update was likely successful)
+                 AccountPutHandler -->> Requester : 16. HTTP Error Response
             else Re-fetch Succeeded
-                 AccountService -->> AccountService : finalAccount
-                 AccountService -->> AccountPutHandler : finalAccount
-                 AccountPutHandler -->> Requester : HTTP 200 OK (finalAccount)
+                 AccountService -->> AccountService : 14. finalAccount
+                 AccountService -->> AccountPutHandler : 15. finalAccount
+                 AccountPutHandler -->> Requester : 16. HTTP 200 OK (finalAccount)
             end
             deactivate AccountService
         end

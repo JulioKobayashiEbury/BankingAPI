@@ -8,56 +8,56 @@ control UserService <<serviceUser.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
 activate Requester
-Requester -> UserPutHandler : PUT /users/:user_id (Body: User Info)
+Requester -> UserPutHandler : 1. PUT /users/:user_id (Body: User Info)
 activate UserPutHandler
 
-UserPutHandler -> AuthorizeService : Authorize(Cookie)
+UserPutHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> UserPutHandler : Claims (userIDFromClaims) / Error
+AuthorizeService -->> UserPutHandler : 3. Claims (userIDFromClaims) / Error
 deactivate AuthorizeService
 
 alt Authorization Failed (or user_id mismatch with claims.Id)
-    UserPutHandler -->> Requester : HTTP Error Response
+    UserPutHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
 
-    UserPutHandler -> UserService : UpdateUser(userRequest with User_id from path/claims)
+    UserPutHandler -> UserService : 4. UpdateUser(userRequest with User_id from path/claims)
     activate UserService
-    UserService -> UserService : User(userRequest.User_id)
-    UserService -> UserFirestore : Get(&userRequest.User_id)
+    UserService -> UserService : 5. User(userRequest.User_id)
+    UserService -> UserFirestore : 6. Get(&userRequest.User_id)
     activate UserFirestore
-    UserFirestore -->> UserService : existingUserData / Error
+    UserFirestore -->> UserService : 7. existingUserData / Error
     deactivate UserFirestore
     
     alt Get Existing User Failed
-        UserService -->> UserService : Error
-        UserService -->> UserPutHandler : Error
-        UserPutHandler -->> Requester : HTTP Error Response
+        UserService -->> UserService : 8. Error
+        UserService -->> UserPutHandler : 9. Error
+        UserPutHandler -->> Requester : 10. HTTP Error Response
     else Get Existing User Succeeded
-        UserService -->> UserService : userResponse ()
+        UserService -->> UserService : 8. userResponse()
         note right of UserService : Updates fields in userResponse if provided in userRequest
-        UserService -> UserFirestore : Update(updatedUserResponse)
+        UserService -> UserFirestore : 9. Update(updatedUserResponse)
         activate UserFirestore
-        UserFirestore -->> UserService : nil / Error
+        UserFirestore -->> UserService : 10. nil / Error
         deactivate UserFirestore
         
         alt Update User Record Failed
-            UserService -->> UserPutHandler : Error
-            UserPutHandler -->> Requester : HTTP Error Response
+            UserService -->> UserPutHandler : 11. Error
+            UserPutHandler -->> Requester : 12. HTTP Error Response
         else Update User Record Succeeded
-            UserService -> UserService : User(userRequest.User_id) 'Re-fetch updated
-            UserService -> UserFirestore : Get(&userRequest.User_id)
+            UserService -> UserService : 11. User(userRequest.User_id) 'Re-fetch updated
+            UserService -> UserFirestore : 12. Get(&userRequest.User_id)
             activate UserFirestore
-            UserFirestore -->> UserService : finalUserData / Error
+            UserFirestore -->> UserService : 13. finalUserData / Error
             deactivate UserFirestore
             
             alt Re-fetch Failed
-                 UserService -->> UserService : Error
-                 UserService -->> UserPutHandler : Error
-                 UserPutHandler -->> Requester : HTTP Error Response
+                 UserService -->> UserService : 14. Error
+                 UserService -->> UserPutHandler : 15. Error
+                 UserPutHandler -->> Requester : 16. HTTP Error Response
             else Re-fetch Succeeded
-                 UserService -->> UserService : finalUser
-                 UserService -->> UserPutHandler : finalUser
-                 UserPutHandler -->> Requester : HTTP 200 OK (finalUser)
+                 UserService -->> UserService : 14. finalUser
+                 UserService -->> UserPutHandler : 15. finalUser
+                 UserPutHandler -->> Requester : 16. HTTP 200 OK (finalUser)
             end
             deactivate UserService
         end

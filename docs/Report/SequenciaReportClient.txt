@@ -9,49 +9,49 @@ control GetFilteredService <<serviceGetFiltered.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 
-Requester -> ClientGetReportHandler : GET /clients/report/:client_id
+Requester -> ClientGetReportHandler : 1. GET /clients/report/:client_id
 activate ClientGetReportHandler
 
-ClientGetReportHandler -> AuthorizeService : Authorize(Cookie)
+ClientGetReportHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> ClientGetReportHandler : Claims / Error
+AuthorizeService -->> ClientGetReportHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    ClientGetReportHandler -->> Requester : HTTP Error Response
+    ClientGetReportHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
-    ClientGetReportHandler -> ClientService : Report(clientID_from_path)
+    ClientGetReportHandler -> ClientService : 4. Report(clientID_from_path)
     activate ClientService
 
-    ClientService -> ClientService : Get(clientID)
+    ClientService -> ClientService : 5. Get(clientID)
     activate ClientService
-    ClientService -> ClientFirestore : Get(&clientID)
+    ClientService -> ClientFirestore : 6. Get(&clientID)
     activate ClientFirestore
-    ClientFirestore -->> ClientService : clientInfo / Error
+    ClientFirestore -->> ClientService : 7. clientInfo / Error
     deactivate ClientFirestore
     deactivate ClientService
 
     alt Get ClientInfo Failed
-        ClientService -->> ClientGetReportHandler : Error
-        ClientGetReportHandler -->> Requester : HTTP Error Response
+        ClientService -->> ClientGetReportHandler : 8. Error
+        ClientGetReportHandler -->> Requester : 9. HTTP Error Response
     else Get ClientInfo Succeeded
-        ClientService -> GetFilteredService : GetAccountsByClientID(clientID)
+        ClientService -> GetFilteredService : 8. GetAccountsByClientID(clientID)
         activate GetFilteredService
-        GetFilteredService -> AccountFirestore : GetAll()
+        GetFilteredService -> AccountFirestore : 9. GetAll()
         activate AccountFirestore
-        AccountFirestore -->> GetFilteredService : allAccounts / Error
+        AccountFirestore -->> GetFilteredService : 10. allAccounts / Error
         deactivate AccountFirestore
         note right of GetFilteredService : Filters accounts by clientID
-        GetFilteredService -->> ClientService : accounts / Error
+        GetFilteredService -->> ClientService : 11. accounts / Error
         deactivate GetFilteredService
 
         alt Get Accounts Failed
-            ClientService -->> ClientGetReportHandler : Error
-            ClientGetReportHandler -->> Requester : HTTP Error Response
+            ClientService -->> ClientGetReportHandler : 12. Error
+            ClientGetReportHandler -->> Requester : 13. HTTP Error Response
         else Get Accounts Succeeded
             note right of ClientService : Assembles ClientReport
-            ClientService -->> ClientGetReportHandler : clientReport
-            ClientGetReportHandler -->> Requester : HTTP 200 OK (clientReport)
+            ClientService -->> ClientGetReportHandler : 12. clientReport
+            ClientGetReportHandler -->> Requester : 13. HTTP 200 OK (clientReport)
         end
     end
     deactivate ClientService

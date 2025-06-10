@@ -8,57 +8,57 @@ entity UserFirestore <<model/user/firestore.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 
-Requester -> AccountPostHandler : POST /accounts (Body: Account Info)
+Requester -> AccountPostHandler : 1. POST /accounts (Body: Account Info)
 activate AccountPostHandler
 
-AccountPostHandler -> AccountService : CreateAccount(accountRequest)
+AccountPostHandler -> AccountService : 2. CreateAccount(accountRequest)
 activate AccountService
 
 alt Missing Credentials (User_id or Client_id)
-    AccountService -->> AccountPostHandler : Error (Missing credentials)
-    AccountPostHandler -->> Requester : HTTP Error Response
+    AccountService -->> AccountPostHandler : 3. Error (Missing credentials)
+    AccountPostHandler -->> Requester : 4. HTTP Error Response
 else
-    AccountService -> UserFirestore : Get(&accountRequest.User_id)
+    AccountService -> UserFirestore : 3. Get(&accountRequest.User_id)
     activate UserFirestore
-    UserFirestore -->> AccountService : userData / Error (IDnotFound or other)
+    UserFirestore -->> AccountService : 4. userData / Error (IDnotFound or other)
     deactivate UserFirestore
     
     alt User Not Found or Error
-        AccountService -->> AccountPostHandler : Error
-        AccountPostHandler -->> Requester : HTTP Error Response
+        AccountService -->> AccountPostHandler : 5. Error
+        AccountPostHandler -->> Requester : 6. HTTP Error Response
     else User Exists
-        AccountService -> ClientFirestore : Get(&accountRequest.Client_id)
+        AccountService -> ClientFirestore : 5. Get(&accountRequest.Client_id)
         activate ClientFirestore
-        ClientFirestore -->> AccountService : clientData / Error (IDnotFound or other)
+        ClientFirestore -->> AccountService : 6. clientData / Error (IDnotFound or other)
         deactivate ClientFirestore
         
         alt Client Not Found or Error
-            AccountService -->> AccountPostHandler : Error
-            AccountPostHandler -->> Requester : HTTP Error Response
+            AccountService -->> AccountPostHandler : 7. Error
+            AccountPostHandler -->> Requester : 8. HTTP Error Response
         else Client Exists
-            AccountService -> AccountFirestore : Create(accountRequest)
+            AccountService -> AccountFirestore : 7. Create(accountRequest)
             activate AccountFirestore
-            AccountFirestore -->> AccountService : accountID_ptr / Error
+            AccountFirestore -->> AccountService : 8. accountID_ptr / Error
             deactivate AccountFirestore
             
             alt Create Account Record Failed
-                AccountService -->> AccountPostHandler : Error
-                AccountPostHandler -->> Requester : HTTP Error Response
+                AccountService -->> AccountPostHandler : 9. Error
+                AccountPostHandler -->> Requester : 10. HTTP Error Response
             else Create Account Record Succeeded
-                AccountService -> AccountService : Account(*accountID_ptr)
-                AccountService -> AccountFirestore : Get(*accountID_ptr)
+                AccountService -> AccountService : 9. Account(*accountID_ptr)
+                AccountService -> AccountFirestore : 10. Get(*accountID_ptr)
                 activate AccountFirestore
-                AccountFirestore -->> AccountService : createdAccountData / Error
+                AccountFirestore -->> AccountService : 11. createdAccountData / Error
                 deactivate AccountFirestore
                 
                 alt Get Created Account Failed
-                    AccountService -->> AccountService : Error
-                    AccountService -->> AccountPostHandler : Error
-                    AccountPostHandler -->> Requester : HTTP Error Response
+                    AccountService -->> AccountService : 12. Error
+                    AccountService -->> AccountPostHandler : 13. Error
+                    AccountPostHandler -->> Requester : 14. HTTP Error Response
                 else Get Created Account Succeeded
-                    AccountService -->> AccountService : createdAccount
-                    AccountService -->> AccountPostHandler : createdAccount
-                    AccountPostHandler -->> Requester : HTTP 201 Created (createdAccount)
+                    AccountService -->> AccountService : 12. createdAccount
+                    AccountService -->> AccountPostHandler : 13. createdAccount
+                    AccountPostHandler -->> Requester : 14. HTTP 201 Created (createdAccount)
                 end
             end
         end

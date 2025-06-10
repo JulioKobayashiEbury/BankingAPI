@@ -2,20 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"BankingAPI/internal/controller"
 	"BankingAPI/internal/model/user"
+	"BankingAPI/internal/service"
 
 	"cloud.google.com/go/firestore"
-	"github.com/go-co-op/gocron/v2"
 	"github.com/rs/zerolog/log"
 )
 
-func init() {
+func main() {
 	os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:8080")
 	os.Setenv("GOOGLE_CLOUD_PROJECT", "banking")
 
@@ -30,74 +27,39 @@ func init() {
 		return
 	}
 
-	controller.DatabaseClient = client
+	repositories := controller.InstantiateRepo(client)
+	services := controller.InstantiateServices(repositories)
 
-	controller.InstantiateRepo()
-	controller.InstantiateServices()
-
-	createAdminUser()
-}
-
-func main() {
-	scheduler, err := gocron.NewScheduler()
-	if err != nil {
+	if err := createAdminUser(services.UserService); err != nil {
+		log.Panic().Msg("Not able to create admin user!")
 		return
 	}
 
-	job, err := scheduler.NewJob(
-		/*
-			gocron.DailyJob(1, gocron.NewAtTimes(
-				gocron.NewAtTime(10, 00, 00)
-			))
-		*/
-		gocron.CronJob(
-			"*/2 * * * *",
-			false,
-		),
-		gocron.NewTask(
-			controller.Services.AutomaticdebitService.CheckAutomaticDebits,
-		),
-		gocron.WithName("Checking Automatic Debits"),
-	)
-	if err != nil {
-		return
-	}
-	scheduler.Start()
-	log.Info().Msg(job.ID().String())
-	fmt.Print("Scheduler running...")
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		log.Info().Msg("Interruption signal received, terminating gracefully...")
-		scheduler.Shutdown()
-		os.Exit(0)
-	}()
-	controller.Server()
+	controller.Server(services)
 }
 
-func createAdminUser() {
-	allUsers, err := controller.Services.UserService.GetAll()
+func createAdminUser(userService service.UserService) error {
+	allUsers, err := userService.GetAll()
 	if err != nil {
-		return
+		return err.Err
 	}
 
 	for _, user := range *allUsers {
 		if user.Name == "admin" {
 			log.Info().Msg("Admin user already exists with ID: " + user.User_id)
-			return
+			return nil
 		}
 	}
 
-	userResponse, err := controller.Services.UserService.Create(&user.User{
+	userResponse, err := userService.Create(&user.User{
 		Name:     "admin",
 		Document: "00000000000000",
 		Password: "admin",
 	})
 	if err != nil {
 		log.Error().Msg(err.Err.Error())
-		return
+		return err.Err
 	}
 	log.Info().Msg("Admin user created with ID: " + userResponse.User_id)
-	return
+	return nil
 }

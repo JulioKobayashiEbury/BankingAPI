@@ -1,6 +1,6 @@
 openapi: 3.0.0
 servers:
-  - url: localhost:8080
+  - url: localhost:25565
 info:
   description: An API used to do banking operations such as user register, withdrawl, deposit, access control, internal and external accounts transfers, account blocking and more.
   version: "1.0.0"
@@ -9,7 +9,7 @@ info:
     email: julio.kobayashi@ebury.com
   license:
     name: Apache 2.0
-    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+    url: "[http://www.apache.org/licenses/LICENSE-2.0.html](http://www.apache.org/licenses/LICENSE-2.0.html)"
 tags:
   - name: users
     description: User related functions
@@ -17,6 +17,14 @@ tags:
     description: Client related functions
   - name: accounts
     description: Account related functions
+  - name: transfers
+    description: Transfer related functions
+  - name: deposits
+    description: Deposit related functions
+  - name: withdrawals
+    description: Withdrawal related functions
+  - name: automaticdebits
+    description: Automatic Debit related functions
 
 paths:
   /users:
@@ -24,1353 +32,1011 @@ paths:
       tags:
         - users
       summary: creates user with info passed
-      operationId: searchInventory
-      description: |
-        By passing in the appropriate options, you can search for
-        available inventory in the system
-      parameters:
-        - in: query
-          name: name
-          description: name of the user
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: document
-          description: document number
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: password
-          description: user password
-          required: true
-          schema:
-            type: string
-            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         "201":
           description: user created sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - user_id
-                  - name
-                  - document
-                  - register_date
-                properties:
-                  user_id:
-                    type: string
-                    format: uuid
-                    example: "20128"
-                  name:
-                    type: string
-                    format: uuid
-                    example: "Julio Kobayashi"
-                  document:
-                    type: string
-                    format: uuid
-                    example: "1234567890"
-                  register_date:
-                    type: string
-                    format: date-time
-                    example: "2016-08-29T09:12:33.001Z"
+                $ref: '#/components/schemas/User'
         "400":
-          description: bad input parameter
+          description: Bad input parameter
+        "500":
+          description: Internal Server Error
+
+  /users/auth:
+    put:
+      tags:
+        - users
+      summary: authenticates a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "202":
+          description: User Authorized
+          headers:
+            Authorization:
+              schema:
+                type: string
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+
   /users/{user_id}:
     get:
       tags:
         - users
       summary: return data of user with ID userID
-      operationId: getUser(userID)
-      description: |
-        Passing the user ID you get the user description as return
       parameters:
         - in: path
           name: user_id
-          description: ID of the user requested
           required: true
           schema:
             type: string
-            format: uuid
       responses:
-        "202":
+        "200":
           description: user returned succesfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - user_id
-                  - name
-                  - register_date
-                properties:
-                  user_id:
-                    type: string
-                    format: uuid
-                    example: "20128"
-                  name:
-                    type: string
-                    example: Carlos
-                  register_date:
-                    type: string
-                    format: date-time
-                    example: "2016-08-29T09:12:33.001Z"
-                  status:
-                    type: boolean
-                    format: boolean
-                    example: true
-        "400":
-          description: Bad input parameter
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "ID in colelction: users not found"
+                $ref: '#/components/schemas/User'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
     delete:
       tags:
         - users
       summary: delete user of userID
-      description: |
-        Deletes a user with userID, if not found return error: "ID not found"
       parameters:
         - in: path
           name: user_id
-          description: ID of user to be deleted
           required: true
           schema:
             type: string
-            format: uuid
       responses:
         "200":
-          description: User deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
-                    format: uuid
-                    example: "User deleted"
+          description: User deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
     put:
       tags:
         - users
       summary: update a given piece of information of a certain user
-      operationId: updateUser
-      description: |
-        Updates user profile based on the arguments passed
       parameters:
         - in: path
           name: user_id
-          description: ID of the user to be updated
           required: true
           schema:
             type: string
-            format: uuid
-        - in: query
-          name: name
-          description: name of the user
-          required: false
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: document
-          description: document number of the user to be updated
-          required: false
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: password
-          description: User's password to be updated
-          required: false
-          schema:
-            type: string
-            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
-        "202":
+        "200":
           description: User updated sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - user_id
-                  - name
-                  - document
-                  - register_date
-                properties:
-                  user_id:
-                    type: string
-                    format: uuid
-                    example: "20128"
-                  name:
-                    type: string
-                    example: Carlos
-                  register_date:
-                    type: string
-                    format: date-time
-                    example: "2016-08-29T09:12:33.001Z"
-        "400":
-          description: Bad input parameter
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  message:
-                    type: string
-                    format: uuid
-                    example: "ID from colection: users not found"
-  /accounts:
-    post:
+                $ref: '#/components/schemas/User'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /users/{user_id}/report:
+    get:
       tags:
-        - accounts
-      summary: creates a account which is coupled up with an user and a client
-      description: |
-        Creates an account coupled with and user and a client
+        - users
+      summary: returns a report of the user
       parameters:
-        - in: query
+        - in: path
           name: user_id
-          description: user ID to be vinculated
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: client_id
-          description: client ID to be vinculated
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: agency_id
-          description: ID of the cliets agency of the account
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: password
-          description: password for the account to be created
           required: true
           schema:
             type: string
-            format: uuid
-      responses:
-        "201":
-          description: Account created succesfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - account_id
-                  - user_id
-                  - client_id
-                  - agency_id
-                  - status
-                  - balance
-                properties:
-                  account_id:
-                    type: integer
-                    format: uint32
-                    example: 98751
-                  user_id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-                  client_id:
-                    type: integer
-                    format: uint32
-                    example: 1274
-                  agency_id:
-                    type: integer
-                    format: uint32
-                    example: 17194
-                  status:
-                    type: boolean
-                    format: boolean
-                    example: true
-                  balance:
-                    type: number
-                    format: float64
-                    example: 1282.34
-        "400":
-          description: An error ocurred during creation, Account not created
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account not created, user do not exists"
-  /accounts/{account_id}:
-    get:
-      tags:
-        - accounts
-      summary: return details of an account
-      description: |
-        Returns details of the account specified by thge account_id
-      operationId: getAccount
-      parameters:
-        - in: path
-          name: account_id
-          description: ID of the account to be returned
-          required: true
-          schema:
-            type: integer
-            format: uint32
       responses:
         "200":
-          description: Account details that are returned
+          description: Report returned
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - user_id
-                  - client_id
-                  - account_id
-                  - agency_id
-                  - balance
-                properties:
-                  user_id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-                  client_id:
-                    type: integer
-                    format: uint32
-                    example: 12741
-                  account_id:
-                    type: integer
-                    format: uint32
-                    example: 98751
-                  agency_id:
-                    type: integer
-                    format: uint32
-                    example: 17194
-                  balance:
-                    type: number
-                    format: float64
-                    example: 10500.50
-        "400":
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account not found with ID: {account_id}"
+                $ref: '#/components/schemas/UserReport'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /users/{user_id}/block:
     put:
       tags:
-        - accounts
-      summary: update informations of a certain account
-      description: |
-        Using the ID provided search for an update (with information provided), an accounts data
-      operationId: updateAccount
+        - users
+      summary: block a user
       parameters:
         - in: path
-          name: account_id
-          description: ID of the account to be updated
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
           name: user_id
-          description: ID of user vinculated with account
-          required: false
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: client_id
-          description: ID of client vinculated with account
-          required: false
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: agency_id
-          description: ID of agency vinculated with account
-          required: false
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: password
-          description: password for the account to be updated
-          required: false
+          required: true
           schema:
             type: string
-            format: uuid
       responses:
-        "202":
-          description: Account details that are returned if update is succesful
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - user_id
-                  - client_id
-                  - account_id
-                  - agency_id
-                  - balance
-                properties:
-                  user_id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-                  client_id:
-                    type: integer
-                    format: uint32
-                    example: 12741
-                  account_id:
-                    type: integer
-                    format: uint32
-                    example: 98751
-                  agency_id:
-                    type: integer
-                    format: uint32
-                    example: 17194
-        "400":
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account not found with ID: {account_id}"
-    delete:
+        "200":
+          description: User Blocked
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /users/{user_id}/unblock:
+    put:
       tags:
-        - accounts
-      summary: delete account of account_id
-      description: |
-        Deletes an account with account_id, if not found return error: "Account not found"
+        - users
+      summary: unblock a user
       parameters:
         - in: path
-          name: account_id
-          description: ID of account to be deleted
-          required: true
-          schema:
-            type: integer
-            format: uint32
-      responses:
-        "200":
-          description: Account deleted succesfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - account_id
-                properties:
-                  account_id:
-                    type: integer
-                    format: uint32
-                    example: 1234
-        "400":
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account to be deleted not found"
-  /accounts/?filter={filter}&order={order}:
-    get:
-      tags:
-        - accounts
-      summary: return array of accounts ordered by scpecified order and filtered with specified filter
-      description: |
-        Returns an array of accounts ordered by account_id
-      operationId: getAccountsByID
-      parameters:
-        - in: query
-          name: filter
-          description: filter to be applied to the accounts
+          name: user_id
           required: true
           schema:
             type: string
-            format: uuid
-        - in: query
-          name: order
-          description: order to be applied to the accounts
-          required: true
-          schema:
-            type: string
-            format: uuid
       responses:
         "200":
-          description: Account details that are returned
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - listOfAccounts
-                properties:
-                  listOfAccounts:
-                    type: array
-                    format: array
-                    example:
-                      {
-                        {
-                          account_id: 1,
-                          user_id: 1,
-                          client_id: 1,
-                          agency_id: 1,
-                          balance: 1000.00,
-                        },
-                        {
-                          account_id: 2,
-                          user_id: 2,
-                          client_id: 2,
-                          agency_id: 2,
-                          balance: 2000.00,
-                        },
-                      }
+          description: User Unblocked
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
   /clients:
     post:
       tags:
         - clients
-      summary: creates a client with info passed
-      operationId: createClient
-      description: |
-        By passing in the appropriate options, you can create a client
-        available in the system
-      parameters:
-        - in: query
-          name: user_id
-          description: user ID to be vinculated
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: name
-          description: name of the client
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: document
-          description: document number
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: password
-          description: client password
-          required: true
-          schema:
-            type: string
+      summary: creates a client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
       responses:
-        "201":
+        "200":
           description: client created sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - client_id
-                  - name
-                  - document
-                  - register_date
-                properties:
-                  client_id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-                  name:
-                    type: string
-                    format: uuid
-                    example: "Carlos"
-                  document:
-                    type: string
-                    format: uuid
-                    example: "123456789"
-                  register_date:
-                    type: string
-                    format: date-time
-                    example: "2016-08-29T09:12:33.001Z"
+                $ref: '#/components/schemas/Client'
         "400":
           description: bad input parameter
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Client not created, user do not exists"
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
   /clients/{client_id}:
     get:
       tags:
         - clients
       summary: return data of client with ID clientID
-      operationId: getClient(clientID)
-      description: |
-        Passing the client ID you get the client description as return
       parameters:
         - in: path
           name: client_id
-          description: ID of the client requested
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
       responses:
         "200":
           description: client returned sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - client_id
-                  - user_id
-                  - name
-                  - register_date
-                properties:
-                  client_id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-                  user_id:
-                    type: integer
-                    format: uint32
-                    example: 12741
-                  name:
-                    type: string
-                    example: "Carlos"
-                  document:
-                    type: string
-                    format: uuid
-                    example: "123456789"
-                  register_date:
-                    type: string
-                    format: date-time
-                    example: "2016-08-29T09:12:33.001Z"
-                  status:
-                    type: boolean
-                    format: boolean
-                    example: true
-        "400":
-          description: Bad input parameter
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "ID not found"
+                $ref: '#/components/schemas/Client'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
     delete:
       tags:
         - clients
       summary: delete client of clientID
-      description: |
-        Deletes a client with clientID, if not found return error: "ID not found"
       parameters:
         - in: path
           name: client_id
-          description: ID of client to be deleted
           required: true
           schema:
-            type: integer
-            format: uint32
-      operationId: deleteClient
+            type: string
       responses:
         "200":
-          description: Client deleted sucessfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - client_id
-                properties:
-                  client_id:
-                    type: integer
-                    format: uint32
-                    example: 12345
-        "400":
-          description: Client not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Client to be deleted not found"
+          description: Client deleted seccesfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
     put:
       tags:
         - clients
       summary: update a given piece of information of a certain client
-      operationId: updateClient
-      description: |
-        Updates client profile based on the arguments passed
       parameters:
         - in: path
           name: client_id
-          description: ID of the client to be updated
           required: true
           schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: name
-          description: name of the client to be updated
-          required: false
-          schema:
             type: string
-            format: uuid
-        - in: query
-          name: document
-          description: document number of the client to be updated
-          required: false
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: password
-          description: Client's password to be updated
-          required: false
-          schema:
-            type: string
-            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
       responses:
-        "202":
+        "200":
           description: Client updated sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - Id
-                  - name
-                  - document
-                  - register_date
-                  - status
-                properties:
-                  Id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-                  name:
-                    type: string
-                    example: "Carlos"
-                  register_date:
-                    type: string
-                    format: date-time
-                    example: "2016-08-29T09:12:33.001Z"
-                  status:
-                    type: boolean
-                    format: boolean
-                    example: true
-        "400":
-          description: Bad input parameter
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  message:
-                    type: string
-                    format: uuid
-                    example: "ID not passed"    
-  /accounts/{account_id}/balance/deposit:
-    put:
-      tags:
-        - accounts
-      summary: deposit money in a certain account
-      description: |
-        Using the ID provided deposit money in the account
-      operationId: depositAccount
-      parameters:
-        - in: path
-          name: account_id
-          description: ID of the account to be updated
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: balance
-          description: The value to be updated in the account (negative means withdrawl, positive means deposit)
-          required: true
-          schema:
-            type: number
-            format: float64
-      responses:
-        "202":
-          description: New balance is returned
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - account_id
-                  - balance
-                properties:
-                  account_id:
-                    type: integer
-                    format: uint32
-                    example: 1234
-                  balance:
-                    type: number
-                    format: float64
-                    example: 10500.50
-        "400":
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account not found with ID: {account_id}"
-  /accounts/{account_id}/balance/withdrawl:
-    put:
-      tags:
-        - accounts
-      summary: withdrawl money from a certain account
-      description: |
-        Using the ID provided withdrawl money from the account
-      operationId: withdrawlAccount
-      parameters:
-        - in: path
-          name: account_id
-          description: ID of the account to be updated
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: balance
-          description: The value to be updated in the account
-          required: true
-          schema:
-            type: number
-            format: float64
-        - in: query
-          name: password
-          description: The password of the account to be updated, only necessary if the balance is negative
-          required: false
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "202":
-          description: New balance is returned
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - account_id
-                  - balance
-                properties:
-                  account_id:
-                    type: integer
-                    format: uuint32
-                    example: 14132
-                  balance:
-                    type: number
-                    format: float64
-                    example: 10500.50
+                $ref: '#/components/schemas/Client'
         "401":
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Unauthorized: bad password"
-  /accounts/{account_id}/newTransfer:
-    post:
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /clients/{client_id}/report:
+    get:
       tags:
-        - accounts
-      summary: transfer money from one account to another
-      description: |
-        Transfer money from one account to another
-      operationId: transferMoney
+        - clients
+      summary: returns a report of the client
       parameters:
         - in: path
-          name: account_id_from
-          description: ID of the account to be updated
+          name: client_id
           required: true
           schema:
             type: string
-            format: uuid
-        - in: query
-          name: account_id_to
-          description: ID of the account to be updated
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: TransferValue
-          description: The value to be transferred between accounts (negative means withdrawl, positive means deposit)
-          required: true
-          schema:
-            type: number
-            format: float64
-        - in: query
-          name: frompassword
-          description: The password of the account to be updated
-          required: true
-          schema:
-            type: string
-            format: uuid
       responses:
-        "201":
-          description: New balance is returned
+        "200":
+          description: Report returned
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - balanceFrom
-                  - balanceTo
-                properties:
-                  balanceFrom:
-                    type: number
-                    format: float64
-                    example: 10500.50
-                  balanceTo:
-                    type: number
-                    format: float64
-                    example: 10500.50
-        "400":
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account not found with ID: {account_id}"
+                $ref: '#/components/schemas/ClientReport'
         "401":
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Unauthorized"
-  /accounts/{account_id}/block:
-    put:
-      tags:
-        - accounts
-      summary: block an account
-      description: |
-        Block an account with account_id, if not found return error: "Account not found"
-      operationId: blockAccount
-      parameters:
-        - in: path
-          name: account_id
-          description: ID of the account to be blocked
-          required: true
-          schema:
-            type: integer
-            format: uint32
-      responses:
-        "202":
-          description: Account blocked sucessfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account blocked"
-        "400":
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account to be blocked not found"
-  /accounts/{account_id}/automaticDebit:
-    put:
-      tags:
-        - accounts
-      summary: register an automatic debit
-      description: |
-        Register an automatic debit with account_id, if not found return error: "Account not found"
-      operationId: registerAutomaticDebit
-      parameters:
-        - in: path
-          name: account_id
-          description: ID of the account to be registered
-          required: true
-          schema:
-            type: integer
-            format: uint32
-        - in: query
-          name: AutomaticDebitValue
-          description: The value to be registered in the account 
-          required: true
-          schema:
-            type: number
-            format: float64
-        - in: query
-          name: AutomaticDebitDate
-          description: The date to be registered in the account
-          required: true
-          schema:
-            type: string
-            format: date-time
-        - in: query
-          name: AutomaticDebitDescription
-          description: description of the automatic debit
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: AutomaticDebitstatus
-          description: If the status passed is true, it is active, false is not active
-          schema:
-            type: boolean
-            format: boolean
-      responses:
-        "202":
-          description: Automatic debit registered sucessfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Automatic debit registered"
-        "400":
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account to be registered not found"
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
 
   /clients/{client_id}/block:
     put:
       tags:
         - clients
       summary: block a client
-      description: |
-        Block a client with client_id, if not found return error: "Client not found"
-      operationId: blockClient
       parameters:
         - in: path
           name: client_id
-          description: ID of the client to be blocked
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
       responses:
-        "202":
-          description: Client updated sucessfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Id
-                  - name
-                  - document
-                  - register_date
-                  - status
-                properties:
-                  Id:
-                    type: integer
-                    format: uint32
-                    example: 20128
-                  name:
-                    type: string
-                    example: "Carlos"
-                  register_date:
-                    type: string
-                    format: date-time
-                    example: "2016-08-29T09:12:33.001Z"
-                  status:
-                    type: boolean
-                    format: boolean
-                    example: true
-        "400":
-          description: Client not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Client to be blocked not found"
-  /users/{user_id}/block:
-    put:
-      tags:
-        - users
-      summary: block a user
-      description: |
-        Block a user with user_id, if not found return error: "User not found"
-      operationId: blockUser
-      parameters:
-        - in: path
-          name: user_id
-          description: ID of the user to be blocked
-          required: true
-          schema:
-            type: integer
-            format: uint32
-      responses:
-        "202":
-          description: User blocked sucessfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "User blocked"
-        "400":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "User to be blocked not found"
-  /users/{user_id}/unblock:
-    put:
-      tags:
-        - users
-      summary: unblock a user
-      description: |
-        Unblock a user with user_id, if not found return error: "User not found"
-      operationId: unblockUser
-      parameters:
-        - in: path
-          name: user_id
-          description: ID of the user to be unblocked
-          required: true
-          schema:
-            type: integer
-            format: uint32
-      responses:
-        "202":
-          description: User unblocked sucessfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "User unblocked"
-        "400":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "User to be unblocked not found"
+        "200":
+          description: Client Blocked
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
   /clients/{client_id}/unblock:
     put:
       tags:
         - clients
       summary: unblock a client
-      description: |
-        Unblock a client with client_id, if not found return error: "Client not found"
-      operationId: unblockClient
       parameters:
         - in: path
           name: client_id
-          description: ID of the client to be unblocked
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
       responses:
-        "202":
-          description: Client unblocked sucessfully
+        "200":
+          description: Client Unblocked
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /accounts:
+    post:
+      tags:
+        - accounts
+      summary: creates an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+      responses:
+        "201":
+          description: Account created sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Client unblocked"
+                $ref: '#/components/schemas/Account'
         "400":
-          description: Client not found
+          description: bad input parameter
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /accounts/{account_id}:
+    get:
+      tags:
+        - accounts
+      summary: return data of account with ID accountID
+      parameters:
+        - in: path
+          name: account_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: account returned sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Client to be unblocked not found"
+                $ref: '#/components/schemas/Account'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+    delete:
+      tags:
+        - accounts
+      summary: delete account of accountID
+      parameters:
+        - in: path
+          name: account_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+    put:
+      tags:
+        - accounts
+      summary: update a given piece of information of a certain account
+      parameters:
+        - in: path
+          name: account_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+      responses:
+        "200":
+          description: Account updated sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /accounts/report/{account_id}:
+    get:
+      tags:
+        - accounts
+      summary: returns a report of the account
+      parameters:
+        - in: path
+          name: account_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountReport'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /accounts/{account_id}/block:
+    put:
+      tags:
+        - accounts
+      summary: block an account
+      parameters:
+        - in: path
+          name: account_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account Blocked Sucesfully!
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
   /accounts/{account_id}/unblock:
     put:
       tags:
         - accounts
       summary: unblock an account
-      description: |
-        Unblock an account with account_id, if not found return error: "Account not found"
-      operationId: unblockAccount
       parameters:
         - in: path
           name: account_id
-          description: ID of the account to be unblocked
           required: true
           schema:
-            type: integer
-            format: uint32
+            type: string
+      responses:
+        "200":
+          description: Account Unblocked
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /transfers:
+    post:
+      tags:
+        - transfers
+      summary: creates a transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+      responses:
+        "200":
+          description: Transfer created sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /transfers/{transfer_id}:
+    get:
+      tags:
+        - transfers
+      summary: return data of transfer with ID transferID
+      parameters:
+        - in: path
+          name: transfer_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: transfer returned sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+    delete:
+      tags:
+        - transfers
+      summary: delete transfer of transferID
+      parameters:
+        - in: path
+          name: transfer_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transfer deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /deposits:
+    post:
+      tags:
+        - deposits
+      summary: creates a deposit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deposit'
+      responses:
+        "201":
+          description: Deposit created sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deposit'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /deposits/{deposit_id}:
+    get:
+      tags:
+        - deposits
+      summary: return data of deposit with ID depositID
+      parameters:
+        - in: path
+          name: deposit_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: deposit returned sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deposit'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+    delete:
+      tags:
+        - deposits
+      summary: delete deposit of depositID
+      parameters:
+        - in: path
+          name: deposit_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deposit deleted succesfully!
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /withdrawals:
+    post:
+      tags:
+        - withdrawals
+      summary: creates a withdrawal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Withdrawal'
+      responses:
+        "201":
+          description: Withdrawal created sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Withdrawal'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /withdrawals/{withdrawal_id}:
+    get:
+      tags:
+        - withdrawals
+      summary: return data of withdrawal with ID withdrawalID
+      parameters:
+        - in: path
+          name: withdrawal_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: withdrawal returned sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Withdrawal'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+    delete:
+      tags:
+        - withdrawals
+      summary: delete withdrawal of withdrawalID
+      parameters:
+        - in: path
+          name: withdrawal_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Withdrawal Deleted!
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /autodebits:
+    post:
+      tags:
+        - automaticdebits
+      summary: creates a automatic debit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutomaticDebit'
       responses:
         "202":
-          description: Account unblocked sucessfully
+          description: Automatic debit created sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account unblocked"
-        "400":
-          description: Account not found
+                $ref: '#/components/schemas/AutomaticDebit'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+  /autodebits/{debit_id}:
+    get:
+      tags:
+        - automaticdebits
+      summary: return data of automatic debit with ID debit_id
+      parameters:
+        - in: path
+          name: debit_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: automatic debit returned sucessfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - Message
-                properties:
-                  Message:
-                    type: string
-                    format: uuid
-                    example: "Account to be unblocked not found"
+                $ref: '#/components/schemas/AutomaticDebit'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+    delete:
+      tags:
+        - automaticdebits
+      summary: delete automatic debit of debit_id
+      parameters:
+        - in: path
+          name: debit_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Automatic debit deleted successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        user_id:
+          type: string
+        name:
+          type: string
+        document:
+          type: string
+        password:
+          type: string
+        register_date:
+          type: string
+          format: date-time
+        status:
+          type: boolean
+    Client:
+      type: object
+      properties:
+        client_id:
+          type: string
+        user_id:
+          type: string
+        name:
+          type: string
+        document:
+          type: string
+        register_date:
+          type: string
+          format: date-time
+        status:
+          type: boolean
+    Account:
+      type: object
+      properties:
+        account_id:
+          type: string
+        client_id:
+          type: string
+        user_id:
+          type: string
+        agency_id:
+          type: integer
+          format: uint32
+        register_date:
+          type: string
+          format: date-time
+        balance:
+          type: number
+          format: float64
+        status:
+          type: boolean
+    Transfer:
+      type: object
+      properties:
+        transfer_id:
+          type: string
+        account_id:
+          type: string
+        account_to:
+          type: string
+        value:
+          type: number
+          format: float64
+        register_date:
+          type: string
+          format: date-time
+    Deposit:
+      type: object
+      properties:
+        deposit_id:
+          type: string
+        account_id:
+          type: string
+        client_id:
+          type: string
+        user_id:
+          type: string
+        agency_id:
+          type: integer
+          format: uint32
+        deposit:
+          type: number
+          format: float64
+        deposit_date:
+          type: string
+          format: date-time
+    Withdrawal:
+      type: object
+      properties:
+        withdrawal_id:
+          type: string
+        account_id:
+          type: string
+        client_id:
+          type: string
+        agency_id:
+          type: integer
+          format: uint32
+        withdrawal:
+          type: number
+          format: float64
+        withdrawal_date:
+          type: string
+          format: date-time
+        status:
+          type: boolean
+    AutomaticDebit:
+      type: object
+      properties:
+        debit_id:
+          type: string
+        account_id:
+          type: string
+        client_id:
+          type: string
+        agency_id:
+          type: integer
+          format: uint32
+        value:
+          type: number
+          format: float64
+        debit_day:
+          type: integer
+          format: uint16
+        status:
+          type: boolean
+        expiration_date:
+          type: string
+          format: date-time
+        register_date:
+          type: string
+          format: date-time
+    UserReport:
+      type: object
+      properties:
+        user_id:
+          type: string
+        name:
+          type: string
+        document:
+          type: string
+        register_date:
+          type: string
+          format: date-time
+        status:
+          type: boolean
+        clients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Client'
+        report_date:
+          type: string
+          format: date-time
+    ClientReport:
+      type: object
+      properties:
+        client_id:
+          type: string
+        user_id:
+          type: string
+        name:
+          type: string
+        document:
+          type: string
+        register_date:
+          type: string
+          format: date-time
+        status:
+          type: boolean
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        report_date:
+          type: string
+          format: date-time
+    AccountReport:
+      type: object
+      properties:
+        account_id:
+          type: string
+        client_id:
+          type: string
+        agency_id:
+          type: integer
+          format: uint32
+        balance:
+          type: number
+          format: float64
+        register_date:
+          type: string
+          format: date-time
+        status:
+          type: boolean
+        transfers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transfer'
+        deposits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deposit'
+        withdrawals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Withdrawal'
+        automatic_debits:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomaticDebit'
+        report_date:
+          type: string
+          format: date-time

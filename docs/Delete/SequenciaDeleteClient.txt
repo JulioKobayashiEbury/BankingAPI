@@ -9,31 +9,31 @@ entity ClientFirestore <<model/client/firestore.go>>
 
 activate Requester 
 
-Requester -> ClientDeleteHandler : DELETE /clients/:client_id
+Requester -> ClientDeleteHandler : 1. DELETE /clients/:client_id
 activate ClientDeleteHandler
 
-ClientDeleteHandler -> AuthorizeService : Authorize(Cookie)
+ClientDeleteHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> ClientDeleteHandler : Claims / Error
+AuthorizeService -->> ClientDeleteHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    ClientDeleteHandler -->> Requester : HTTP Error Response
+    ClientDeleteHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
 
-    ClientDeleteHandler -> ClientService : ClientDelete(clientID_from_path)
+    ClientDeleteHandler -> ClientService : 4. ClientDelete(clientID_from_path)
     activate ClientService
-    ClientService -> ClientFirestore : Delete(&clientID_from_path)
+    ClientService -> ClientFirestore : 5. (&clientID_from_path)
     activate ClientFirestore
-    ClientFirestore -->> ClientService : nil / Error
+    ClientFirestore -->> ClientService : 6. nil / Error
     deactivate ClientFirestore
     
     alt Delete Client Failed
-        ClientService -->> ClientDeleteHandler : Error
-        ClientDeleteHandler -->> Requester : HTTP Error Response
+        ClientService -->> ClientDeleteHandler : 7. Error
+        ClientDeleteHandler -->> Requester : 8. HTTP Error Response
     else Delete Client Succeeded
-        ClientService -->> ClientDeleteHandler : nil
-        ClientDeleteHandler -->> Requester : HTTP 200 OK (Message: Client deleted seccesfully)
+        ClientService -->> ClientDeleteHandler : 7. nil
+        ClientDeleteHandler -->> Requester : 8. HTTP 200 OK (Message: Client deleted seccesfully)
     end
     deactivate ClientService
 end

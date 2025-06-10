@@ -36,10 +36,39 @@ func (service depositImpl) Create(depositRequest *deposit.Deposit) (*deposit.Dep
 }
 
 func (service depositImpl) Delete(id *string) *model.Erro {
-	if err := service.depositDatabase.Delete(id); err != nil {
+	deposit, err := service.Get(id)
+	if err != nil {
 		return err
 	}
+	account, err := service.accountService.Get(&deposit.Account_id)
+	if err != nil {
+		return err
+	}
+	account.Balance -= deposit.Deposit
+
+	if _, err := service.accountService.Update(account); err != nil {
+		return err
+	} else {
+		if err := service.depositDatabase.Delete(id); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (service depositImpl) Get(id *string) (*deposit.Deposit, *model.Erro) {
+	obj, err := service.depositDatabase.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	depositResponse, ok := obj.(*deposit.Deposit)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	return depositResponse, nil
 }
 
 func (service depositImpl) GetAll() (*[]deposit.Deposit, *model.Erro) {

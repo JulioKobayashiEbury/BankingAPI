@@ -36,10 +36,42 @@ func (service withdrawalImpl) Create(withdrawalRequest *withdrawal.Withdrawal) (
 }
 
 func (service withdrawalImpl) Delete(id *string) *model.Erro {
-	if err := service.withdrawalDatabase.Delete(id); err != nil {
+	// modificar para dar rollback
+	withdrawalResponse, err := service.Get(id)
+	if err != nil {
 		return err
 	}
+
+	accountResponse, err := service.accountService.Get(&withdrawalResponse.Account_id)
+	if err != nil {
+		return err
+	}
+
+	accountResponse.Balance += withdrawalResponse.Withdrawal
+
+	if _, err := service.accountService.Update(accountResponse); err != nil {
+		return err
+	} else {
+		if err := service.withdrawalDatabase.Delete(id); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (service withdrawalImpl) Get(id *string) (*withdrawal.Withdrawal, *model.Erro) {
+	obj, err := service.withdrawalDatabase.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	withdrawalResponse, ok := obj.(*withdrawal.Withdrawal)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	return withdrawalResponse, nil
 }
 
 func (service withdrawalImpl) GetAll() (*[]withdrawal.Withdrawal, *model.Erro) {

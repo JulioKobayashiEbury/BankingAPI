@@ -12,76 +12,76 @@ entity DepositFirestore <<model/deposit/firestore.go>>
 entity WithdrawalFirestore <<model/withdrawal/firestore.go>>
 entity AutoDebitFirestore <<model/automaticDebit/firestore.go>>
 
-Requester -> AccountGetReportHandler : GET /accounts/report/:account_id
+Requester -> AccountGetReportHandler : 1. GET /accounts/report/:account_id
 activate AccountGetReportHandler
 
-AccountGetReportHandler -> AuthorizeService : Authorize(Cookie)
+AccountGetReportHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> AccountGetReportHandler : Claims / Error
+AuthorizeService -->> AccountGetReportHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    AccountGetReportHandler -->> Requester : HTTP Error Response
+    AccountGetReportHandler -->> Requester : 4.HTTP Error Response
 else Authorization Succeeded
-    AccountGetReportHandler -> AccountService : Report(accountID_from_path)
+    AccountGetReportHandler -> AccountService : 4. Report(accountID_from_path)
     activate AccountService
     
-    AccountService -> AccountService : Get(accountID)
+    AccountService -> AccountService : 5. Get(accountID)
     activate AccountService
-    AccountService -> AccountFirestore : Get(&accountID)
+    AccountService -> AccountFirestore : 6. Get(&accountID)
     activate AccountFirestore
-    AccountFirestore -->> AccountService : accountInfo / Error
+    AccountFirestore -->> AccountService : 7. accountInfo / Error
     deactivate AccountFirestore
     deactivate AccountService
     
     alt Get AccountInfo Failed
-        AccountService -->> AccountGetReportHandler : Error
-        AccountGetReportHandler -->> Requester : HTTP Error Response
+        AccountService -->> AccountGetReportHandler : 8. Error
+        AccountGetReportHandler -->> Requester : 9. HTTP Error Response
     else Get AccountInfo Succeeded
         
-        AccountService -> GetFilteredService : GetAllTransfersByAccountID(accountID)
+        AccountService -> GetFilteredService : 8. GetAllTransfersByAccountID(accountID)
         activate GetFilteredService
-        GetFilteredService -> TransferFirestore : GetAll()
+        GetFilteredService -> TransferFirestore : 9. GetAll()
         activate TransferFirestore
-        TransferFirestore -->> GetFilteredService : allTransfers / Error
+        TransferFirestore -->> GetFilteredService : 10. allTransfers / Error
         deactivate TransferFirestore
         note right of GetFilteredService : Filters transfers by accountID
-        GetFilteredService -->> AccountService : transfers / Error
+        GetFilteredService -->> AccountService : 11. transfers / Error
         deactivate GetFilteredService
         
-        AccountService -> GetFilteredService : GetAllDepositsByAccountID(accountID)
+        AccountService -> GetFilteredService : 12. GetAllDepositsByAccountID(accountID)
         activate GetFilteredService
-        GetFilteredService -> DepositFirestore : GetAll()
+        GetFilteredService -> DepositFirestore : 13. GetAll()
         activate DepositFirestore
-        DepositFirestore -->> GetFilteredService : allDeposits / Error
+        DepositFirestore -->> GetFilteredService : 14. allDeposits / Error
         deactivate DepositFirestore
         note right of GetFilteredService : Filters deposits by accountID
-        GetFilteredService -->> AccountService : deposits / Error
+        GetFilteredService -->> AccountService : 15. deposits / Error
         deactivate GetFilteredService
         
-        AccountService -> GetFilteredService : GetAllWithdrawalsByAccountID(accountID)
+        AccountService -> GetFilteredService : 16. GetAllWithdrawalsByAccountID(accountID)
         activate GetFilteredService
-        GetFilteredService -> WithdrawalFirestore : GetAll()
+        GetFilteredService -> WithdrawalFirestore : 17. GetAll()
         activate WithdrawalFirestore
-        WithdrawalFirestore -->> GetFilteredService : allWithdrawals / Error
+        WithdrawalFirestore -->> GetFilteredService : 18. allWithdrawals / Error
         deactivate WithdrawalFirestore
         note right of GetFilteredService : Filters withdrawals by accountID
-        GetFilteredService -->> AccountService : withdrawals / Error
+        GetFilteredService -->> AccountService : 19. withdrawals / Error
         deactivate GetFilteredService
 
-        AccountService -> GetFilteredService : GetAllAutoDebitsByAccountID(accountID)
+        AccountService -> GetFilteredService : 20. GetAllAutoDebitsByAccountID(accountID)
         activate GetFilteredService
-        GetFilteredService -> AutoDebitFirestore : GetAll()
+        GetFilteredService -> AutoDebitFirestore : 21. GetAll()
         activate AutoDebitFirestore
-        AutoDebitFirestore -->> GetFilteredService : allAutoDebits / Error
+        AutoDebitFirestore -->> GetFilteredService : 22. allAutoDebits / Error
         deactivate AutoDebitFirestore
         note right of GetFilteredService : Filters autoDebits by accountID
-        GetFilteredService -->> AccountService : automaticDebits / Error
+        GetFilteredService -->> AccountService : 23. automaticDebits / Error
         deactivate GetFilteredService
 
         note right of AccountService : Assembles AccountReport from all data
-        AccountService -->> AccountGetReportHandler : accountReport
-        AccountGetReportHandler -->> Requester : HTTP 200 OK (accountReport)
+        AccountService -->>  AccountGetReportHandler : 24. accountReport
+        AccountGetReportHandler -->> Requester : 25. HTTP 200 OK (accountReport)
         
     end
     deactivate AccountService

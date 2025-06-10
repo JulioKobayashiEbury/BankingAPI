@@ -6,33 +6,46 @@ import (
 
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
-	automaticdebit "BankingAPI/internal/model/automaticDebit"
-	"BankingAPI/internal/model/deposit"
-	"BankingAPI/internal/model/transfer"
-	"BankingAPI/internal/model/withdrawal"
 	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
-func AddAccountEndPoints(server *echo.Echo) {
-	// server.GET("/accounts", AccountGetOrderFilterHandler)
-	server.GET("/accounts/:account_id", AccountGetHandler)
-	server.GET("/accounts/report/:account_id", AccountGetReportHandler)
-	server.POST("/accounts", AccountPostHandler)
-	server.DELETE("/accounts/:account_id", AccountDeleteHandler)
-	server.PUT("/accounts/:account_id", AccountPutHandler)
-	server.PUT("/accounts/:account_id/withdrawal", AccountPutWithDrawalHandler)
-	server.PUT("/accounts/:account_id/deposit", AccountPutDepositHandler)
-	server.PUT("/accounts/:account_id/transfer", AccountPutTransferHandler)
-	server.PUT("/accounts/:account_id/block", AccountPutBlockHandler)
-	server.PUT("/accounts/:account_id/unblock", AccountPutUnBlockHandler)
-	server.PUT("/accounts/:account_id/debit", AccountPutAutomaticDebit)
+type AccountHandler interface {
+	AccountPostHandler(c echo.Context) error
+	AccountGetHandler(c echo.Context) error
+	AccountDeleteHandler(c echo.Context) error
+	AccountPutHandler(c echo.Context) error
+	AccountPutBlockHandler(c echo.Context) error
+	AccountPutUnBlockHandler(c echo.Context) error
+	AccountGetReportHandler(c echo.Context) error
 }
 
-func AccountPostHandler(c echo.Context) error {
-	userID, err := authorizationForAccountEndpoints(&c, nil)
+type accountHandlerImpl struct {
+	accountService service.AccountService
+}
+
+func NewAccountHandler(accountServe service.AccountService) AccountHandler {
+	return accountHandlerImpl{
+		accountService: accountServe,
+	}
+}
+
+func AddAccountEndPoints(server *echo.Echo, h AccountHandler) {
+	// server.GET("/accounts", AccountGetOrderFilterHandler)
+
+	server.GET("/accounts/:account_id", h.AccountGetHandler)
+	server.GET("/accounts/report/:account_id", h.AccountGetReportHandler)
+	server.POST("/accounts", h.AccountPostHandler)
+	server.DELETE("/accounts/:account_id", h.AccountDeleteHandler)
+	server.PUT("/accounts/:account_id", h.AccountPutHandler)
+	server.PUT("/accounts/:account_id/block", h.AccountPutBlockHandler)
+	server.PUT("/accounts/:account_id/unblock", h.AccountPutUnBlockHandler)
+}
+
+func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {
+	userID, err := h.authorizationForAccountEndpoints(&c, nil)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -52,7 +65,7 @@ func AccountPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	accountResponse, err := Services.AccountService.Create(&accountInfo)
+	accountResponse, err := h.accountService.Create(&accountInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -60,13 +73,13 @@ func AccountPostHandler(c echo.Context) error {
 	return c.JSON(http.StatusCreated, accountResponse)
 }
 
-func AccountGetHandler(c echo.Context) error {
+func (h accountHandlerImpl) AccountGetHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
+	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	accountResponse, err := Services.AccountService.Get(&accountID)
+	accountResponse, err := h.accountService.Get(&accountID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -91,22 +104,22 @@ func AccountGetHandler(c echo.Context) error {
 		return c.JSON(http.StatusOK, (*listOfAccounts))
 	}
 */
-func AccountDeleteHandler(c echo.Context) error {
+func (h accountHandlerImpl) AccountDeleteHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
+	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.AccountService.Delete(&accountID); err != nil {
+	if err := h.accountService.Delete(&accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Deleted"})
 }
 
-func AccountPutHandler(c echo.Context) error {
+func (h accountHandlerImpl) AccountPutHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
+	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -117,7 +130,7 @@ func AccountPutHandler(c echo.Context) error {
 	}
 	accountInfo.Account_id = accountID
 
-	accountResponse, err := Services.AccountService.Update(&accountInfo)
+	accountResponse, err := h.accountService.Update(&accountInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -125,137 +138,51 @@ func AccountPutHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, accountResponse)
 }
 
-func AccountPutDepositHandler(c echo.Context) error {
+func (h accountHandlerImpl) AccountPutBlockHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
+	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	var depositRequest deposit.Deposit
-	if err := c.Bind(&depositRequest); err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-	depositRequest.Account_id = accountID
-
-	depositResponse, err := Services.DepositService.ProcessDeposit(&depositRequest)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusAccepted, depositResponse)
-}
-
-func AccountPutWithDrawalHandler(c echo.Context) error {
-	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-	var withdrawalRequest withdrawal.Withdrawal
-	if err := c.Bind(&withdrawalRequest); err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-	withdrawalRequest.Account_id = accountID
-	// talk to service
-
-	withdrawalResponse, err := Services.WithdrawalService.ProcessWithdrawal(&withdrawalRequest)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusOK, withdrawalResponse)
-}
-
-func AccountPutBlockHandler(c echo.Context) error {
-	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if err := Services.AccountService.Status(&accountID, false); err != nil {
+	if err := h.accountService.Status(&accountID, false); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Blocked Sucesfully!"})
 }
 
-func AccountPutUnBlockHandler(c echo.Context) error {
+func (h accountHandlerImpl) AccountPutUnBlockHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
+	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.AccountService.Status(&accountID, true); err != nil {
+	if err := h.accountService.Status(&accountID, true); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Unblocked"})
 }
 
-func AccountPutAutomaticDebit(c echo.Context) error {
-	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	var newAutoDebit automaticdebit.AutomaticDebit
-	if err := c.Bind(&newAutoDebit); err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-	newAutoDebit.Account_id = accountID
-
-	autodebitResponse, err := Services.AutomaticdebitService.ProcessNewAutomaticDebit(&newAutoDebit)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusAccepted, *autodebitResponse)
-}
-
-func AccountPutTransferHandler(c echo.Context) error {
-	accountID := c.Param("account_id")
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-	var newTransferInfo transfer.Transfer
-	if err := c.Bind(&newTransferInfo); err != nil {
-		log.Error().Msg(err.Error())
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-	newTransferInfo.Account_id = accountID
-
-	transferResponse, err := Services.TransferService.ProcessNewTransfer(&newTransferInfo)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusOK, *transferResponse)
-}
-
-func AccountGetReportHandler(c echo.Context) error {
+func (h accountHandlerImpl) AccountGetReportHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
 
-	if _, err := authorizationForAccountEndpoints(&c, &accountID); err != nil {
+	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	accountReport, err := Services.AccountService.Report(&accountID)
+	accountReport, err := h.accountService.Report(&accountID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, accountReport)
 }
 
-func authorizationForAccountEndpoints(c *echo.Context, accountID *string) (*string, *model.Erro) {
+func (h accountHandlerImpl) authorizationForAccountEndpoints(c *echo.Context, accountID *string) (*string, *model.Erro) {
 	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
 
 	claims, err := service.Authorize(&authorizationHeader)
 	if err != nil {
-		if err.Err == http.ErrNoCookie {
-			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
-		}
 		return nil, err
 	}
 
@@ -263,7 +190,7 @@ func authorizationForAccountEndpoints(c *echo.Context, accountID *string) (*stri
 		return &claims.Id, nil
 	}
 
-	account, err := Services.AccountService.Get(accountID)
+	account, err := h.accountService.Get(accountID)
 	if err != nil {
 		return nil, err
 	}

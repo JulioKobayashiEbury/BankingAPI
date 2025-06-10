@@ -7,30 +7,30 @@ control AuthorizeService <<serviceAuthorize.go>>
 control ClientService <<serviceClient.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
-Requester -> ClientGetHandler : GET /clients/:client_id
+Requester -> ClientGetHandler : 1. GET /clients/:client_id
 activate ClientGetHandler
 
-ClientGetHandler -> AuthorizeService : Authorize(Cookie)
+ClientGetHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> ClientGetHandler : Claims / Error
+AuthorizeService -->> ClientGetHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    ClientGetHandler -->> Requester : HTTP Error Response
+    ClientGetHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
-    ClientGetHandler -> ClientService : Client(clientID_from_path)
+    ClientGetHandler -> ClientService : 4. Client(clientID_from_path)
     activate ClientService
-    ClientService -> ClientFirestore : Get(&clientID_from_path)
+    ClientService -> ClientFirestore : 5. Get(&clientID_from_path)
     activate ClientFirestore
-    ClientFirestore -->> ClientService : clientData / Error
+    ClientFirestore -->> ClientService : 6. clientData / Error
     deactivate ClientFirestore
     
     alt Get Client Failed
-        ClientService -->> ClientGetHandler : Error
-        ClientGetHandler -->> Requester : HTTP Error Response
+        ClientService -->> ClientGetHandler : 7. Error
+        ClientGetHandler -->> Requester : 8. HTTP Error Response
     else Get Client Succeeded
-        ClientService -->> ClientGetHandler : clientResponse
-        ClientGetHandler -->> Requester : HTTP 200 OK (clientResponse)
+        ClientService -->> ClientGetHandler : 7. clientResponse
+        ClientGetHandler -->> Requester : 8. HTTP 200 OK (clientResponse)
     end
     deactivate ClientService
 end

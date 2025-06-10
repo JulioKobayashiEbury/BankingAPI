@@ -7,30 +7,30 @@ control AuthorizeService <<serviceAuthorize.go>>
 control AccountService <<serviceAccount.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 
-Requester -> AccountGetHandler : GET /accounts/:account_id
+Requester -> AccountGetHandler : 1. GET /accounts/:account_id
 activate AccountGetHandler
 
-AccountGetHandler -> AuthorizeService : Authorize(Cookie)
+AccountGetHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService -->> AccountGetHandler : Claims / Error
+AuthorizeService -->> AccountGetHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    AccountGetHandler -->> Requester : HTTP Error Response
+    AccountGetHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
-    AccountGetHandler -> AccountService : Account(accountID_from_path)
+    AccountGetHandler -> AccountService : 4. Account(accountID_from_path)
     activate AccountService
-    AccountService -> AccountFirestore : Get(&accountID_from_path)
+    AccountService -> AccountFirestore : 5. Get(&accountID_from_path)
     activate AccountFirestore
-    AccountFirestore -->> AccountService : accountData / Error
+    AccountFirestore -->> AccountService : 6. accountData / Error
     deactivate AccountFirestore
     
     alt Get Account Failed
-        AccountService -->> AccountGetHandler : Error
-        AccountGetHandler -->> Requester : HTTP Error Response
+        AccountService -->> AccountGetHandler : 7. Error
+        AccountGetHandler -->> Requester : 8. HTTP Error Response
     else Get Account Succeeded
-        AccountService -->> AccountGetHandler : accountResponse
-        AccountGetHandler -->> Requester : HTTP 200 OK (accountResponse)
+        AccountService -->> AccountGetHandler : 7. accountResponse
+        AccountGetHandler -->> Requester : 8. HTTP 200 OK (accountResponse)
     end
     deactivate AccountService
 end

@@ -9,49 +9,49 @@ control GetFilteredService <<serviceGetFiltered.go>>
 entity UserFirestore <<model/user/firestore.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
-Requester -> UserGetReportHandler : GET /users/report/:user_id
+Requester -> UserGetReportHandler : 1. GET /users/report/:user_id
 activate UserGetReportHandler
 
-UserGetReportHandler -> AuthorizeService : Authorize(Cookie, userID_from_path)
+UserGetReportHandler -> AuthorizeService : 2. Authorize(Cookie, userID_from_path)
 activate AuthorizeService
-AuthorizeService -->> UserGetReportHandler : Claims / Error
+AuthorizeService -->> UserGetReportHandler : 3. Claims / Error
 deactivate AuthorizeService
 
 alt Authorization Failed
-    UserGetReportHandler -->> Requester : HTTP Error Response
+    UserGetReportHandler -->> Requester : 4. HTTP Error Response
 else Authorization Succeeded
-    UserGetReportHandler -> UserService : Report(userID_from_path)
+    UserGetReportHandler -> UserService : 5. Report(userID_from_path)
     activate UserService
 
-    UserService -> UserService : Get(userID)
+    UserService -> UserService : 6. Get(userID)
     activate UserService
-    UserService -> UserFirestore : Get(&userID)
+    UserService -> UserFirestore : 7. Get(&userID)
     activate UserFirestore
-    UserFirestore -->> UserService : userInfo / Error
+    UserFirestore -->> UserService : 8. userInfo / Error
     deactivate UserFirestore
     deactivate UserService
 
     alt Get UserInfo Failed
-        UserService -->> UserGetReportHandler : Error
-        UserGetReportHandler -->> Requester : HTTP Error Response
+        UserService -->> UserGetReportHandler : 9. Error
+        UserGetReportHandler -->> Requester : 10. HTTP Error Response
     else Get UserInfo Succeeded
-        UserService -> GetFilteredService : GetClientsByUserID(userID)
+        UserService -> GetFilteredService : 9. GetClientsByUserID(userID)
         activate GetFilteredService
-        GetFilteredService -> ClientFirestore : GetAll()
+        GetFilteredService -> ClientFirestore : 10. GetAll()
         activate ClientFirestore
-        ClientFirestore -->> GetFilteredService : allClients / Error
+        ClientFirestore -->> GetFilteredService : 11. allClients / Error
         deactivate ClientFirestore
         note right of GetFilteredService : Filters clients by userID
-        GetFilteredService -->> UserService : clients / Error
+        GetFilteredService -->> UserService : 12. clients / Error
         deactivate GetFilteredService
 
         alt Get Clients Failed
-            UserService -->> UserGetReportHandler : Error
-            UserGetReportHandler -->> Requester : HTTP Error Response
+            UserService -->> UserGetReportHandler : 13. Error
+            UserGetReportHandler -->> Requester : 14. HTTP Error Response
         else Get Clients Succeeded
             note right of UserService : Assembles UserReport
-            UserService -->> UserGetReportHandler : userReport
-            UserGetReportHandler -->> Requester : HTTP 200 OK (userReport)
+            UserService -->> UserGetReportHandler : 13. userReport
+            UserGetReportHandler -->> Requester : 14. HTTP 200 OK (userReport)
         end
     end
     deactivate UserService

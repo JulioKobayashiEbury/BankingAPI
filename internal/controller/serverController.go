@@ -33,20 +33,21 @@ const (
 	maxNameLenght       = 30
 )
 
-var (
-	Repositories   model.RepositoryList
-	Services       service.ServicesList
-	DatabaseClient *firestore.Client
-)
-
-func Server() {
+func Server(services *service.ServicesList) {
 	server := echo.New()
-	AddAccountEndPoints(server)
-	AddClientsEndPoints(server)
-	AddUsersEndPoints(server)
+
+	AddAccountEndPoints(server, NewAccountHandler(services.AccountService))
+	AddClientsEndPoints(server, NewClientHandler(services.ClientService))
+	AddUsersEndPoints(server, NewUserHandler(services.UserService, services.AuthenticationService))
+	AddTransferEndPoints(server, NewTransferHandler(services.TransferService, services.AccountService))
+	AddAutodebitEndPoints(server, NewAutodebitHandler(services.AutomaticdebitService, services.AccountService))
+	AddDepositsEndPoints(server, NewDeposithandler(services.DepositService, services.AccountService))
+	AddWithdrawalEndPoints(server, NewWithdrawalHandler(services.WithdrawalService, services.AccountService))
 
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+
+	services.AutomaticdebitService.Scheduled()
 
 	if err := server.Start("localhost:25565"); err != nil {
 		log.Error().Msg(err.Error())
@@ -55,36 +56,37 @@ func Server() {
 	log.Info().Msg("Server started on port 25565")
 }
 
-func InstantiateRepo() {
-	Repositories = model.RepositoryList{
-		UserDatabase:           user.NewUserFireStore(DatabaseClient),
-		ClientDatabase:         client.NewClientFirestore(DatabaseClient),
-		AccountDatabase:        account.NewAccountFirestore(DatabaseClient),
-		AutomaticDebitDatabase: automaticdebit.NewAutoDebitFirestore(DatabaseClient),
-		DepositDatabase:        deposit.NewDepositFirestore(DatabaseClient),
-		TransferDatabase:       transfer.NewTransferFirestore(DatabaseClient),
-		WithdrawalDatabase:     withdrawal.NewWithdrawalFirestore(DatabaseClient),
+func InstantiateRepo(databaseClient *firestore.Client) *model.RepositoryList {
+	return &model.RepositoryList{
+		UserDatabase:           user.NewUserFireStore(databaseClient),
+		ClientDatabase:         client.NewClientFirestore(databaseClient),
+		AccountDatabase:        account.NewAccountFirestore(databaseClient),
+		AutomaticDebitDatabase: automaticdebit.NewAutoDebitFirestore(databaseClient),
+		DepositDatabase:        deposit.NewDepositFirestore(databaseClient),
+		TransferDatabase:       transfer.NewTransferFirestore(databaseClient),
+		WithdrawalDatabase:     withdrawal.NewWithdrawalFirestore(databaseClient),
 	}
 }
 
-func InstantiateServices() {
+func InstantiateServices(repositories *model.RepositoryList) *service.ServicesList {
 	getFilteredServe := service.NewGetFilteredService(
-		Repositories.ClientDatabase,
-		Repositories.AccountDatabase,
-		Repositories.TransferDatabase,
-		Repositories.DepositDatabase,
-		Repositories.WithdrawalDatabase,
-		Repositories.AutomaticDebitDatabase,
+		repositories.ClientDatabase,
+		repositories.AccountDatabase,
+		repositories.TransferDatabase,
+		repositories.DepositDatabase,
+		repositories.WithdrawalDatabase,
+		repositories.AutomaticDebitDatabase,
 	)
-	userServe := service.NewUserService(Repositories.UserDatabase, getFilteredServe)
-	clientServe := service.NewClientService(Repositories.ClientDatabase, userServe, getFilteredServe)
-	accountServe := service.NewAccountService(Repositories.AccountDatabase, userServe, clientServe, getFilteredServe)
-	withdrawalServe := service.NewWithdrawalService(Repositories.WithdrawalDatabase, accountServe)
-	depositServe := service.NewDepositService(Repositories.DepositDatabase, accountServe)
-	automaticdebitServe := service.NewAutoDebit(Repositories.AutomaticDebitDatabase, withdrawalServe)
-	transferServe := service.NewTransferService(Repositories.TransferDatabase, accountServe)
+	userServe := service.NewUserService(repositories.UserDatabase, getFilteredServe)
+	clientServe := service.NewClientService(repositories.ClientDatabase, userServe, getFilteredServe)
+	accountServe := service.NewAccountService(repositories.AccountDatabase, userServe, clientServe, getFilteredServe)
+	withdrawalServe := service.NewWithdrawalService(repositories.WithdrawalDatabase, accountServe)
+	depositServe := service.NewDepositService(repositories.DepositDatabase, accountServe)
+	automaticdebitServe := service.NewAutoDebit(repositories.AutomaticDebitDatabase, withdrawalServe)
+	transferServe := service.NewTransferService(repositories.TransferDatabase, accountServe)
+	authentication := service.NewAuth(repositories.UserDatabase)
 
-	Services = service.ServicesList{
+	return &service.ServicesList{
 		UserService:           userServe,
 		ClientService:         clientServe,
 		AccountService:        accountServe,
@@ -93,5 +95,6 @@ func InstantiateServices() {
 		AutomaticdebitService: automaticdebitServe,
 		TransferService:       transferServe,
 		GetFilteredService:    getFilteredServe,
+		AuthenticationService: authentication,
 	}
 }

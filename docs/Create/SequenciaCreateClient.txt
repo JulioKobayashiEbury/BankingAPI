@@ -9,47 +9,47 @@ entity ClientFirestore <<model/client/firestore.go>>
 
 activate Requester
 
-Requester -> ClientPostHandler : POST /clients (Body: ClientRequest Info)
+Requester -> ClientPostHandler : 1. POST /clients (Body: ClientRequest Info)
 activate ClientPostHandler
 
-ClientPostHandler -> ClientService : CreateClient(clientRequest)
+ClientPostHandler -> ClientService : 2. CreateClient(clientRequest)
 activate ClientService
 
 alt Missing Credentials (User_id, Document, or Name)
-    ClientService -->> ClientPostHandler : Error (Missing credentials for creating client)
-    ClientPostHandler -->> Requester : HTTP Error Response
+    ClientService -->> ClientPostHandler : 3. Error (Missing credentials for creating client)
+    ClientPostHandler -->> Requester : 4. HTTP Error Response
 else
-    ClientService -> UserFirestore : Get(&clientRequest.User_id)
+    ClientService -> UserFirestore : 4. Get(&clientRequest.User_id)
     activate UserFirestore
-    UserFirestore -->> ClientService : userData / Error (IDnotFound or other)
+    UserFirestore -->> ClientService : 5. userData / Error (IDnotFound or other)
     deactivate UserFirestore
     
     alt User Not Found or Error
-        ClientService -->> ClientPostHandler : Error
-        ClientPostHandler -->> Requester : HTTP Error Response
+        ClientService -->> ClientPostHandler : 6. Error
+        ClientPostHandler -->> Requester : 7. HTTP Error Response
     else User Exists
-        ClientService -> ClientFirestore : Create(clientRequest)
+        ClientService -> ClientFirestore : 6. Create(clientRequest)
         activate ClientFirestore
-        ClientFirestore -->> ClientService : clientID_ptr / Error
+        ClientFirestore -->> ClientService : 7. clientID_ptr / Error
         deactivate ClientFirestore
         alt Create Client Record Failed
-            ClientService -->> ClientPostHandler : Error
-            ClientPostHandler -->> Requester : HTTP Error Response
+            ClientService -->> ClientPostHandler : 8. Error
+            ClientPostHandler -->> Requester : 9. HTTP Error Response
         else Create Client Record Succeeded
-            ClientService -> ClientService : Client(*clientID_ptr)
-            ClientService -> ClientFirestore : Get(*clientID_ptr)
+            ClientService -> ClientService : 8. (*clientID_ptr)
+            ClientService -> ClientFirestore : 9. Get(*clientID_ptr)
             activate ClientFirestore
-            ClientFirestore -->> ClientService : createdClientData / Error
+            ClientFirestore -->> ClientService : 10. createdClientData / Error
             deactivate ClientFirestore
             
             alt Get Created Client Failed
-                ClientService -->> ClientService : Error
-                ClientService -->> ClientPostHandler : Error
-                ClientPostHandler -->> Requester : HTTP Error Response
+                ClientService -->> ClientService : 11. Error
+                ClientService -->> ClientPostHandler : 12. Error
+                ClientPostHandler -->> Requester : 13. HTTP Error Response
             else Get Created Client Succeeded
-                ClientService -->> ClientService : createdClientResponse
-                ClientService -->> ClientPostHandler : createdClientResponse
-                ClientPostHandler -->> Requester : HTTP 200 OK (createdClientResponse)
+                ClientService -->> ClientService : 11. createdClientResponse
+                ClientService -->> ClientPostHandler : 12. createdClientResponse
+                ClientPostHandler -->> Requester : 13. HTTP 200 OK (createdClientResponse)
             end
 
         end

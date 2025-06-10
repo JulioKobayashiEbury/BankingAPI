@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"BankingAPI/internal/model"
@@ -11,19 +12,42 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func AddUsersEndPoints(server *echo.Echo) {
-	server.POST("/users", UserPostHandler)
-	server.PUT("/users/auth", UserAuthHandler)
-	server.GET("/users/:user_id", UserGetHandler)
-	server.GET("/users/:user_id/report", UserGetReportHandler)
-	server.DELETE("/users/:user_id", UserDeleteHandler)
-	server.PUT("/users/:user_id", UserPutHandler)
-	server.PUT("/users/:user_id/block", UserPutBlockHandler)
-	server.PUT("/users/:user_id/unblock", UserPutUnBlockHandler)
+type UserHandler interface {
+	UserPostHandler(c echo.Context) error
+	UserAuthHandler(c echo.Context) error
+	UserPutBlockHandler(c echo.Context) error
+	UserPutUnBlockHandler(c echo.Context) error
+	UserPutHandler(c echo.Context) error
+	UserGetHandler(c echo.Context) error
+	UserDeleteHandler(c echo.Context) error
+	UserGetReportHandler(c echo.Context) error
 }
 
-func UserPostHandler(c echo.Context) error {
-	if _, err := internalUserAuthorization(&c); err != nil {
+type userHanderImpl struct {
+	userService         service.UserService
+	authenticateService service.Authentication
+}
+
+func NewUserHandler(userServe service.UserService, authServe service.Authentication) UserHandler {
+	return &userHanderImpl{
+		userService:         userServe,
+		authenticateService: authServe,
+	}
+}
+
+func AddUsersEndPoints(server *echo.Echo, h UserHandler) {
+	server.POST("/users", h.UserPostHandler)
+	server.PUT("/users/auth", h.UserAuthHandler)
+	server.GET("/users/:user_id", h.UserGetHandler)
+	server.GET("/users/:user_id/report", h.UserGetReportHandler)
+	server.DELETE("/users/:user_id", h.UserDeleteHandler)
+	server.PUT("/users/:user_id", h.UserPutHandler)
+	server.PUT("/users/:user_id/block", h.UserPutBlockHandler)
+	server.PUT("/users/:user_id/unblock", h.UserPutUnBlockHandler)
+}
+
+func (h userHanderImpl) UserPostHandler(c echo.Context) error {
+	if _, err := h.internalUserAuthorization(&c); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -37,24 +61,21 @@ func UserPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	userResponse, err := Services.UserService.Create(&userInfo)
+	userResponse, err := h.userService.Create(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusCreated, (*userResponse))
 }
 
-func UserAuthHandler(c echo.Context) error {
+func (h userHanderImpl) UserAuthHandler(c echo.Context) error {
 	var userInfo user.User
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	userDatabase := user.NewUserFireStore(DatabaseClient)
-	serviceAuthenticate := service.NewAuth(userDatabase)
-
-	ok, err := serviceAuthenticate.Authenticate(&(userInfo).User_id, &(userInfo).Password, model.UsersPath)
+	ok, err := h.authenticateService.Authenticate(&(userInfo).User_id, &(userInfo).Password, model.UsersPath)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -62,7 +83,7 @@ func UserAuthHandler(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "Credentials not valid")
 	}
 
-	tokenString, err := serviceAuthenticate.GenerateToken(&(userInfo.User_id))
+	tokenString, err := h.authenticateService.GenerateToken(&(userInfo.User_id))
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -73,32 +94,32 @@ func UserAuthHandler(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "User Authorized"})
 }
 
-func UserPutBlockHandler(c echo.Context) error {
-	userID, err := internalUserAuthorization(&c)
+func (h userHanderImpl) UserPutBlockHandler(c echo.Context) error {
+	userID, err := h.internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.UserService.Status(userID, false); err != nil {
+	if err := h.userService.Status(userID, false); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Blocked"})
 }
 
-func UserPutUnBlockHandler(c echo.Context) error {
-	userID, err := internalUserAuthorization(&c)
+func (h userHanderImpl) UserPutUnBlockHandler(c echo.Context) error {
+	userID, err := h.internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.UserService.Status(userID, true); err != nil {
+	if err := h.userService.Status(userID, true); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Unblocked"})
 }
 
-func UserPutHandler(c echo.Context) error {
-	userID, err := internalUserAuthorization(&c)
+func (h userHanderImpl) UserPutHandler(c echo.Context) error {
+	userID, err := h.internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -109,20 +130,20 @@ func UserPutHandler(c echo.Context) error {
 	}
 
 	userInfo.User_id = *userID
-	userResponse, err := Services.UserService.Update(&userInfo)
+	userResponse, err := h.userService.Update(&userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, (*userResponse))
 }
 
-func UserGetHandler(c echo.Context) error {
-	userID, err := internalUserAuthorization(&c)
+func (h userHanderImpl) UserGetHandler(c echo.Context) error {
+	userID, err := h.internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	userResponse, err := Services.UserService.Get(userID)
+	userResponse, err := h.userService.Get(userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -130,47 +151,44 @@ func UserGetHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, (*userResponse))
 }
 
-func UserDeleteHandler(c echo.Context) error {
-	userID, err := internalUserAuthorization(&c)
+func (h userHanderImpl) UserDeleteHandler(c echo.Context) error {
+	userID, err := h.internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	if err := Services.UserService.Delete(userID); err != nil {
+	if err := h.userService.Delete(userID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User deleted"})
 }
 
-func UserGetReportHandler(c echo.Context) error {
-	userID, err := internalUserAuthorization(&c)
+func (h userHanderImpl) UserGetReportHandler(c echo.Context) error {
+	userID, err := h.internalUserAuthorization(&c)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
-	userReport, err := Services.UserService.Report(userID)
+	userReport, err := h.userService.Report(userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, (*userReport))
 }
 
-func internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
+func (h userHanderImpl) internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
 	authorizationHeader := (*c).Request().Header.Get(echo.HeaderAuthorization)
 
 	claims, err := service.Authorize(&authorizationHeader)
 	if err != nil {
-		if err.Err == http.ErrNoCookie {
-			return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: err.HttpCode}
-		}
 		return nil, err
 	}
 	var userID string
 
 	log.Debug().Msg("Entering users path...")
 
-	userResponse, err := Services.UserService.Get(&claims.Id)
+	userResponse, err := h.userService.Get(&claims.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +198,8 @@ func internalUserAuthorization(c *echo.Context) (*string, *model.Erro) {
 	}
 
 	if (*claims).Id != userID {
-		return nil, &model.Erro{Err: service.NoAuthenticationToken, HttpCode: http.StatusUnauthorized}
+		log.Error().Msg("User ID does not match with accounts User ID")
+		return nil, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
 	}
 
 	return &userID, nil

@@ -1,0 +1,80 @@
+@startuml
+title Create Transfer - POST /transfers
+
+actor Requester
+boundary TransferPostHandler <<transferHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control TransferService <<serviceTransfer.go>>
+control AccountService <<serviceAccount.go>>
+entity TransferFirestore <<model/transfer/firestore.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+
+activate Requester
+Requester -> TransferPostHandler : 1. POST /transfers (Body: TransferInfo)
+activate TransferPostHandler
+
+TransferPostHandler -> AuthorizeService : 2. authorizationForTransferEndpoints(c, &newTransferInfo.Account_id)
+activate AuthorizeService
+' ... authorization logic for "from" account ...
+AuthorizeService -->> TransferPostHandler : 3. nil / error
+deactivate AuthorizeService
+
+alt Authorization Failed
+    TransferPostHandler -->> Requester : 4. HTTP Error Response
+else Authorization Succeeded
+    TransferPostHandler -> TransferService : 4. ProcessNewTransfer(&newTransferInfo)
+    activate TransferService
+    
+    TransferService -> AccountService : 5. Get(&transferRequest.Account_to)
+    activate AccountService
+    
+    AccountService -> TransferService : 6. account.Account
+    deactivate AccountService
+    ' ... get account_to ...
+    TransferService -> AccountService : 7. Get(&transferRequest.Account_id)
+    activate AccountService
+    
+    AccountService -> TransferService : 8. account.Account
+    deactivate AccountService
+    ' ... get account_from ...
+
+    alt Get Accounts Failed
+        TransferService -->> TransferPostHandler : 9. error
+        TransferPostHandler -->> Requester : 10. HTTP Error Response
+    else Get Accounts Succeeded
+        TransferService -> TransferFirestore : 9. Create(transferRequest)
+        activate TransferFirestore
+        TransferFirestore -->> TransferService : 10. transferResponse / error
+        deactivate TransferFirestore
+        
+        alt Create Transfer Record Failed
+            TransferService -->> TransferPostHandler : 11. error
+            TransferPostHandler -->> Requester : 12. HTTP Error Response
+        else Create Transfer Succeeded
+            TransferService -> AccountService : 11. Update(accountTo)
+            activate AccountService
+            
+            AccountService -> TransferService : 12. err
+            deactivate AccountService
+            
+            TransferService -> AccountService : 13. Update(accountTo)
+            activate AccountService
+            
+            AccountService -> TransferService : 14. err
+            deactivate AccountService
+            ' Includes rollback logic for both account updates
+            
+            alt Account Updates Failed
+                TransferService -->> TransferPostHandler : 15. error (with rollback)
+                TransferPostHandler -->> Requester : 16. HTTP Error Response
+            else Account Updates Succeeded
+                TransferService -->> TransferPostHandler : 15. transferResponse
+                TransferPostHandler -->> Requester : 16. HTTP 200 OK (transferResponse)
+            end
+        end
+    end
+    deactivate TransferService
+end
+deactivate TransferPostHandler
+deactivate Requester
+@enduml
