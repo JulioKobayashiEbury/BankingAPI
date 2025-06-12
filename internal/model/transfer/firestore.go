@@ -119,10 +119,10 @@ func (db transferFirestore) GetAll() (interface{}, *model.Erro) {
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	transferResponseSlice := make([]*Transfer, 0, len(docSnapshots))
+	transferResponseSlice := make([]Transfer, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		transferResponse := &Transfer{}
+		transferResponse := Transfer{}
 		if err := docSnap.DataTo(&transferResponse); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

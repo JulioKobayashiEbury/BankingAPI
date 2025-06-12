@@ -8,6 +8,10 @@ import (
 
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
+	automaticdebit "BankingAPI/internal/model/automaticDebit"
+	"BankingAPI/internal/model/deposit"
+	"BankingAPI/internal/model/transfer"
+	"BankingAPI/internal/model/withdrawal"
 
 	"github.com/rs/zerolog/log"
 )
@@ -17,15 +21,27 @@ type accountServiceImpl struct {
 	clientService   ClientService
 	accountDatabase model.RepositoryInterface
 
-	getFilteredService GetFilteredService
+	withdrawalDatabase model.RepositoryInterface
+	depositDatabase    model.RepositoryInterface
+	transferDatabase   model.RepositoryInterface
+	autodebitDatabase  model.RepositoryInterface
 }
 
-func NewAccountService(ad model.RepositoryInterface, us UserService, cs ClientService, getFilteredServe GetFilteredService) AccountService {
+func NewAccountService(accountDB model.RepositoryInterface,
+	userServe UserService,
+	clientServe ClientService,
+	withdrawalDB model.RepositoryInterface,
+	depositDB model.RepositoryInterface,
+	transferDB model.RepositoryInterface,
+	autodebitDB model.RepositoryInterface) AccountService {
 	return accountServiceImpl{
-		accountDatabase:    ad,
-		userService:        us,
-		clientService:      cs,
-		getFilteredService: getFilteredServe,
+		accountDatabase:    accountDB,
+		userService:        userServe,
+		clientService:      clientServe,
+		withdrawalDatabase: withdrawalDB,
+		depositDatabase:    depositDB,
+		transferDatabase:   transferDB,
+		autodebitDatabase:  autodebitDB,
 	}
 }
 
@@ -141,19 +157,19 @@ func (service accountServiceImpl) Report(accountID *string) (*account.AccountRep
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := service.getFilteredService.GetAllTransfersByAccountID(accountID)
+	transfers, err := service.transfersByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := service.getFilteredService.GetAllDepositsByAccountID(accountID)
+	deposits, err := service.depositsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	withdrawals, err := service.getFilteredService.GetAllWithdrawalsByAccountID(accountID)
+	withdrawals, err := service.withdrawalsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
-	automaticDebits, err := service.getFilteredService.GetAllAutoDebitsByAccountID(accountID)
+	automaticDebits, err := service.automaticdebitsByAccountID(accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -172,4 +188,79 @@ func (service accountServiceImpl) Report(accountID *string) (*account.AccountRep
 	}
 	log.Info().Msg("Report generated for account: " + *accountID)
 	return &accountReport, nil
+}
+
+func (service accountServiceImpl) transfersByAccountID(accountID *string) (*[]transfer.Transfer, *model.Erro) {
+	obj, err := service.transferDatabase.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	transfers, ok := obj.(*[]transfer.Transfer)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	transfersByAccountSlice := make([]transfer.Transfer, 0, len(*transfers))
+	for _, transfer := range *transfers {
+		if transfer.Account_id == *accountID {
+			transfersByAccountSlice = append(transfersByAccountSlice, transfer)
+		}
+	}
+	return &transfersByAccountSlice, nil
+}
+
+func (service accountServiceImpl) depositsByAccountID(accountID *string) (*[]deposit.Deposit, *model.Erro) {
+	obj, err := service.depositDatabase.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	deposits, ok := obj.(*[]deposit.Deposit)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+	depositByAccountSlice := make([]deposit.Deposit, 0, len(*deposits))
+	for _, deposit := range *deposits {
+		if deposit.Account_id == *accountID {
+			depositByAccountSlice = append(depositByAccountSlice, deposit)
+		}
+	}
+	return &depositByAccountSlice, nil
+}
+
+func (service accountServiceImpl) withdrawalsByAccountID(accountID *string) (*[]withdrawal.Withdrawal, *model.Erro) {
+	obj, err := service.withdrawalDatabase.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	withdrawals, ok := obj.(*[]withdrawal.Withdrawal)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	withdrawalByAccountSlice := make([]withdrawal.Withdrawal, 0, len(*withdrawals))
+	for _, withdrawal := range *withdrawals {
+		if withdrawal.Account_id == *accountID {
+			withdrawalByAccountSlice = append(withdrawalByAccountSlice, withdrawal)
+		}
+	}
+	return &withdrawalByAccountSlice, nil
+}
+
+func (service accountServiceImpl) automaticdebitsByAccountID(accountID *string) (*[]automaticdebit.AutomaticDebit, *model.Erro) {
+	obj, err := service.autodebitDatabase.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	autodebits, ok := obj.(*[]automaticdebit.AutomaticDebit)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	autodebitByAccountSlice := make([]automaticdebit.AutomaticDebit, 0, len(*autodebits))
+	for _, autodebit := range *autodebits {
+		if autodebit.Account_id == *accountID {
+			autodebitByAccountSlice = append(autodebitByAccountSlice, autodebit)
+		}
+	}
+	return &autodebitByAccountSlice, nil
 }

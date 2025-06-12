@@ -24,7 +24,6 @@ type ServicesList struct {
 	DepositService        DepositService
 	AutomaticdebitService AutomaticDebitService
 	TransferService       TransferService
-	GetFilteredService    GetFilteredService
 	AuthenticationService Authentication
 }
 
@@ -96,13 +95,4 @@ type TransferService interface {
 	Get(id *string) (*transfer.Transfer, *model.Erro)
 	GetAll() (*[]transfer.Transfer, *model.Erro)
 	ProcessNewTransfer(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
-}
-
-type GetFilteredService interface {
-	GetAllTransfersByAccountID(accountID *string) (*[]transfer.Transfer, *model.Erro)
-	GetAllAutoDebitsByAccountID(accountID *string) (*[]automaticdebit.AutomaticDebit, *model.Erro)
-	GetAllDepositsByAccountID(accountID *string) (*[]deposit.Deposit, *model.Erro)
-	GetAllWithdrawalsByAccountID(accountID *string) (*[]withdrawal.Withdrawal, *model.Erro)
-	GetClientsByUserID(userID *string) (*[]client.Client, *model.Erro)
-	GetAccountsByClientID(clientID *string) (*[]account.Account, *model.Erro)
 }

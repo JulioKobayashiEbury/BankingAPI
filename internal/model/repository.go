@@ -22,6 +22,7 @@ const (
 )
 
 var (
+	FilterNotSet       = &Erro{Err: errors.New("Repository Error: filter value not set"), HttpCode: http.StatusBadRequest}
 	ResquestNotSet     = &Erro{Err: errors.New("Repository Error: Request value not set"), HttpCode: http.StatusBadRequest}
 	FailCreatingClient = &Erro{Err: errors.New("Repository Error: Failed to create DB client"), HttpCode: http.StatusInternalServerError}
 	IDnotFound         = &Erro{Err: errors.New("Repository Error: Id not founc"), HttpCode: http.StatusBadRequest}

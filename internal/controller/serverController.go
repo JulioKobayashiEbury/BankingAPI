@@ -69,17 +69,16 @@ func InstantiateRepo(databaseClient *firestore.Client) *model.RepositoryList {
 }
 
 func InstantiateServices(repositories *model.RepositoryList) *service.ServicesList {
-	getFilteredServe := service.NewGetFilteredService(
-		repositories.ClientDatabase,
-		repositories.AccountDatabase,
-		repositories.TransferDatabase,
-		repositories.DepositDatabase,
+	userServe := service.NewUserService(repositories.UserDatabase, repositories.ClientDatabase)
+	clientServe := service.NewClientService(repositories.ClientDatabase, userServe, repositories.AccountDatabase)
+	accountServe := service.NewAccountService(repositories.AccountDatabase,
+		userServe,
+		clientServe,
 		repositories.WithdrawalDatabase,
+		repositories.DepositDatabase,
+		repositories.TransferDatabase,
 		repositories.AutomaticDebitDatabase,
 	)
-	userServe := service.NewUserService(repositories.UserDatabase, getFilteredServe)
-	clientServe := service.NewClientService(repositories.ClientDatabase, userServe, getFilteredServe)
-	accountServe := service.NewAccountService(repositories.AccountDatabase, userServe, clientServe, getFilteredServe)
 	withdrawalServe := service.NewWithdrawalService(repositories.WithdrawalDatabase, accountServe)
 	depositServe := service.NewDepositService(repositories.DepositDatabase, accountServe)
 	automaticdebitServe := service.NewAutoDebit(repositories.AutomaticDebitDatabase, withdrawalServe)
@@ -94,7 +93,6 @@ func InstantiateServices(repositories *model.RepositoryList) *service.ServicesLi
 		DepositService:        depositServe,
 		AutomaticdebitService: automaticdebitServe,
 		TransferService:       transferServe,
-		GetFilteredService:    getFilteredServe,
 		AuthenticationService: authentication,
 	}
 }

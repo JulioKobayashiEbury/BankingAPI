@@ -4,20 +4,21 @@ import (
 	"time"
 
 	"BankingAPI/internal/model"
+	"BankingAPI/internal/model/client"
 	"BankingAPI/internal/model/user"
 
 	"github.com/rs/zerolog/log"
 )
 
 type userServiceImpl struct {
-	userDatabase       model.RepositoryInterface
-	getFilteredService GetFilteredService
+	userDatabase   model.RepositoryInterface
+	clientDatabase model.RepositoryInterface
 }
 
-func NewUserService(userRepo model.RepositoryInterface, getFilteredServe GetFilteredService) UserService {
+func NewUserService(userDB model.RepositoryInterface, clientDB model.RepositoryInterface) UserService {
 	return userServiceImpl{
-		userDatabase:       userRepo,
-		getFilteredService: getFilteredServe,
+		userDatabase:   userDB,
+		clientDatabase: clientDB,
 	}
 }
 
@@ -115,7 +116,7 @@ func (service userServiceImpl) Report(id *string) (*user.UserReport, *model.Erro
 	if err != nil {
 		return nil, err
 	}
-	clients, err := service.getFilteredService.GetClientsByUserID(id)
+	clients, err := service.clientsByUserID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -128,4 +129,23 @@ func (service userServiceImpl) Report(id *string) (*user.UserReport, *model.Erro
 		Clients:       *clients,
 		Report_date:   time.Now().Format(timeLayout),
 	}, nil
+}
+
+func (service userServiceImpl) clientsByUserID(userID *string) (*[]client.Client, *model.Erro) {
+	obj, err := service.clientDatabase.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	clients, ok := obj.(*[]client.Client)
+	if !ok {
+		return nil, model.DataTypeWrong
+	}
+
+	clientsByUserIDSlice := make([]client.Client, 0, len(*clients))
+	for _, client := range *clients {
+		if client.User_id == *userID {
+			clientsByUserIDSlice = append(clientsByUserIDSlice, client)
+		}
+	}
+	return &clientsByUserIDSlice, nil
 }
