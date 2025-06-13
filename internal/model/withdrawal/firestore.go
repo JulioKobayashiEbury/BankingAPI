@@ -138,3 +138,42 @@ func (db withdrawalFirestore) GetAll() (interface{}, *model.Erro) {
 
 	return &WithdrawalSlice, nil
 }
+
+func (db withdrawalFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	ctx := context.Background()
+	defer ctx.Done()
+
+	query := db.databaseClient.Collection(collection).Query
+
+	for _, filter := range *filters {
+		token := model.TokenizeFilters(&filter)
+		if len(*token) != 3 {
+			return nil, model.InvalidFilterFormat
+		}
+
+		query = query.Where((*token)[0], (*token)[1], (*token)[2])
+
+	}
+
+	allDocs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	}
+
+	withdrawalsSlice := make([]Withdrawal, 0, len(allDocs))
+	for _, docSnap := range allDocs {
+		withdrawal := Withdrawal{}
+		if err := docSnap.DataTo(&withdrawal); err != nil {
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		}
+
+		withdrawal.Withdrawal_id = docSnap.Ref.ID
+
+		withdrawalsSlice = append(withdrawalsSlice, withdrawal)
+	}
+
+	return &withdrawalsSlice, nil
+}

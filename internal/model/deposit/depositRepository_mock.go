@@ -76,3 +76,40 @@ func (d MockDepositRepository) GetAll() (interface{}, *model.Erro) {
 	}
 	return users, nil
 }
+
+func (db MockDepositRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	depositSlice := make([]Deposit, 0, len(*db.DepositMap))
+	for _, depositResponse := range *db.DepositMap {
+		match := true
+		for _, filter := range *filters {
+			token := model.TokenizeFilters(&filter)
+			if len(*token) != 3 {
+				return nil, model.InvalidFilterFormat
+			}
+			field := (*token)[0]
+			operator := (*token)[1]
+			value := (*token)[2]
+
+			switch field {
+			case "account_id":
+				if operator == "==" && depositResponse.Account_id != value {
+					match = false
+				}
+			case "client_id":
+				if operator == "==" && depositResponse.Client_id != value {
+					match = false
+				}
+			// Add more fields as necessary
+			default:
+				match = false
+			}
+		}
+		if match {
+			depositSlice = append(depositSlice, depositResponse)
+		}
+	}
+	return &depositSlice, nil
+}

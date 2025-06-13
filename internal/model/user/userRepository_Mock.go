@@ -86,3 +86,39 @@ func (m MockUserRepository) GetAll() (interface{}, *model.Erro) {
 	}
 	return users, nil
 }
+
+func (db MockUserRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	userSlice := make([]User, 0, len(*db.UserMap))
+	for _, userResponse := range *db.UserMap {
+		match := true
+		for _, filter := range *filters {
+			token := model.TokenizeFilters(&filter)
+			if len(*token) != 3 {
+				return nil, model.InvalidFilterFormat
+			}
+			field := (*token)[0]
+			operator := (*token)[1]
+			value := (*token)[2]
+
+			switch field {
+			case "register_date":
+				if operator == ">=" && userResponse.Register_date < value {
+					match = false
+				}
+				if operator == "<=" && userResponse.Register_date > value {
+					match = false
+				}
+			// Add more fields as necessary
+			default:
+				match = false
+			}
+		}
+		if match {
+			userSlice = append(userSlice, userResponse)
+		}
+	}
+	return &userSlice, nil
+}

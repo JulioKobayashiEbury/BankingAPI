@@ -136,3 +136,40 @@ func (db userFirestore) GetAll() (interface{}, *model.Erro) {
 	}
 	return &userResponseSlice, nil
 }
+
+func (db userFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	ctx := context.Background()
+	defer ctx.Done()
+
+	query := db.databaseClient.Collection(collection).Query
+
+	for _, filter := range *filters {
+		token := model.TokenizeFilters(&filter)
+		if len(*token) != 3 {
+			return nil, model.InvalidFilterFormat
+		}
+
+		query = query.Where((*token)[0], (*token)[1], (*token)[2])
+	}
+
+	allDocs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	}
+
+	userSlice := make([]User, 0, len(allDocs))
+	for _, docSnap := range allDocs {
+		userResponse := User{}
+		if err := docSnap.DataTo(&userResponse); err != nil {
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		}
+
+		userResponse.User_id = docSnap.Ref.ID
+
+		userSlice = append(userSlice, userResponse)
+	}
+	return &userSlice, nil
+}

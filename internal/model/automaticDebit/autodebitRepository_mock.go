@@ -1,6 +1,9 @@
 package automaticdebit
 
-import "BankingAPI/internal/model"
+import (
+	"BankingAPI/internal/model"
+	"strconv"
+)
 
 var singleton *model.RepositoryInterface
 
@@ -74,4 +77,45 @@ func (db MockAutoDebitRepository) GetAll() (interface{}, *model.Erro) {
 		autoDebits = append(autoDebits, autoDebit)
 	}
 	return autoDebits, nil
+}
+
+func (db MockAutoDebitRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	autodebitSlice := make([]AutomaticDebit, 0, len(*db.AutoDebitMap))
+	for _, autodebit := range *db.AutoDebitMap {
+		match := true
+		for _, filter := range *filters {
+			token := model.TokenizeFilters(&filter)
+			if len(*token) != 3 {
+				return nil, model.InvalidFilterFormat
+			}
+			field := (*token)[0]
+			operator := (*token)[1]
+			value := (*token)[2]
+
+			switch field {
+			case "account_id":
+				if operator == "==" && autodebit.Account_id != value {
+					match = false
+				}
+			case "status":
+				floatValue, err := strconv.ParseBool(value)
+				if err != nil {
+					return nil, model.DataTypeWrong
+				}
+				if operator == "==" && autodebit.Status != floatValue {
+					match = false
+				}
+			// Add more fields as necessary
+			default:
+				match = false
+			}
+		}
+		if match {
+			autodebitSlice = append(autodebitSlice, autodebit)
+		}
+	}
+	return &autodebitSlice, nil
 }

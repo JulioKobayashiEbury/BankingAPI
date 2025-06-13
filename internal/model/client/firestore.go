@@ -132,3 +132,43 @@ func (db clientFirestore) GetAll() (interface{}, *model.Erro) {
 	}
 	return &clientSlice, nil
 }
+
+func (db clientFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+
+	ctx := context.Background()
+	defer ctx.Done()
+
+	query := db.databaseclient.Collection(collection).Query
+
+	for _, filter := range *filters {
+		token := model.TokenizeFilters(&filter)
+		if len(*token) != 3 {
+			return nil, model.InvalidFilterFormat
+		}
+
+		query = query.Where((*token)[0], (*token)[1], (*token)[2])
+
+	}
+
+	allDocs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	}
+
+	clientSlice := make([]Client, 0, len(allDocs))
+	for _, docSnap := range allDocs {
+		clientResponse := Client{}
+		if err := docSnap.DataTo(&clientResponse); err != nil {
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		}
+
+		clientResponse.Client_id = docSnap.Ref.ID
+
+		clientSlice = append(clientSlice, clientResponse)
+	}
+
+	return &clientSlice, nil
+}

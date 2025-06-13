@@ -139,3 +139,42 @@ func (db depositFirestore) GetAll() (interface{}, *model.Erro) {
 	}
 	return &DepositSlice, nil
 }
+
+func (db depositFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+
+	ctx := context.Background()
+	defer ctx.Done()
+
+	query := db.databaseClient.Collection(collection).Query
+
+	for _, filter := range *filters {
+		token := model.TokenizeFilters(&filter)
+		if len(*token) != 3 {
+			return nil, model.InvalidFilterFormat
+		}
+
+		query = query.Where((*token)[0], (*token)[1], (*token)[2])
+	}
+
+	allDocs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	}
+
+	depositSlice := make([]Deposit, 0, len(allDocs))
+	for _, docSnap := range allDocs {
+		depositResponse := Deposit{}
+		if err := docSnap.DataTo(&depositResponse); err != nil {
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		}
+
+		depositResponse.Deposit_id = docSnap.Ref.ID
+
+		depositSlice = append(depositSlice, depositResponse)
+	}
+
+	return &depositSlice, nil
+}

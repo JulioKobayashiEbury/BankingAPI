@@ -76,3 +76,40 @@ func (t MockTransferRepository) GetAll() (interface{}, *model.Erro) {
 	}
 	return users, nil
 }
+
+func (db MockTransferRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	transferSlice := make([]Transfer, 0, len(*db.TransferMap))
+	for _, transferResponse := range *db.TransferMap {
+		match := true
+		for _, filter := range *filters {
+			token := model.TokenizeFilters(&filter)
+			if len(*token) != 3 {
+				return nil, model.InvalidFilterFormat
+			}
+			field := (*token)[0]
+			operator := (*token)[1]
+			value := (*token)[2]
+
+			switch field {
+			case "account_id":
+				if operator == "==" && transferResponse.Account_id != value {
+					match = false
+				}
+			case "account_to":
+				if operator == "==" && transferResponse.Account_to != value {
+					match = false
+				}
+			// Add more fields as necessary
+			default:
+				match = false
+			}
+		}
+		if match {
+			transferSlice = append(transferSlice, transferResponse)
+		}
+	}
+	return &transferSlice, nil
+}

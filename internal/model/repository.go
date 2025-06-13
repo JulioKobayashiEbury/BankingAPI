@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
@@ -22,11 +23,12 @@ const (
 )
 
 var (
-	FilterNotSet       = &Erro{Err: errors.New("Repository Error: filter value not set"), HttpCode: http.StatusBadRequest}
-	ResquestNotSet     = &Erro{Err: errors.New("Repository Error: Request value not set"), HttpCode: http.StatusBadRequest}
-	FailCreatingClient = &Erro{Err: errors.New("Repository Error: Failed to create DB client"), HttpCode: http.StatusInternalServerError}
-	IDnotFound         = &Erro{Err: errors.New("Repository Error: Id not founc"), HttpCode: http.StatusBadRequest}
-	DataTypeWrong      = &Erro{Err: errors.New("Repository Error: Invalid argument passed"), HttpCode: http.StatusBadRequest}
+	InvalidFilterFormat = &Erro{Err: errors.New("Repository Error: Invalid fitler format"), HttpCode: http.StatusBadRequest}
+	FilterNotSet        = &Erro{Err: errors.New("Repository Error: filter value not set"), HttpCode: http.StatusBadRequest}
+	ResquestNotSet      = &Erro{Err: errors.New("Repository Error: Request value not set"), HttpCode: http.StatusBadRequest}
+	FailCreatingClient  = &Erro{Err: errors.New("Repository Error: Failed to create DB client"), HttpCode: http.StatusInternalServerError}
+	IDnotFound          = &Erro{Err: errors.New("Repository Error: Id not founc"), HttpCode: http.StatusBadRequest}
+	DataTypeWrong       = &Erro{Err: errors.New("Repository Error: Invalid argument passed"), HttpCode: http.StatusBadRequest}
 )
 
 type RepositoryInterface interface {
@@ -35,6 +37,7 @@ type RepositoryInterface interface {
 	Get(id *string) (interface{}, *Erro)
 	Update(interface{}) *Erro
 	GetAll() (interface{}, *Erro)
+	GetFiltered(*[]string) (interface{}, *Erro)
 }
 
 func GetFireStoreClient() (*firestore.Client, error) {
@@ -51,4 +54,9 @@ func GetFireStoreClient() (*firestore.Client, error) {
 		return nil, err
 	}
 	return client, nil
+}
+
+func TokenizeFilters(filters *string) *[]string {
+	tokens := strings.Split(*filters, ",")
+	return &tokens
 }

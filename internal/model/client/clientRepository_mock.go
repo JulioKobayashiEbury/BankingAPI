@@ -1,6 +1,9 @@
 package client
 
-import "BankingAPI/internal/model"
+import (
+	"BankingAPI/internal/model"
+	"strconv"
+)
 
 var singleton *model.RepositoryInterface
 
@@ -75,4 +78,45 @@ func (db MockClientRepository) GetAll() (interface{}, *model.Erro) {
 		clients = append(clients, client)
 	}
 	return clients, nil
+}
+
+func (db MockClientRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	clientSlice := make([]Client, 0, len(*db.ClientMap))
+	for _, clientResponse := range *db.ClientMap {
+		match := true
+		for _, filter := range *filters {
+			token := model.TokenizeFilters(&filter)
+			if len(*token) != 3 {
+				return nil, model.InvalidFilterFormat
+			}
+			field := (*token)[0]
+			operator := (*token)[1]
+			value := (*token)[2]
+
+			switch field {
+			case "user_id":
+				if operator == "==" && clientResponse.User_id != value {
+					match = false
+				}
+			case "status":
+				floatValue, err := strconv.ParseBool(value)
+				if err != nil {
+					return nil, model.DataTypeWrong
+				}
+				if operator == "==" && clientResponse.Status != floatValue {
+					match = false
+				}
+			// Add more fields as necessary
+			default:
+				match = false
+			}
+		}
+		if match {
+			clientSlice = append(clientSlice, clientResponse)
+		}
+	}
+	return &clientSlice, nil
 }

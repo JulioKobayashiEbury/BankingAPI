@@ -4,7 +4,6 @@ import (
 	"time"
 
 	model "BankingAPI/internal/model"
-	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/client"
 
 	"github.com/rs/zerolog/log"
@@ -120,7 +119,7 @@ func (service clientServiceImpl) Report(id *string) (*client.ClientReport, *mode
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := service.accountsByClientID(id)
+	accounts, err := service.accountDatabase.GetFiltered(&[]string{"client_id,==," + *id})
 	if err != nil {
 		return nil, err
 	}
@@ -131,25 +130,7 @@ func (service clientServiceImpl) Report(id *string) (*client.ClientReport, *mode
 		Document:      clientInfo.Document,
 		Register_date: clientInfo.Register_date,
 		Status:        clientInfo.Status,
-		Accounts:      (*accounts),
+		Accounts:      accounts,
 		Report_date:   time.Now().Format(timeLayout),
 	}, nil
-}
-
-func (service clientServiceImpl) accountsByClientID(clientID *string) (*[]account.Account, *model.Erro) {
-	obj, err := service.accountDatabase.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	accountSlice, ok := obj.(*[]account.Account)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-	clientAccountsSlice := make([]account.Account, 0, len(*accountSlice))
-	for _, accounts := range *accountSlice {
-		if accounts.Client_id == *clientID {
-			clientAccountsSlice = append(clientAccountsSlice, accounts)
-		}
-	}
-	return &clientAccountsSlice, nil
 }

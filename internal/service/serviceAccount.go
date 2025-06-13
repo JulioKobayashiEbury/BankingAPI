@@ -8,10 +8,6 @@ import (
 
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
-	automaticdebit "BankingAPI/internal/model/automaticDebit"
-	"BankingAPI/internal/model/deposit"
-	"BankingAPI/internal/model/transfer"
-	"BankingAPI/internal/model/withdrawal"
 
 	"github.com/rs/zerolog/log"
 )
@@ -48,7 +44,7 @@ func NewAccountService(accountDB model.RepositoryInterface,
 func (service accountServiceImpl) Create(accountRequest *account.Account) (*account.Account, *model.Erro) {
 	if accountRequest.User_id == "" || accountRequest.Client_id == "" {
 		log.Warn().Msg("Missing credentials on creating account")
-		return nil, &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
+		return nil, ErrorMissingCredentials
 	}
 	// verify if client and user exists, PERMISSION MUST BE of user
 	if _, err := service.userService.Get(&accountRequest.User_id); err == model.IDnotFound || err != nil {
@@ -157,19 +153,22 @@ func (service accountServiceImpl) Report(accountID *string) (*account.AccountRep
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := service.transfersByAccountID(accountID)
+	filters := []string{"account_id,==," + *accountID}
+
+	transfers, err := service.transferDatabase.GetFiltered(&filters)
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := service.depositsByAccountID(accountID)
+
+	deposits, err := service.depositDatabase.GetFiltered(&filters)
 	if err != nil {
 		return nil, err
 	}
-	withdrawals, err := service.withdrawalsByAccountID(accountID)
+	withdrawals, err := service.withdrawalDatabase.GetFiltered(&filters)
 	if err != nil {
 		return nil, err
 	}
-	automaticDebits, err := service.automaticdebitsByAccountID(accountID)
+	automaticDebits, err := service.autodebitDatabase.GetFiltered(&filters)
 	if err != nil {
 		return nil, err
 	}
@@ -180,87 +179,12 @@ func (service accountServiceImpl) Report(accountID *string) (*account.AccountRep
 		Balance:          accountInfo.Balance,
 		Register_date:    accountInfo.Register_date,
 		Status:           accountInfo.Status,
-		Transfers:        *transfers,
-		Deposits:         *deposits,
-		Withdrawals:      *withdrawals,
-		Automatic_Debits: *automaticDebits,
+		Transfers:        transfers,
+		Deposits:         deposits,
+		Withdrawals:      withdrawals,
+		Automatic_Debits: automaticDebits,
 		Report_Date:      time.Now().Format(timeLayout),
 	}
 	log.Info().Msg("Report generated for account: " + *accountID)
 	return &accountReport, nil
-}
-
-func (service accountServiceImpl) transfersByAccountID(accountID *string) (*[]transfer.Transfer, *model.Erro) {
-	obj, err := service.transferDatabase.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	transfers, ok := obj.(*[]transfer.Transfer)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
-	transfersByAccountSlice := make([]transfer.Transfer, 0, len(*transfers))
-	for _, transfer := range *transfers {
-		if transfer.Account_id == *accountID {
-			transfersByAccountSlice = append(transfersByAccountSlice, transfer)
-		}
-	}
-	return &transfersByAccountSlice, nil
-}
-
-func (service accountServiceImpl) depositsByAccountID(accountID *string) (*[]deposit.Deposit, *model.Erro) {
-	obj, err := service.depositDatabase.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	deposits, ok := obj.(*[]deposit.Deposit)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-	depositByAccountSlice := make([]deposit.Deposit, 0, len(*deposits))
-	for _, deposit := range *deposits {
-		if deposit.Account_id == *accountID {
-			depositByAccountSlice = append(depositByAccountSlice, deposit)
-		}
-	}
-	return &depositByAccountSlice, nil
-}
-
-func (service accountServiceImpl) withdrawalsByAccountID(accountID *string) (*[]withdrawal.Withdrawal, *model.Erro) {
-	obj, err := service.withdrawalDatabase.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	withdrawals, ok := obj.(*[]withdrawal.Withdrawal)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
-	withdrawalByAccountSlice := make([]withdrawal.Withdrawal, 0, len(*withdrawals))
-	for _, withdrawal := range *withdrawals {
-		if withdrawal.Account_id == *accountID {
-			withdrawalByAccountSlice = append(withdrawalByAccountSlice, withdrawal)
-		}
-	}
-	return &withdrawalByAccountSlice, nil
-}
-
-func (service accountServiceImpl) automaticdebitsByAccountID(accountID *string) (*[]automaticdebit.AutomaticDebit, *model.Erro) {
-	obj, err := service.autodebitDatabase.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	autodebits, ok := obj.(*[]automaticdebit.AutomaticDebit)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
-	autodebitByAccountSlice := make([]automaticdebit.AutomaticDebit, 0, len(*autodebits))
-	for _, autodebit := range *autodebits {
-		if autodebit.Account_id == *accountID {
-			autodebitByAccountSlice = append(autodebitByAccountSlice, autodebit)
-		}
-	}
-	return &autodebitByAccountSlice, nil
 }

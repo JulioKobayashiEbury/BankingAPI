@@ -136,3 +136,41 @@ func (db accountFirestore) GetAll() (interface{}, *model.Erro) {
 	}
 	return &accountResponseSlice, nil
 }
+
+func (db accountFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	if filters == nil || len(*filters) == 0 {
+		return nil, model.FilterNotSet
+	}
+	ctx := context.Background()
+	defer ctx.Done()
+
+	query := db.databaseClient.Collection(collection).Query
+
+	for _, filter := range *filters {
+		tokens := model.TokenizeFilters(&filter)
+		if len(*tokens) != 3 {
+			log.Error().Msg("Invalid filter format: " + filter)
+			return nil, model.InvalidFilterFormat
+		}
+		query = query.Where((*tokens)[0], (*tokens)[1], (*tokens)[2])
+	}
+
+	allDocs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+	}
+	accountResponseSlice := make([]Account, 0, len(allDocs))
+	for _, docSnap := range allDocs {
+		accountResponse := Account{}
+		if err := docSnap.DataTo(&accountResponse); err != nil {
+			log.Error().Msg(err.Error())
+			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		}
+		accountResponse.Account_id = docSnap.Ref.ID
+
+		accountResponseSlice = append(accountResponseSlice, accountResponse)
+
+	}
+
+	return &accountResponseSlice, nil
+}
