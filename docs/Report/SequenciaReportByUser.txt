@@ -1,5 +1,5 @@
 @startuml
-title Generate User Report - GET /users/report/:user_id
+title Generate User Report - GET /users/:user_id/report
 
 actor Requester
 boundary UserGetReportHandler <<userHandler.go>>
@@ -35,15 +35,11 @@ else Authorization Succeeded
         UserService -->> UserGetReportHandler : 9. Error
         UserGetReportHandler -->> Requester : 10. HTTP Error Response
     else Get UserInfo Succeeded
-        UserService -> GetFilteredService : 9. GetClientsByUserID(userID)
-        activate GetFilteredService
-        GetFilteredService -> ClientFirestore : 10. GetAll()
+        UserService -> ClientFirestore : 9. GetFiltered(user_id==userID)
         activate ClientFirestore
-        ClientFirestore -->> GetFilteredService : 11. allClients / Error
+        ClientFirestore -->> UserService : 11. filteredClients / Error
         deactivate ClientFirestore
-        note right of GetFilteredService : Filters clients by userID
-        GetFilteredService -->> UserService : 12. clients / Error
-        deactivate GetFilteredService
+        note right of ClientFirestore : Filters clients by userID
 
         alt Get Clients Failed
             UserService -->> UserGetReportHandler : 13. Error
