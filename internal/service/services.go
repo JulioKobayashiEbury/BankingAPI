@@ -14,7 +14,7 @@ import (
 	"BankingAPI/internal/model/withdrawal"
 )
 
-var ErrorMissingCredentials = &model.Erro{Err: errors.New("Missing credentials"), HttpCode: http.StatusBadRequest}
+var ErrorMissingCredentials = &model.Erro{Err: errors.New("missing credentials"), HttpCode: http.StatusBadRequest}
 
 type ServicesList struct {
 	UserService           UserService
@@ -38,7 +38,6 @@ type UserService interface {
 	Get(*string) (*user.User, *model.Erro)
 	Update(*user.User) (*user.User, *model.Erro)
 	GetAll() (*[]user.User, *model.Erro)
-	Status(*string, bool) *model.Erro
 	Report(*string) (*user.UserReport, *model.Erro)
 }
 
@@ -48,7 +47,6 @@ type ClientService interface {
 	Get(*string) (*client.Client, *model.Erro)
 	Update(*client.Client) (*client.Client, *model.Erro)
 	GetAll() (*[]client.Client, *model.Erro)
-	Status(*string, bool) *model.Erro
 	Report(*string) (*client.ClientReport, *model.Erro)
 }
 
@@ -58,7 +56,6 @@ type AccountService interface {
 	Get(*string) (*account.Account, *model.Erro)
 	Update(*account.Account) (*account.Account, *model.Erro)
 	GetAll() (*[]account.Account, *model.Erro)
-	Status(*string, bool) *model.Erro
 	Report(*string) (*account.AccountReport, *model.Erro)
 }
 
@@ -85,7 +82,6 @@ type AutomaticDebitService interface {
 	GetAll() (*[]automaticdebit.AutomaticDebit, *model.Erro)
 	ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
 	CheckAutomaticDebits()
-	Status(*string, bool) *model.Erro
 	Scheduled()
 }
 

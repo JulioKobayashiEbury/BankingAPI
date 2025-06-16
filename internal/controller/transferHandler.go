@@ -99,7 +99,7 @@ func (h transferHandlerImpl) authorizationForTransferEndpoints(c *echo.Context, 
 	}
 	if account.User_id != claims.Id {
 		log.Error().Msg("User ID does not match with accounts User ID")
-		return nil, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
+		return nil, &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
 	}
 
 	return nil, nil

@@ -23,12 +23,15 @@ const (
 )
 
 var (
-	InvalidFilterFormat = &Erro{Err: errors.New("Repository Error: Invalid fitler format"), HttpCode: http.StatusBadRequest}
-	FilterNotSet        = &Erro{Err: errors.New("Repository Error: filter value not set"), HttpCode: http.StatusBadRequest}
-	ResquestNotSet      = &Erro{Err: errors.New("Repository Error: Request value not set"), HttpCode: http.StatusBadRequest}
-	FailCreatingClient  = &Erro{Err: errors.New("Repository Error: Failed to create DB client"), HttpCode: http.StatusInternalServerError}
-	IDnotFound          = &Erro{Err: errors.New("Repository Error: Id not founc"), HttpCode: http.StatusBadRequest}
-	DataTypeWrong       = &Erro{Err: errors.New("Repository Error: Invalid argument passed"), HttpCode: http.StatusBadRequest}
+	InvalidFilterFormat = &Erro{Err: errors.New("repository Error: Invalid fitler format"), HttpCode: http.StatusBadRequest}
+	FilterNotSet        = &Erro{Err: errors.New("repository Error: filter value not set"), HttpCode: http.StatusBadRequest}
+	ResquestNotSet      = &Erro{Err: errors.New("repository Error: Request value not set"), HttpCode: http.StatusBadRequest}
+	FailCreatingClient  = &Erro{Err: errors.New("repository Error: Failed to create DB client"), HttpCode: http.StatusInternalServerError}
+	IDnotFound          = &Erro{Err: errors.New("repository Error: Id not founc"), HttpCode: http.StatusBadRequest}
+	DataTypeWrong       = &Erro{Err: errors.New("repository Error: Invalid argument passed"), HttpCode: http.StatusBadRequest}
+	InvalidStatus       = &Erro{Err: errors.New("invalid status value"), HttpCode: http.StatusBadRequest}
+
+	ValidStatus = []Status{"active", "blocked"}
 )
 
 type RepositoryInterface interface {

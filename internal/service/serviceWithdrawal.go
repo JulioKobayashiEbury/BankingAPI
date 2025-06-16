@@ -119,14 +119,14 @@ func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Wi
 
 func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse *account.Account) (bool, *model.Erro) {
 	if accountResponse.Client_id != withdrawalRequest.Client_id {
-		return false, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, &model.Erro{Err: errors.New("client ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 
 	if accountResponse.Agency_id != withdrawalRequest.Agency_id {
-		return false, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, &model.Erro{Err: errors.New("agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	if accountResponse.Balance-withdrawalRequest.Withdrawal < 0.0 {
-		return false, &model.Erro{Err: errors.New("Insuficcient funds"), HttpCode: http.StatusBadRequest}
+		return false, &model.Erro{Err: errors.New("insuficcient funds"), HttpCode: http.StatusBadRequest}
 	}
 	return true, nil
 }

@@ -29,8 +29,9 @@ import (
 )
 
 const (
-	documentLenghtIdeal = 14
-	maxNameLenght       = 30
+	documentLenghtForUser   = 14
+	documentLenghtForClient = 11
+	maxNameLenght           = 30
 )
 
 func Server(services *service.ServicesList) {

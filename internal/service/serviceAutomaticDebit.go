@@ -84,22 +84,10 @@ func (service serviceAutoDebitImpl) Update(autodebitRequest *automaticdebit.Auto
 	return autodebitRequest, nil
 }
 
-func (service serviceAutoDebitImpl) Status(id *string, status bool) *model.Erro {
-	autodebit, err := service.Get(id)
-	if err != nil {
-		return nil
-	}
-	autodebit.Status = status
-	if err := service.autoDebitFirestore.Update(autodebit); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (service serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
 	if !isValidDate(autoDebit.Expiration_date) {
 		log.Warn().Msg("Invalid date format")
-		return nil, &model.Erro{Err: errors.New("Invalid date format"), HttpCode: http.StatusBadRequest}
+		return nil, &model.Erro{Err: errors.New("invalid date format"), HttpCode: http.StatusBadRequest}
 	}
 	obj, err := service.autoDebitFirestore.Create(autoDebit)
 	if err != nil {
@@ -128,7 +116,7 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 	}
 	for index := 0; index < len(*(autoDebitList)); index++ {
 		autoDebit := (*autoDebitList)[index]
-		if !autoDebit.Status {
+		if autoDebit.Status == model.ValidStatus[1] {
 			log.Warn().Msg("Debit is expired")
 			return
 		} else {
@@ -138,7 +126,8 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 				return
 			}
 			if expirationDate.Unix() < time.Now().Unix() {
-				if err := service.Status(&autoDebit.Debit_id, false); err != nil {
+				autoDebit.Status = model.ValidStatus[1]
+				if _, err := service.Update(&autoDebit); err != nil {
 					log.Error().Msg("Failed to update automatic debit status to expired")
 					return
 				}

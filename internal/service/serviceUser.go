@@ -74,6 +74,12 @@ func (service userServiceImpl) Update(userRequest *user.User) (*user.User, *mode
 	if userRequest.Password != "" {
 		userResponse.Password = userRequest.Password
 	}
+	if userRequest.Status != "" {
+		if !userRequest.Status.IsValid() {
+			return nil, model.InvalidStatus
+		}
+		userResponse.Status = userRequest.Status
+	}
 
 	// monta struct de updat
 
@@ -96,18 +102,6 @@ func (service userServiceImpl) GetAll() (*[]user.User, *model.Erro) {
 		return nil, model.DataTypeWrong
 	}
 	return users, nil
-}
-
-func (service userServiceImpl) Status(id *string, status bool) *model.Erro {
-	user, err := service.Get(id)
-	if err != nil {
-		return err
-	}
-	user.Status = status
-	if err := service.userDatabase.Update(user); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (service userServiceImpl) Report(id *string) (*user.UserReport, *model.Erro) {

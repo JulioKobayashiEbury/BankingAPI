@@ -1,23 +1,23 @@
 @startuml
-title User Block - PUT /users/:user_id/block
+title User UnBlock - PUT /users/:user_id
 
 actor Requester
-boundary UserPutBlockHandler <<userHandler.go>>
+boundary UserPutHandler <<userHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
 control UserService <<serviceUser.go>>
 entity UserFirestore <<model/user/firestore.go>>
 
-Requester -> UserPutBlockHandler : 1. PUT /users/:user_id/block
+Requester -> UserPutHandler : 1. PUT /users/:user_id
 activate Requester
-activate UserPutBlockHandler
-UserPutBlockHandler -> AuthorizeService : 2. Authorize(Cookie)
+activate UserPutHandler
+UserPutHandler -> AuthorizeService : 2. Authorize(Cookie)
 activate AuthorizeService
-AuthorizeService --> UserPutBlockHandler : 3. Claims / Error
+AuthorizeService --> UserPutHandler : 3. Claims / Error
 deactivate AuthorizeService
 alt Authorization Failed
-    UserPutBlockHandler --> Requester : 4. HTTP Error Response
+    UserPutHandler --> Requester : 4. HTTP Error Response
 else Authorization Succeeded
-    UserPutBlockHandler -> UserService : 4. UserBlock(userID)
+    UserPutHandler -> UserService : 4. Update(userID)
     activate UserService
     UserService -> UserService : 5. User(userID)
     UserService -> UserFirestore : 6. Get(&userID)
@@ -26,24 +26,24 @@ else Authorization Succeeded
     deactivate UserFirestore
     alt Get User Failed
         UserService --> UserService : 8. Error
-        UserService --> UserPutBlockHandler : 9. Error
-        UserPutBlockHandler --> Requester : 10. HTTP Error Response
+        UserService --> UserPutHandler : 9. Error
+        UserPutHandler --> Requester : 10. HTTP Error Response
     else Get User Succeeded
         UserService --> UserService : 8. User
-        UserService -> UserFirestore : 9. Update(User with Status=false)
+        UserService -> UserFirestore : 9. Update(User with Status="active")
         activate UserFirestore
         UserFirestore --> UserService : 10. nil / Error
         deactivate UserFirestore
         alt Update User Failed
-            UserService --> UserPutBlockHandler : 11. Error
-            UserPutBlockHandler --> Requester : 12. HTTP Error Response
+            UserService --> UserPutHandler : 11. Error
+            UserPutHandler --> Requester : 12. HTTP Error Response
         else Update User Succeeded
-            UserService --> UserPutBlockHandler : 11. nil
-            UserPutBlockHandler --> Requester : 12. HTTP 200 OK (User Blocked)
+            UserService --> UserPutHandler : 11. nil
+            UserPutHandler --> Requester : 12. HTTP 200 OK (User Blocked)
         end
         deactivate UserService
     end
-    deactivate UserPutBlockHandler
+    deactivate UserPutHandler
 end
 deactivate Requester
 

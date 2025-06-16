@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	model "BankingAPI/internal/model"
@@ -90,7 +89,7 @@ func (service accountServiceImpl) Update(accountRequest *account.Account) (*acco
 	// verifica valores que foram passados ou não
 	if accountRequest.Account_id == "" {
 		log.Warn().Msg("No account with id: 0 allowed")
-		return nil, &model.Erro{Err: errors.New("Account id invalid"), HttpCode: http.StatusBadRequest}
+		return nil, &model.Erro{Err: errors.New("account id invalid"), HttpCode: http.StatusBadRequest}
 	}
 	if accountRequest.Agency_id != 0 {
 		accountResponse.Agency_id = accountRequest.Agency_id
@@ -104,8 +103,12 @@ func (service accountServiceImpl) Update(accountRequest *account.Account) (*acco
 	if accountRequest.Balance != accountResponse.Balance {
 		accountResponse.Balance = accountRequest.Balance
 	}
-	// monta struct de update
-
+	if accountRequest.Status != "" {
+		if !(accountRequest.Status).IsValid() {
+			return nil, model.InvalidStatus
+		}
+		accountResponse.Status = accountRequest.Status
+	}
 	if err := service.accountDatabase.Update(accountResponse); err != nil {
 		return nil, err
 	}
@@ -135,6 +138,7 @@ func (service accountServiceImpl) Delete(accountID *string) *model.Erro {
 	return nil
 }
 
+/*
 func (service accountServiceImpl) Status(accountID *string, status bool) *model.Erro {
 	account, err := service.Get(accountID)
 	if err != nil {
@@ -147,6 +151,7 @@ func (service accountServiceImpl) Status(accountID *string, status bool) *model.
 	log.Info().Msg("Account status changed: " + *accountID + " to " + strconv.FormatBool(status))
 	return nil
 }
+*/
 
 func (service accountServiceImpl) Report(accountID *string) (*account.AccountReport, *model.Erro) {
 	accountInfo, err := service.Get(accountID)

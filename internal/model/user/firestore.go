@@ -40,7 +40,7 @@ func (db userFirestore) Create(request interface{}) (interface{}, *model.Erro) {
 		"document":      userRequest.Document,
 		"password":      userRequest.Password,
 		"register_date": time.Now().Format(model.TimeLayout),
-		"status":        true,
+		"status":        model.ValidStatus[0],
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
 	if err != nil {

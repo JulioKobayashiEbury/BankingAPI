@@ -38,7 +38,7 @@ func (a auth) Authenticate(typeID *string, password *string, collection string) 
 	}
 
 	if *password != userAuth.Password {
-		return false, &model.Erro{Err: errors.New("Password is wrong"), HttpCode: http.StatusBadRequest}
+		return false, &model.Erro{Err: errors.New("password is wrong"), HttpCode: http.StatusBadRequest}
 	}
 	return true, nil
 }

@@ -39,7 +39,6 @@ func (db withdrawalFirestore) Create(request interface{}) (interface{}, *model.E
 		"client_id":       Withdrawal.Client_id,
 		"agency_id":       Withdrawal.Agency_id,
 		"withdrawal":      Withdrawal.Withdrawal,
-		"status":          true,
 		"withdrawal_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)

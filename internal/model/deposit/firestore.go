@@ -41,7 +41,6 @@ func (db depositFirestore) Create(request interface{}) (interface{}, *model.Erro
 		"agency_id":    depositRequest.Agency_id,
 		"user_id":      depositRequest.User_id,
 		"deposit":      depositRequest.Deposit,
-		"status":       true,
 		"deposit_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
@@ -101,7 +100,6 @@ func (db depositFirestore) Update(request interface{}) *model.Erro {
 		"agency_id":    depositRequest.Agency_id,
 		"user_id":      depositRequest.User_id,
 		"deposit":      depositRequest.Deposit,
-		"status":       true,
 		"deposit_date": depositRequest.Deposit_date,
 	}
 	docRef := db.databaseClient.Collection(collection).Doc(depositRequest.Deposit_id)

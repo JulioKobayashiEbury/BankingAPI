@@ -2,7 +2,6 @@ package automaticdebit
 
 import (
 	"BankingAPI/internal/model"
-	"strconv"
 )
 
 var singleton *model.RepositoryInterface
@@ -101,11 +100,7 @@ func (db MockAutoDebitRepository) GetFiltered(filters *[]string) (interface{}, *
 					match = false
 				}
 			case "status":
-				floatValue, err := strconv.ParseBool(value)
-				if err != nil {
-					return nil, model.DataTypeWrong
-				}
-				if operator == "==" && autodebit.Status != floatValue {
+				if operator == "==" && autodebit.Status != model.Status(value) {
 					match = false
 				}
 			// Add more fields as necessary

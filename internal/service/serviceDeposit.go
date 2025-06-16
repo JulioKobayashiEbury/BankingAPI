@@ -110,13 +110,13 @@ func (service depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*dep
 
 func verifyDeposit(depositRequest *deposit.Deposit, accountResponse *account.Account) (bool, *model.Erro) {
 	if accountResponse.Client_id != depositRequest.Client_id {
-		return false, &model.Erro{Err: errors.New("Client ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, &model.Erro{Err: errors.New("client ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	if accountResponse.User_id != depositRequest.User_id {
-		return false, &model.Erro{Err: errors.New("User ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, &model.Erro{Err: errors.New("user ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	if accountResponse.Agency_id != depositRequest.Agency_id {
-		return false, &model.Erro{Err: errors.New("Agency ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, &model.Erro{Err: errors.New("agency ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 	return true, nil
 }

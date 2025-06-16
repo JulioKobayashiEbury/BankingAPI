@@ -2,7 +2,6 @@ package account
 
 import (
 	"BankingAPI/internal/model"
-	"strconv"
 )
 
 var singleton *model.RepositoryInterface
@@ -103,16 +102,12 @@ func (db MockAccountRepository) GetFiltered(filters *[]string) (interface{}, *mo
 					match = false
 				}
 			case "status":
-				floatValue, err := strconv.ParseBool(value)
-				if err != nil {
-					return nil, model.DataTypeWrong
-				}
-				if operator == "==" && account.Status != floatValue {
+				if operator == "==" && account.Status != model.Status(value) {
 					match = false
 				}
 			// Add more fields as necessary
 			default:
-				match = false
+				match = true
 			}
 		}
 		if match {

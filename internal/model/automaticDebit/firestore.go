@@ -42,7 +42,7 @@ func (db autoDebitFirestore) Create(request interface{}) (interface{}, *model.Er
 		"value":           autoDebitRequest.Value,
 		"debit_day":       autoDebitRequest.Debit_day,
 		"expiration_date": autoDebitRequest.Expiration_date,
-		"status":          true,
+		"status":          model.ValidStatus[0],
 		"register_date":   time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)

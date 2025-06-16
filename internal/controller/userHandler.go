@@ -15,8 +15,6 @@ import (
 type UserHandler interface {
 	UserPostHandler(c echo.Context) error
 	UserAuthHandler(c echo.Context) error
-	UserPutBlockHandler(c echo.Context) error
-	UserPutUnBlockHandler(c echo.Context) error
 	UserPutHandler(c echo.Context) error
 	UserGetHandler(c echo.Context) error
 	UserDeleteHandler(c echo.Context) error
@@ -42,8 +40,6 @@ func AddUsersEndPoints(server *echo.Echo, h UserHandler) {
 	server.GET("/users/:user_id/report", h.UserGetReportHandler)
 	server.DELETE("/users/:user_id", h.UserDeleteHandler)
 	server.PUT("/users/:user_id", h.UserPutHandler)
-	server.PUT("/users/:user_id/block", h.UserPutBlockHandler)
-	server.PUT("/users/:user_id/unblock", h.UserPutUnBlockHandler)
 }
 
 func (h userHanderImpl) UserPostHandler(c echo.Context) error {
@@ -56,7 +52,7 @@ func (h userHanderImpl) UserPostHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	if (len(userInfo.Document) != documentLenghtIdeal) || (len(userInfo.Name) > maxNameLenght) {
+	if (len(userInfo.Document) != documentLenghtForUser) || (len(userInfo.Name) > maxNameLenght) {
 		log.Warn().Msg("User parameters are not ideal for creating user")
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
@@ -92,30 +88,6 @@ func (h userHanderImpl) UserAuthHandler(c echo.Context) error {
 
 	c.Response().Header().Set(echo.HeaderAuthorization, "Bearer "+*tokenString)
 	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "User Authorized"})
-}
-
-func (h userHanderImpl) UserPutBlockHandler(c echo.Context) error {
-	userID, err := h.internalUserAuthorization(&c)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if err := h.userService.Status(userID, false); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Blocked"})
-}
-
-func (h userHanderImpl) UserPutUnBlockHandler(c echo.Context) error {
-	userID, err := h.internalUserAuthorization(&c)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if err := h.userService.Status(userID, true); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Unblocked"})
 }
 
 func (h userHanderImpl) UserPutHandler(c echo.Context) error {
@@ -199,7 +171,7 @@ func (h userHanderImpl) internalUserAuthorization(c *echo.Context) (*string, *mo
 
 	if (*claims).Id != userID {
 		log.Error().Msg("User ID does not match with accounts User ID")
-		return nil, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
+		return nil, &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
 	}
 
 	return &userID, nil

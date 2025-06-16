@@ -17,8 +17,6 @@ type AccountHandler interface {
 	AccountGetHandler(c echo.Context) error
 	AccountDeleteHandler(c echo.Context) error
 	AccountPutHandler(c echo.Context) error
-	AccountPutBlockHandler(c echo.Context) error
-	AccountPutUnBlockHandler(c echo.Context) error
 	AccountGetReportHandler(c echo.Context) error
 }
 
@@ -33,15 +31,11 @@ func NewAccountHandler(accountServe service.AccountService) AccountHandler {
 }
 
 func AddAccountEndPoints(server *echo.Echo, h AccountHandler) {
-	// server.GET("/accounts", AccountGetOrderFilterHandler)
-
 	server.GET("/accounts/:account_id", h.AccountGetHandler)
-	server.GET("/accounts/report/:account_id", h.AccountGetReportHandler)
+	server.GET("/accounts/:account_id/report", h.AccountGetReportHandler)
 	server.POST("/accounts", h.AccountPostHandler)
 	server.DELETE("/accounts/:account_id", h.AccountDeleteHandler)
 	server.PUT("/accounts/:account_id", h.AccountPutHandler)
-	server.PUT("/accounts/:account_id/block", h.AccountPutBlockHandler)
-	server.PUT("/accounts/:account_id/unblock", h.AccountPutUnBlockHandler)
 }
 
 func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {
@@ -87,23 +81,6 @@ func (h accountHandlerImpl) AccountGetHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, *accountResponse)
 }
 
-/*
-	func AccountGetOrderFilterHandler(c echo.Context) error {
-		if _, err := userAuthorization(&c); err != nil {
-		}
-		var listRequest model.ListRequest
-		if err := c.Bind(&listRequest); err != nil {
-			log.Error().Msg(err.Error())
-			return c.JSON(http.StatusInternalServerError, err.Error())
-		}
-		listOfAccounts, err := service.GetAccountByFilterAndOrder(&listRequest)
-		if err != nil {
-			return c.JSON(err.HttpCode, err.Err.Error())
-		}
-
-		return c.JSON(http.StatusOK, (*listOfAccounts))
-	}
-*/
 func (h accountHandlerImpl) AccountDeleteHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
 	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
@@ -138,32 +115,6 @@ func (h accountHandlerImpl) AccountPutHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, accountResponse)
 }
 
-func (h accountHandlerImpl) AccountPutBlockHandler(c echo.Context) error {
-	accountID := c.Param("account_id")
-	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if err := h.accountService.Status(&accountID, false); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Blocked Sucesfully!"})
-}
-
-func (h accountHandlerImpl) AccountPutUnBlockHandler(c echo.Context) error {
-	accountID := c.Param("account_id")
-	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if err := h.accountService.Status(&accountID, true); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Unblocked"})
-}
-
 func (h accountHandlerImpl) AccountGetReportHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
 
@@ -196,7 +147,7 @@ func (h accountHandlerImpl) authorizationForAccountEndpoints(c *echo.Context, ac
 	}
 	if account.User_id != claims.Id {
 		log.Error().Msg("User ID does not match with accounts User ID")
-		return nil, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
+		return nil, &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
 	}
 
 	return nil, nil

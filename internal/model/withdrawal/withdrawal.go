@@ -7,5 +7,4 @@ type Withdrawal struct {
 	Agency_id       uint32  `json:"agency_id" xml:"agency_id"`
 	Withdrawal      float64 `json:"withdrawal" xml:"withdrawal"`
 	Withdrawal_date string  `json:"withdrawal_date" xml:"withdrawal_date"`
-	Status          bool    `json:"status" xml:"status"`
 }

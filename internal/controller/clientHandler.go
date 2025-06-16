@@ -18,8 +18,6 @@ type ClientHandler interface {
 	ClientGetHandler(c echo.Context) error
 	ClientDeleteHandler(c echo.Context) error
 	ClientPutHandler(c echo.Context) error
-	ClientPutBlockHandler(c echo.Context) error
-	ClientPutUnBlockHandler(c echo.Context) error
 	ClientGetReportHandler(c echo.Context) error
 }
 
@@ -39,8 +37,6 @@ func AddClientsEndPoints(server *echo.Echo, h ClientHandler) {
 	server.GET("/clients/:client_id/report", h.ClientGetReportHandler)
 	server.DELETE("/clients/:client_id", h.ClientDeleteHandler)
 	server.PUT("/clients/:client_id", h.ClientPutHandler)
-	server.PUT("/clients/:client_id/block", h.ClientPutBlockHandler)
-	server.PUT("/clients/:client_id/unblock", h.ClientPutUnBlockHandler)
 }
 
 func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {
@@ -60,7 +56,7 @@ func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, model.StandartResponse{Message: "User ID does not match with clients User ID"})
 	}
 
-	if len(clientInfo.Document) != documentLenghtIdeal || len(clientInfo.Name) > maxNameLenght {
+	if len(clientInfo.Document) != documentLenghtForClient || len(clientInfo.Name) > maxNameLenght {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
@@ -119,32 +115,6 @@ func (h clientHandlerImpl) ClientPutHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, (*Client))
 }
 
-func (h clientHandlerImpl) ClientPutBlockHandler(c echo.Context) error {
-	clientID := c.Param("client_id")
-	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if err := h.clientService.Status(&clientID, false); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Client Blocked"})
-}
-
-func (h clientHandlerImpl) ClientPutUnBlockHandler(c echo.Context) error {
-	clientID := c.Param("client_id")
-	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if err := h.clientService.Status(&clientID, true); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Client Unblocked"})
-}
-
 func (h clientHandlerImpl) ClientGetReportHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
 	if _, err := h.authorizationForClientEndpoints(&c, &clientID); err != nil {
@@ -177,7 +147,7 @@ func (h clientHandlerImpl) authorizationForClientEndpoints(c *echo.Context, clie
 
 	if client.User_id != claims.Id {
 		log.Error().Msg("User ID does not match with accounts User ID")
-		return nil, &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
+		return nil, &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
 	}
 
 	return nil, nil

@@ -38,7 +38,7 @@ func (db clientFirestore) Create(request interface{}) (interface{}, *model.Erro)
 		"user_id":       client.User_id,
 		"name":          client.Name,
 		"document":      client.Document,
-		"status":        true,
+		"status":        model.ValidStatus[0],
 		"register_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseclient.Collection(collection).Add(ctx, entity)

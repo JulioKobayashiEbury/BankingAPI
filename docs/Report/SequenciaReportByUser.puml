@@ -5,7 +5,6 @@ actor Requester
 boundary UserGetReportHandler <<userHandler.go>>
 control AuthorizeService <<serviceAuthorize.go>>
 control UserService <<serviceUser.go>>
-control GetFilteredService <<serviceGetFiltered.go>>
 entity UserFirestore <<model/user/firestore.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 

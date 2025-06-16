@@ -67,26 +67,32 @@ func (service clientServiceImpl) Get(id *string) (*client.Client, *model.Erro) {
 }
 
 func (service clientServiceImpl) Update(clientRequest *client.Client) (*client.Client, *model.Erro) {
-	client, err := service.Get(&clientRequest.Client_id)
+	clientResponse, err := service.Get(&clientRequest.Client_id)
 	if err != nil {
 		return nil, err
 	}
 
 	if clientRequest.User_id != "" {
-		client.User_id = clientRequest.User_id
+		clientResponse.User_id = clientRequest.User_id
 	}
 	if clientRequest.Name != "" {
-		client.Name = clientRequest.Name
+		clientResponse.Name = clientRequest.Name
 	}
 	if clientRequest.Document != "" {
-		client.Document = clientRequest.Document
+		clientResponse.Document = clientRequest.Document
+	}
+	if clientRequest.Status != "" {
+		if !clientRequest.Status.IsValid() {
+			return nil, model.InvalidStatus
+		}
+		clientResponse.Status = clientRequest.Status
 	}
 	// monta struct de update
-	if err := service.clientDatabase.Update(client); err != nil {
+	if err := service.clientDatabase.Update(clientResponse); err != nil {
 		return nil, err
 	}
-	log.Info().Msg("Update was succesful (client): " + client.Client_id)
-	return service.Get(&client.Client_id)
+	log.Info().Msg("Update was succesful (client): " + clientResponse.Client_id)
+	return service.Get(&clientResponse.Client_id)
 }
 
 func (service clientServiceImpl) GetAll() (*[]client.Client, *model.Erro) {
@@ -100,18 +106,6 @@ func (service clientServiceImpl) GetAll() (*[]client.Client, *model.Erro) {
 	}
 
 	return clients, nil
-}
-
-func (service clientServiceImpl) Status(id *string, status bool) *model.Erro {
-	client, err := service.Get(id)
-	if err != nil {
-		return err
-	}
-	client.Status = status
-	if err := service.clientDatabase.Update(client); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (service clientServiceImpl) Report(id *string) (*client.ClientReport, *model.Erro) {

@@ -101,7 +101,7 @@ func (h depositHandlerImpl) authorizationForDepositsEndPoints(c *echo.Context, a
 	}
 	if account.User_id != claims.Id {
 		log.Error().Msg("User ID does not match with accounts User ID")
-		return &model.Erro{Err: errors.New("No match for user id"), HttpCode: http.StatusForbidden}
+		return &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
 	}
 
 	return nil

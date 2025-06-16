@@ -30,3 +30,19 @@ type Claims struct {
 	Role string `json:"role" xml:"role"`
 	jwt.RegisteredClaims
 }
+
+type Erro struct {
+	Err      error
+	HttpCode int
+}
+
+type Status string
+
+func (s Status) IsValid() bool {
+	for _, status := range ValidStatus {
+		if s == status {
+			return true
+		}
+	}
+	return false
+}

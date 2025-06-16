@@ -1,0 +1,51 @@
+@startuml
+title Account UnBlock - PUT /accounts/:account_id
+
+actor Requester
+boundary AccountPutHandler <<accountHandler.go>>
+control AuthorizeService <<serviceAuthorize.go>>
+control AccountService <<serviceAccount.go>>
+entity AccountFirestore <<model/account/firestore.go>>
+
+Requester -> AccountPutHandler : 1. PUT /accounts/:account_id
+activate Requester
+activate AccountPutHandler
+AccountPutHandler -> AuthorizeService : 2. Authorize(Cookie)
+activate AuthorizeService
+AuthorizeService --> AccountPutHandler : 3. Claims / Error
+deactivate AuthorizeService
+alt Authorization Failed
+    AccountPutHandler --> Requester : 4. HTTP Error Response
+else Authorization Succeeded
+   
+    AccountPutHandler -> AccountService : 4. Update(accountID)
+    activate AccountService
+    AccountService -> AccountService : 5. Account(accountID)
+    AccountService -> AccountFirestore : 6. Get(&accountID)
+    activate AccountFirestore
+    AccountFirestore --> AccountService : 7. accountData / Error
+    deactivate AccountFirestore
+    alt Get Account Failed
+        AccountService --> AccountService : 8. Error
+        AccountService --> AccountPutHandler : 9. Error
+        AccountPutHandler --> Requester : 10. HTTP Error Response
+    else Get Account Succeeded
+        AccountService --> AccountService : 8. account
+        AccountService -> AccountFirestore : 9. Update(account with Status="active")
+        activate AccountFirestore
+        AccountFirestore --> AccountService : 10. nil / Error
+        deactivate AccountFirestore
+        alt Update Account Failed
+            AccountService --> AccountPutHandler : 11. Error
+            AccountPutHandler --> Requester : 12. HTTP Error Response
+        else Update Account Succeeded
+            AccountService --> AccountPutHandler : 11. nil
+            AccountPutHandler --> Requester : 12. HTTP 200 OK (Account Blocked)
+        end
+        deactivate AccountService
+    end
+    deactivate AccountPutHandler
+end
+deactivate Requester
+
+@enduml
