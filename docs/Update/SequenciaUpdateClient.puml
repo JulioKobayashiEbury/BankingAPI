@@ -11,53 +11,49 @@ activate Requester
 Requester -> ClientPutHandler : 1. PUT /clients/:client_id (Body: ClientRequest Info)
 activate ClientPutHandler
 
-ClientPutHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService -->> ClientPutHandler : 3. Claims / Error
-deactivate AuthorizeService
 
 alt Authorization Failed
-    ClientPutHandler -->> Requester : 4. HTTP Error Response
+    ClientPutHandler -->> Requester : 2. HTTP Error Response
 else Authorization Succeeded
-    ClientPutHandler -> ClientService : 4. UpdateClient(clientRequest with Client_id from path)
+    ClientPutHandler -> ClientService : 2. UpdateClient(clientRequest with Client_id from path)
     activate ClientService
-    ClientService -> ClientService : 5. Client(clientRequest.Client_id)
-    ClientService -> ClientFirestore : 6. Get(&clientRequest.Client_id)
+    ClientService -> ClientService : 3. Client(clientRequest.Client_id)
+    ClientService -> ClientFirestore : 4. Get(&clientRequest.Client_id)
     activate ClientFirestore
-    ClientFirestore -->> ClientService : 7. existingClientData / Error
+    ClientFirestore -->> ClientService : 5. existingClientData / Error
     deactivate ClientFirestore
     
     alt Get Existing Client Failed
-        ClientService -->> ClientService : 8. Error
-        ClientService -->> ClientPutHandler : 9. Error
-        ClientPutHandler -->> Requester : 10. HTTP Error Response
+        ClientService -->> ClientService : 6. Error
+        ClientService -->> ClientPutHandler : 7. Error
+        ClientPutHandler -->> Requester : 8. HTTP Error Response
     else Get Existing Client Succeeded
-        ClientService -->> ClientService : 8. clientResponse (existing data)
+        ClientService -->> ClientService : 6. clientResponse (existing data)
         note right of ClientService : Updates fields in clientResponse if provided in clientRequest
-        ClientService -> ClientFirestore : 9. Update(updatedClientResponseAsRequest) ' ClientFirestore.Update expects *ClientRequest
+        ClientService -> ClientFirestore : 7. Update(updatedClientResponseAsRequest) ' ClientFirestore.Update expects *ClientRequest
         activate ClientFirestore
-        ClientFirestore -->> ClientService : 10. nil / Error
+        ClientFirestore -->> ClientService : 8. nil / Error
         deactivate ClientFirestore
         
         alt Update Client Record Failed
-            ClientService -->> ClientPutHandler : 11. Error
-            ClientPutHandler -->> Requester : 12. HTTP Error Response
+            ClientService -->> ClientPutHandler : 9. Error
+            ClientPutHandler -->> Requester : 10. HTTP Error Response
         else Update Client Record Succeeded
-            ClientService -> ClientService : 11. Client(clientRequest.Client_id) 'Re-fetch updated
-            ClientService -> ClientFirestore : 12. Get(&clientRequest.Client_id)
+            ClientService -> ClientService : 9. Client(clientRequest.Client_id) 'Re-fetch updated
+            ClientService -> ClientFirestore : 10. Get(&clientRequest.Client_id)
             activate ClientFirestore
-            ClientFirestore -->> ClientService : 13. finalClientData / Error
+            ClientFirestore -->> ClientService : 11. finalClientData / Error
             deactivate ClientFirestore
             
             alt Re-fetch Failed
-                 ClientService -->> ClientService : 14. Error
-                 ClientService -->> ClientPutHandler : 15. Error
-                 ClientPutHandler -->> Requester : 16. HTTP Error Response
+                 ClientService -->> ClientService : 12. Error
+                 ClientService -->> ClientPutHandler : 13. Error
+                 ClientPutHandler -->> Requester : 14. HTTP Error Response
             else Re-fetch Succeeded
-                 ClientService -->> ClientService : 14. finalClientResponse
-                 ClientService -->> ClientPutHandler : 15. finalClientResponse
+                 ClientService -->> ClientService : 12. finalClientResponse
+                 ClientService -->> ClientPutHandler : 13. finalClientResponse
                  
-                 ClientPutHandler -->> Requester : 16. HTTP 200 OK (finalClientResponse)
+                 ClientPutHandler -->> Requester : 14. HTTP 200 OK (finalClientResponse)
             end
             deactivate ClientService
         end

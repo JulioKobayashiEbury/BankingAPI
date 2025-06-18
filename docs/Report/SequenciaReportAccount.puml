@@ -3,7 +3,6 @@ title Generate Account Report - GET /accounts/:account_id/report
 
 actor Requester
 boundary AccountGetReportHandler <<accountHandler.go>>
-control AuthorizeService <<serviceAuthorize.go>>
 control AccountService <<serviceAccount.go>>
 entity AccountFirestore <<model/account/firestore.go>>
 entity TransferFirestore <<model/transfer/firestore.go>>
@@ -14,59 +13,54 @@ entity AutoDebitFirestore <<model/automaticDebit/firestore.go>>
 Requester -> AccountGetReportHandler : 1. GET /accounts/report/:account_id
 activate AccountGetReportHandler
 
-AccountGetReportHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService -->> AccountGetReportHandler : 3. Claims / Error
-deactivate AuthorizeService
-
 alt Authorization Failed
-    AccountGetReportHandler -->> Requester : 4.HTTP Error Response
+    AccountGetReportHandler -->> Requester : 2.HTTP Error Response
 else Authorization Succeeded
-    AccountGetReportHandler -> AccountService : 4. Report(accountID_from_path)
+    AccountGetReportHandler -> AccountService : 2. Report(accountID_from_path)
     activate AccountService
     
-    AccountService -> AccountService : 5. Get(accountID)
+    AccountService -> AccountService : 3. Get(accountID)
     activate AccountService
-    AccountService -> AccountFirestore : 6. Get(&accountID)
+    AccountService -> AccountFirestore : 4. Get(&accountID)
     activate AccountFirestore
-    AccountFirestore -->> AccountService : 7. accountInfo / Error
+    AccountFirestore -->> AccountService : 5. accountInfo / Error
     deactivate AccountFirestore
     deactivate AccountService
     
     alt Get AccountInfo Failed
-        AccountService -->> AccountGetReportHandler : 8. Error
-        AccountGetReportHandler -->> Requester : 9. HTTP Error Response
+        AccountService -->> AccountGetReportHandler : 6. Error
+        AccountGetReportHandler -->> Requester : 7. HTTP Error Response
     else Get AccountInfo Succeeded
         
-        AccountService -> TransferFirestore : 8. GetFiltered(account_id==accountID)
+        AccountService -> TransferFirestore : 6. GetFiltered(account_id==accountID)
         activate TransferFirestore
-        TransferFirestore -->> AccountService : 9. filteredTransfer / Error
+        TransferFirestore -->> AccountService : 7. filteredTransfer / Error
         deactivate TransferFirestore
         note right of TransferFirestore : Filters transfers by accountID
         
-        AccountService -> DepositFirestore : 10. GetFiltered(account_id==accountID)
+        AccountService -> DepositFirestore : 8. GetFiltered(account_id==accountID)
         activate DepositFirestore
-        DepositFirestore -->> AccountService : 11. filteredDeposits / Error
+        DepositFirestore -->> AccountService : 9. filteredDeposits / Error
         deactivate DepositFirestore
         note right of DepositFirestore : Filters deposits by accountID
         
-        AccountService -> WithdrawalFirestore : 12. GetFiltered(account_id==accountID)
+        AccountService -> WithdrawalFirestore : 10. GetFiltered(account_id==accountID)
         activate WithdrawalFirestore
-        WithdrawalFirestore -->> AccountService : 13. filteredWithdrawals / Error
+        WithdrawalFirestore -->> AccountService : 11. filteredWithdrawals / Error
         deactivate WithdrawalFirestore
         note right of WithdrawalFirestore : Filters withdrawals by accountID
 
 
-        AccountService -> AutoDebitFirestore : 14. GetFiltered(account_id==accountID)
+        AccountService -> AutoDebitFirestore : 12. GetFiltered(account_id==accountID)
         activate AutoDebitFirestore
-        AutoDebitFirestore -->> AccountService : 15. filteredAutodebits / Error
+        AutoDebitFirestore -->> AccountService : 13. filteredAutodebits / Error
         deactivate AutoDebitFirestore
         note right of AutoDebitFirestore : Filters autoDebits by accountID
 
 
         note right of AccountService : Assembles AccountReport from all data
-        AccountService -->>  AccountGetReportHandler : 16. accountReport
-        AccountGetReportHandler -->> Requester : 17. HTTP 200 OK (accountReport)
+        AccountService -->>  AccountGetReportHandler : 14. accountReport
+        AccountGetReportHandler -->> Requester : 15. HTTP 200 OK (accountReport)
         
     end
     deactivate AccountService

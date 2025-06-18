@@ -10,44 +10,41 @@ entity AutoDebitFirestore <<model/automaticDebit/firestore.go>>
 activate Requester
 Requester -> AccountPutAutomaticDebitHandler : 1. PUT /accounts/:account_id/debit (Body: AutomaticDebitRequest)
 activate AccountPutAutomaticDebitHandler
-AccountPutAutomaticDebitHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService --> AccountPutAutomaticDebitHandler : 3. Claims / Error
-deactivate AuthorizeService
+
 alt Authorization Failed
-    AccountPutAutomaticDebitHandler --> Requester : 4. HTTP Error Response
+    AccountPutAutomaticDebitHandler --> Requester : 2. HTTP Error Response
 else Authorization Succeeded
-    AccountPutAutomaticDebitHandler -> AutoDebitFirestore : 4. NewAutoDebitFirestore(DatabaseClient)
+    AccountPutAutomaticDebitHandler -> AutoDebitFirestore : 2. NewAutoDebitFirestore(DatabaseClient)
     activate AutoDebitFirestore
-    AutoDebitFirestore -> AccountPutAutomaticDebitHandler : 5. automaticdebit.AutoDebitFirestore
+    AutoDebitFirestore -> AccountPutAutomaticDebitHandler : 4. automaticdebit.AutoDebitFirestore
     ' Withdrawal service setup for AutoDebitService is also needed, simplified here for focus
     note right of AutoDebitService : Withdrawal service is needed but not shown for simplicity and focus
-    AccountPutAutomaticDebitHandler -> AutoDebitService : 6. NewAutoDebitImpl(autodebitDatabase, withdrawalService)
+    AccountPutAutomaticDebitHandler -> AutoDebitService : 5. NewAutoDebitImpl(autodebitDatabase, withdrawalService)
     activate AutoDebitService
-    AutoDebitService -> AccountPutAutomaticDebitHandler : 7. ServiceAutoDebit
-    AccountPutAutomaticDebitHandler -> AutoDebitService : 8. ProcessNewAutomaticDebit(newAutoDebitRequest)
+    AutoDebitService -> AccountPutAutomaticDebitHandler : 6. ServiceAutoDebit
+    AccountPutAutomaticDebitHandler -> AutoDebitService : 7. ProcessNewAutomaticDebit(newAutoDebitRequest)
     note right of AutoDebitService : newAutoDebitRequest.Account_id is from path param
 
-    AutoDebitService -> AutoDebitService : 9. isValidDate(newAutoDebitRequest.Expiration_date)
+    AutoDebitService -> AutoDebitService : 8. isValidDate(newAutoDebitRequest.Expiration_date)
     alt Invalid Date Format
-        AutoDebitService --> AccountPutAutomaticDebitHandler : 10. Error (Invalid date format)
-        AccountPutAutomaticDebitHandler --> Requester : 11. HTTP Error Response
+        AutoDebitService --> AccountPutAutomaticDebitHandler : 9. Error (Invalid date format)
+        AccountPutAutomaticDebitHandler --> Requester : 10. HTTP Error Response
     else Valid Date Format
-        AutoDebitService -> AutoDebitFirestore : 10. Create(newAutoDebitRequest)
-        AutoDebitFirestore --> AutoDebitService : 11. responseID / Error
+        AutoDebitService -> AutoDebitFirestore : 9. Create(newAutoDebitRequest)
+        AutoDebitFirestore --> AutoDebitService : 10. responseID / Error
         alt Create AutoDebit Record Failed
-            AutoDebitService --> AccountPutAutomaticDebitHandler : 12. Error
-            AccountPutAutomaticDebitHandler --> Requester : 13. HTTP Error Response
+            AutoDebitService --> AccountPutAutomaticDebitHandler : 11. Error
+            AccountPutAutomaticDebitHandler --> Requester : 12. HTTP Error Response
         else Create AutoDebit Record Succeeded
-            AutoDebitService -> AutoDebitFirestore : 12. Get(responseID)
-            AutoDebitFirestore --> AutoDebitService : 13. autoDebitResponseData / Error
+            AutoDebitService -> AutoDebitFirestore : 11. Get(responseID)
+            AutoDebitFirestore --> AutoDebitService : 12. autoDebitResponseData / Error
             deactivate AutoDebitFirestore
             alt Get Created AutoDebit Failed
-                AutoDebitService --> AccountPutAutomaticDebitHandler : 14. Error
-                AccountPutAutomaticDebitHandler --> Requester : 15. HTTP Error Response
+                AutoDebitService --> AccountPutAutomaticDebitHandler : 13. Error
+                AccountPutAutomaticDebitHandler --> Requester : 14. HTTP Error Response
             else Get Created AutoDebit Succeeded
-                AutoDebitService --> AccountPutAutomaticDebitHandler : 14. autoDebitResponse
-                AccountPutAutomaticDebitHandler --> Requester : 15. HTTP 202 Accepted (autoDebitResponse)
+                AutoDebitService --> AccountPutAutomaticDebitHandler : 13. autoDebitResponse
+                AccountPutAutomaticDebitHandler --> Requester : 14. HTTP 202 Accepted (autoDebitResponse)
             end
             deactivate AutoDebitService
             deactivate AccountPutAutomaticDebitHandler

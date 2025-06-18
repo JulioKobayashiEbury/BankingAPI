@@ -12,28 +12,23 @@ activate Requester
 Requester -> ClientDeleteHandler : 1. DELETE /clients/:client_id
 activate ClientDeleteHandler
 
-ClientDeleteHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService -->> ClientDeleteHandler : 3. Claims / Error
-deactivate AuthorizeService
-
 alt Authorization Failed
-    ClientDeleteHandler -->> Requester : 4. HTTP Error Response
+    ClientDeleteHandler -->> Requester : 2. HTTP Error Response
 else Authorization Succeeded
 
-    ClientDeleteHandler -> ClientService : 4. ClientDelete(clientID_from_path)
+    ClientDeleteHandler -> ClientService : 2. ClientDelete(clientID_from_path)
     activate ClientService
-    ClientService -> ClientFirestore : 5. (&clientID_from_path)
+    ClientService -> ClientFirestore : 3. (&clientID_from_path)
     activate ClientFirestore
-    ClientFirestore -->> ClientService : 6. nil / Error
+    ClientFirestore -->> ClientService : 4. nil / Error
     deactivate ClientFirestore
     
     alt Delete Client Failed
-        ClientService -->> ClientDeleteHandler : 7. Error
-        ClientDeleteHandler -->> Requester : 8. HTTP Error Response
+        ClientService -->> ClientDeleteHandler : 5. Error
+        ClientDeleteHandler -->> Requester : 6. HTTP Error Response
     else Delete Client Succeeded
-        ClientService -->> ClientDeleteHandler : 7. nil
-        ClientDeleteHandler -->> Requester : 8. HTTP 200 OK (Message: Client deleted seccesfully)
+        ClientService -->> ClientDeleteHandler : 5. nil
+        ClientDeleteHandler -->> Requester : 6. HTTP 200 OK (Message: Client deleted seccesfully)
     end
     deactivate ClientService
 end

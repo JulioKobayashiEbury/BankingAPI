@@ -1,11 +1,25 @@
 # BankingAPI
-A Banking API using Golang, Firestore DB and RestAPI
+A Banking API using Golang.
+
+- For Database it uses Firestore emulator called Spine3.
+- It uses Echo as the web framework.
+- It uses Zerolog for structured logging.
+- It uses Swagger for API documentation.
+- It uses PlantUML for sequence diagrams and other documentation.
+- Conformant with RESTful API principles.
 
 # Packages Used
 
 - [echo](https://echo.labstack.com/) - Web framework for Golang
 - [firestore](https://cloud.google.com/firestore) - NoSQL database by Google
 - [zerolog]("github.com/rs/zerolog/log") - Structured logger for golang
+
+# Documentation
+All documentation is available in the [docs](docs) folder of the project. All sequence diagrams use the authorization diagram.
+
+All documentation (except the swagger) is generated using [PlantUML](https://plantuml.com/).
+
+The swagger is compliant with OpenAPI.
 
 # Docker
 

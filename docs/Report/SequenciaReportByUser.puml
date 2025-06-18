@@ -11,42 +11,37 @@ entity ClientFirestore <<model/client/firestore.go>>
 Requester -> UserGetReportHandler : 1. GET /users/report/:user_id
 activate UserGetReportHandler
 
-UserGetReportHandler -> AuthorizeService : 2. Authorize(Cookie, userID_from_path)
-activate AuthorizeService
-AuthorizeService -->> UserGetReportHandler : 3. Claims / Error
-deactivate AuthorizeService
-
 alt Authorization Failed
-    UserGetReportHandler -->> Requester : 4. HTTP Error Response
+    UserGetReportHandler -->> Requester : 2. HTTP Error Response
 else Authorization Succeeded
-    UserGetReportHandler -> UserService : 5. Report(userID_from_path)
+    UserGetReportHandler -> UserService : 2. Report(userID_from_path)
     activate UserService
 
-    UserService -> UserService : 6. Get(userID)
+    UserService -> UserService : 3. Get(userID)
     activate UserService
-    UserService -> UserFirestore : 7. Get(&userID)
+    UserService -> UserFirestore : 4. Get(&userID)
     activate UserFirestore
-    UserFirestore -->> UserService : 8. userInfo / Error
+    UserFirestore -->> UserService : 5. userInfo / Error
     deactivate UserFirestore
     deactivate UserService
 
     alt Get UserInfo Failed
-        UserService -->> UserGetReportHandler : 9. Error
-        UserGetReportHandler -->> Requester : 10. HTTP Error Response
+        UserService -->> UserGetReportHandler : 6. Error
+        UserGetReportHandler -->> Requester : 7. HTTP Error Response
     else Get UserInfo Succeeded
-        UserService -> ClientFirestore : 9. GetFiltered(user_id==userID)
+        UserService -> ClientFirestore : 6. GetFiltered(user_id==userID)
         activate ClientFirestore
-        ClientFirestore -->> UserService : 11. filteredClients / Error
+        ClientFirestore -->> UserService : 7. filteredClients / Error
         deactivate ClientFirestore
         note right of ClientFirestore : Filters clients by userID
 
         alt Get Clients Failed
-            UserService -->> UserGetReportHandler : 13. Error
-            UserGetReportHandler -->> Requester : 14. HTTP Error Response
+            UserService -->> UserGetReportHandler : 8. Error
+            UserGetReportHandler -->> Requester : 9. HTTP Error Response
         else Get Clients Succeeded
             note right of UserService : Assembles UserReport
-            UserService -->> UserGetReportHandler : 13. userReport
-            UserGetReportHandler -->> Requester : 14. HTTP 200 OK (userReport)
+            UserService -->> UserGetReportHandler : 8. userReport
+            UserGetReportHandler -->> Requester : 9. HTTP 200 OK (userReport)
         end
     end
     deactivate UserService

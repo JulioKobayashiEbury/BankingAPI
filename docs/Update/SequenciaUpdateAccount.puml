@@ -11,53 +11,48 @@ activate Requester
 Requester -> AccountPutHandler : 1. PUT /accounts/:account_id (Body: Account Info)
 activate AccountPutHandler
 
-AccountPutHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService -->> AccountPutHandler : 3. Claims / Error
-deactivate AuthorizeService
-
 alt Authorization Failed
-    AccountPutHandler -->> Requester : 4. HTTP Error Response
+    AccountPutHandler -->> Requester : 2. HTTP Error Response
 else Authorization Succeeded
 
-    AccountPutHandler -> AccountService : 4. UpdateAccount(accountRequest with Account_id from path)
+    AccountPutHandler -> AccountService : 2. UpdateAccount(accountRequest with Account_id from path)
     activate AccountService
-    AccountService -> AccountService : 5. Account(accountRequest.Account_id)
-    AccountService -> AccountFirestore : 6. Get(&accountRequest.Account_id)
+    AccountService -> AccountService : 3. Account(accountRequest.Account_id)
+    AccountService -> AccountFirestore : 4. Get(&accountRequest.Account_id)
     activate AccountFirestore
-    AccountFirestore -->> AccountService : 7. existingAccountData / Error
+    AccountFirestore -->> AccountService : 5. existingAccountData / Error
     deactivate AccountFirestore
     
     alt Get Existing Account Failed
-        AccountService -->> AccountService : 8. Error
-        AccountService -->> AccountPutHandler : 9. Error
-        AccountPutHandler -->> Requester : 10. HTTP Error Response
+        AccountService -->> AccountService : 6. Error
+        AccountService -->> AccountPutHandler : 7. Error
+        AccountPutHandler -->> Requester : 8. HTTP Error Response
     else Get Existing Account Succeeded
-        AccountService -->> AccountService : 8. accountResponse (existing data)
+        AccountService -->> AccountService : 6. accountResponse (existing data)
         note right of AccountService : Updates fields in accountResponse if provided in accountRequest
-        AccountService -> AccountFirestore : 9. Update(updatedAccountResponse)
+        AccountService -> AccountFirestore : 7. Update(updatedAccountResponse)
         activate AccountFirestore
-        AccountFirestore -->> AccountService : 10. nil / Error
+        AccountFirestore -->> AccountService : 8. nil / Error
         deactivate AccountFirestore
         
         alt Update Account Record Failed
-            AccountService -->> AccountPutHandler : 11. Error
-            AccountPutHandler -->> Requester : 12. HTTP Error Response
+            AccountService -->> AccountPutHandler : 9. Error
+            AccountPutHandler -->> Requester : 10. HTTP Error Response
         else Update Account Record Succeeded
-            AccountService -> AccountService : 11. Account(accountRequest.Account_id) 'Re-fetch updated
-            AccountService -> AccountFirestore : 12. Get(&accountRequest.Account_id)
+            AccountService -> AccountService : 9. Account(accountRequest.Account_id) 'Re-fetch updated
+            AccountService -> AccountFirestore : 10. Get(&accountRequest.Account_id)
             activate AccountFirestore
-            AccountFirestore -->> AccountService : 13. finalAccountData / Error
+            AccountFirestore -->> AccountService : 11. finalAccountData / Error
             deactivate AccountFirestore
             
             alt Re-fetch Failed
-                 AccountService -->> AccountService : 14. Error
-                 AccountService -->> AccountPutHandler : 15. Error (but update was likely successful)
-                 AccountPutHandler -->> Requester : 16. HTTP Error Response
+                 AccountService -->> AccountService : 12. Error
+                 AccountService -->> AccountPutHandler : 13. Error (but update was likely successful)
+                 AccountPutHandler -->> Requester : 14. HTTP Error Response
             else Re-fetch Succeeded
-                 AccountService -->> AccountService : 14. finalAccount
-                 AccountService -->> AccountPutHandler : 15. finalAccount
-                 AccountPutHandler -->> Requester : 16. HTTP 200 OK (finalAccount)
+                 AccountService -->> AccountService : 12. finalAccount
+                 AccountService -->> AccountPutHandler : 13. finalAccount
+                 AccountPutHandler -->> Requester : 14. HTTP 200 OK (finalAccount)
             end
             deactivate AccountService
         end

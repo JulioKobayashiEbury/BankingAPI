@@ -11,53 +11,50 @@ entity DepositFirestore <<model/deposit/firestore.go>>
 activate Requester
 Requester -> DepositHandler : 1. PUT /accounts/:account_id/balance/deposit (Body: DepositRequest)
 activate DepositHandler
-DepositHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService --> DepositHandler : 3. Claims / Error
-deactivate AuthorizeService
+
 alt Authorization Failed
-    DepositHandler --> Requester : 4. HTTP Error Response
+    DepositHandler --> Requester : 2. HTTP Error Response
 else Authorization Succeeded
     
-    DepositHandler -> DepositService : 4. ProcessDeposit(depositRequest)
+    DepositHandler -> DepositService : 2. ProcessDeposit(depositRequest)
     activate DepositService
     note right of DepositService : depositRequest.Account_id is from path param
 
-    DepositService -> DepositService : 5. Account(depositRequest.Account_id)
-    DepositService -> AccountFirestore : 6. Get(&depositRequest.Account_id)
+    DepositService -> DepositService : 3. Account(depositRequest.Account_id)
+    DepositService -> AccountFirestore : 4. Get(&depositRequest.Account_id)
     activate AccountFirestore
-    AccountFirestore --> DepositService : 7. accountData / Error
+    AccountFirestore --> DepositService : 5. accountData / Error
     deactivate AccountFirestore
     alt Get Account Failed
-        DepositService --> DepositService : 8. Error
-        DepositService --> DepositHandler : 9. Error
-        DepositHandler --> Requester : 10. HTTP Error Response
+        DepositService --> DepositService : 6. Error
+        DepositService --> DepositHandler : 7. Error
+        DepositHandler --> Requester : 8. HTTP Error Response
     else Get Account Succeeded
-        DepositService --> DepositService : 8. accountResponse
-        DepositService -> DepositService : 9. verifyDeposit(depositRequest, accountResponse)
+        DepositService --> DepositService : 6. accountResponse
+        DepositService -> DepositService : 7. verifyDeposit(depositRequest, accountResponse)
         alt Verification Failed
-            DepositService --> DepositHandler : 10. Error (e.g. Client/User/Agency ID mismatch)
-            DepositHandler --> Requester : 11. HTTP Error Response
+            DepositService --> DepositHandler : 8. Error (e.g. Client/User/Agency ID mismatch)
+            DepositHandler --> Requester : 9. HTTP Error Response
         else Verification Succeeded
-            DepositService -> DepositFirestore : 10. Create(depositRequest)
+            DepositService -> DepositFirestore : 8. Create(depositRequest)
             activate DepositFirestore
-            DepositFirestore --> DepositService : 11. depositID / Error
+            DepositFirestore --> DepositService : 9. depositID / Error
             alt Create Deposit Record Failed
-                DepositService --> DepositHandler : 12. Error
-                DepositHandler --> Requester : 13. HTTP Error Response
+                DepositService --> DepositHandler : 10. Error
+                DepositHandler --> Requester : 11. HTTP Error Response
             else Create Deposit Record Succeeded
-                DepositService -> AccountFirestore : 12. Update(accountResponse with balance + depositRequest.Deposit)
+                DepositService -> AccountFirestore : 10. Update(accountResponse with balance + depositRequest.Deposit)
                 activate AccountFirestore
-                AccountFirestore --> DepositService : 13. nil / Error
+                AccountFirestore --> DepositService : 11. nil / Error
                 deactivate AccountFirestore
                 alt Update Account Balance Failed (Rollback Create Deposit)
-                    DepositService -> DepositFirestore : 14. Delete(depositID)
-                    DepositFirestore --> DepositService : 15. (ignore error for this rollback attempt)
-                    DepositService --> DepositHandler : 16. Error
-                    DepositHandler --> Requester : 17. HTTP Error Response
+                    DepositService -> DepositFirestore : 12. Delete(depositID)
+                    DepositFirestore --> DepositService : 13. (ignore error for this rollback attempt)
+                    DepositService --> DepositHandler : 14. Error
+                    DepositHandler --> Requester : 15. HTTP Error Response
                 else Update Account Balance Succeeded
-                    DepositService --> DepositHandler : 14. depositID
-                    DepositHandler --> Requester : 15. HTTP 202 Accepted (depositID)
+                    DepositService --> DepositHandler : 12. depositID
+                    DepositHandler --> Requester : 13. HTTP 202 Accepted (depositID)
                 end
                 deactivate DepositFirestore
             end

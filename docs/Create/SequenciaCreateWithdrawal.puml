@@ -12,56 +12,53 @@ entity WithdrawalFirestore <<model/withdrawal/firestore.go>>
 activate Requester
 Requester -> WithdrawalPostHandler : PUT 1. /accounts/:account_id/balance/withdrawal (Body: WithdrawalRequest)
 activate WithdrawalPostHandler
-WithdrawalPostHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService --> WithdrawalPostHandler : 3. Claims / Error
-deactivate AuthorizeService
+
 alt Authorization Failed
-    WithdrawalPostHandler --> Requester : 4. HTTP Error Response
+    WithdrawalPostHandler --> Requester : 2. HTTP Error Response
 else Authorization Succeeded
     
-    WithdrawalPostHandler -> WithdrawalService : 4. ProcessWithdrawal(withdrawalRequest)
+    WithdrawalPostHandler -> WithdrawalService : 3. ProcessWithdrawal(withdrawalRequest)
     activate WithdrawalService
     note right of WithdrawalService : withdrawalRequest.Account_id is from path param
 
-    WithdrawalService -> WithdrawalService : 5. Account(withdrawalRequest.Account_id)
-    WithdrawalService -> AccountFirestore : 6. Get(&withdrawalRequest.Account_id)
+    WithdrawalService -> WithdrawalService : 4. Account(withdrawalRequest.Account_id)
+    WithdrawalService -> AccountFirestore : 5. Get(&withdrawalRequest.Account_id)
     activate AccountFirestore
-    AccountFirestore --> WithdrawalService : 7. accountData / Error
+    AccountFirestore --> WithdrawalService : 6. accountData / Error
     deactivate AccountFirestore
     alt Get Account Failed
-        WithdrawalService --> WithdrawalService : 8. Error
-        WithdrawalService --> WithdrawalPostHandler : 9. Error
-        WithdrawalPostHandler --> Requester : 10. HTTP Error Response
+        WithdrawalService --> WithdrawalService : 7. Error
+        WithdrawalService --> WithdrawalPostHandler : 8. Error
+        WithdrawalPostHandler --> Requester : 9. HTTP Error Response
     else Get Account Succeeded
-        WithdrawalService --> WithdrawalService : 8. accountResponse
-        WithdrawalService -> WithdrawalService : 9. verifyWithdrawal(withdrawalRequest, accountResponse)
+        WithdrawalService --> WithdrawalService : 7. accountResponse
+        WithdrawalService -> WithdrawalService : 8. verifyWithdrawal(withdrawalRequest, accountResponse)
         alt Verification Failed (e.g. ID mismatch, insufficient funds)
-            WithdrawalService --> WithdrawalPostHandler : 10. Error
-            WithdrawalPostHandler --> Requester : 11. HTTP Error Response
+            WithdrawalService --> WithdrawalPostHandler : 9. Error
+            WithdrawalPostHandler --> Requester : 10. HTTP Error Response
         else Verification Succeeded
-            WithdrawalService -> WithdrawalFirestore : 10. Create(withdrawalRequest)
+            WithdrawalService -> WithdrawalFirestore : 9. Create(withdrawalRequest)
             activate WithdrawalFirestore
-            WithdrawalFirestore --> WithdrawalService : 11. withdrawalID / Error
+            WithdrawalFirestore --> WithdrawalService : 10. withdrawalID / Error
             deactivate WithdrawalFirestore
             alt Create Withdrawal Record Failed
-                WithdrawalService --> WithdrawalPostHandler : 12. Error
-                WithdrawalPostHandler --> Requester : HTTP 13. Error Response
+                WithdrawalService --> WithdrawalPostHandler : 11. Error
+                WithdrawalPostHandler --> Requester : HTTP 12. Error Response
             else Create Withdrawal Record Succeeded
-                WithdrawalService -> AccountFirestore : 12. Update(accountResponse with balance - withdrawalRequest.Withdrawal)
+                WithdrawalService -> AccountFirestore : 11. Update(accountResponse with balance - withdrawalRequest.Withdrawal)
                 activate AccountFirestore
-                AccountFirestore --> WithdrawalService : 13 nil / Error
+                AccountFirestore --> WithdrawalService : 12 nil / Error
                 deactivate AccountFirestore
                 alt Update Account Balance Failed (Rollback Create Withdrawal)
-                    WithdrawalService -> WithdrawalFirestore : 14. Delete(withdrawalID)
+                    WithdrawalService -> WithdrawalFirestore : 13. Delete(withdrawalID)
                     activate WithdrawalFirestore
-                    WithdrawalFirestore --> WithdrawalService : 15. (ignore error for this rollback attempt)
+                    WithdrawalFirestore --> WithdrawalService : 14. (ignore error for this rollback attempt)
                     deactivate WithdrawalFirestore
-                    WithdrawalService --> WithdrawalPostHandler : 16. Error
-                    WithdrawalPostHandler --> Requester : 17. HTTP Error Response
+                    WithdrawalService --> WithdrawalPostHandler : 15. Error
+                    WithdrawalPostHandler --> Requester : 16. HTTP Error Response
                 else Update Account Balance Succeeded
-                    WithdrawalService --> WithdrawalPostHandler : 14. withdrawalID
-                    WithdrawalPostHandler --> Requester : 15. HTTP 200 OK (withdrawalID)
+                    WithdrawalService --> WithdrawalPostHandler : 13. withdrawalID
+                    WithdrawalPostHandler --> Requester : 14. HTTP 200 OK (withdrawalID)
                 end
                 deactivate WithdrawalService
             end

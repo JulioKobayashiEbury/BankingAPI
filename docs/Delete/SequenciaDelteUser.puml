@@ -12,28 +12,23 @@ activate Requester
 Requester -> UserDeleteHandler : 1. DELETE /users/:user_id
 activate UserDeleteHandler
 
-UserDeleteHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService -->> UserDeleteHandler : 3. Claims (userIDFromClaims) / Error
-deactivate AuthorizeService
-
 alt Authorization Failed (or user_id mismatch with claims.Id)
-    UserDeleteHandler -->> Requester : 4. HTTP Error Response
+    UserDeleteHandler -->> Requester : 2. HTTP Error Response
 else Authorization Succeeded
    
-    UserDeleteHandler -> UserService : 4. UserDelete(userIDFromClaims_or_path)
+    UserDeleteHandler -> UserService : 2. UserDelete(userIDFromClaims_or_path)
     activate UserService
-    UserService -> UserFirestore : 5. Delete(&userIDFromClaims_or_path)
+    UserService -> UserFirestore : 3. Delete(&userIDFromClaims_or_path)
     activate UserFirestore
-    UserFirestore -->> UserService : 6. nil / Error
+    UserFirestore -->> UserService : 4. nil / Error
     deactivate UserFirestore
     
     alt Delete User Failed
-        UserService -->> UserDeleteHandler : 7. Error
-        UserDeleteHandler -->> Requester : 8. HTTP Error Response
+        UserService -->> UserDeleteHandler : 5. Error
+        UserDeleteHandler -->> Requester : 6. HTTP Error Response
     else Delete User Succeeded
-        UserService -->> UserDeleteHandler : 7. nil
-        UserDeleteHandler -->> Requester : 8. HTTP 200 OK (Message: User deleted)
+        UserService -->> UserDeleteHandler : 5. nil
+        UserDeleteHandler -->> Requester : 6. HTTP 200 OK (Message: User deleted)
     end
     deactivate UserService
 end

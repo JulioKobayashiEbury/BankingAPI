@@ -11,53 +11,48 @@ activate Requester
 Requester -> UserPutHandler : 1. PUT /users/:user_id (Body: User Info)
 activate UserPutHandler
 
-UserPutHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService -->> UserPutHandler : 3. Claims (userIDFromClaims) / Error
-deactivate AuthorizeService
-
 alt Authorization Failed (or user_id mismatch with claims.Id)
-    UserPutHandler -->> Requester : 4. HTTP Error Response
+    UserPutHandler -->> Requester : 2. HTTP Error Response
 else Authorization Succeeded
 
-    UserPutHandler -> UserService : 4. UpdateUser(userRequest with User_id from path/claims)
+    UserPutHandler -> UserService : 2. UpdateUser(userRequest with User_id from path/claims)
     activate UserService
-    UserService -> UserService : 5. User(userRequest.User_id)
-    UserService -> UserFirestore : 6. Get(&userRequest.User_id)
+    UserService -> UserService : 3. User(userRequest.User_id)
+    UserService -> UserFirestore : 4. Get(&userRequest.User_id)
     activate UserFirestore
-    UserFirestore -->> UserService : 7. existingUserData / Error
+    UserFirestore -->> UserService : 5. existingUserData / Error
     deactivate UserFirestore
     
     alt Get Existing User Failed
-        UserService -->> UserService : 8. Error
-        UserService -->> UserPutHandler : 9. Error
-        UserPutHandler -->> Requester : 10. HTTP Error Response
+        UserService -->> UserService : 6. Error
+        UserService -->> UserPutHandler : 7. Error
+        UserPutHandler -->> Requester : 8. HTTP Error Response
     else Get Existing User Succeeded
-        UserService -->> UserService : 8. userResponse()
+        UserService -->> UserService : 6. userResponse()
         note right of UserService : Updates fields in userResponse if provided in userRequest
-        UserService -> UserFirestore : 9. Update(updatedUserResponse)
+        UserService -> UserFirestore : 7. Update(updatedUserResponse)
         activate UserFirestore
-        UserFirestore -->> UserService : 10. nil / Error
+        UserFirestore -->> UserService : 8. nil / Error
         deactivate UserFirestore
         
         alt Update User Record Failed
-            UserService -->> UserPutHandler : 11. Error
-            UserPutHandler -->> Requester : 12. HTTP Error Response
+            UserService -->> UserPutHandler : 9. Error
+            UserPutHandler -->> Requester : 10. HTTP Error Response
         else Update User Record Succeeded
-            UserService -> UserService : 11. User(userRequest.User_id) 'Re-fetch updated
-            UserService -> UserFirestore : 12. Get(&userRequest.User_id)
+            UserService -> UserService : 9. User(userRequest.User_id) 'Re-fetch updated
+            UserService -> UserFirestore : 10. Get(&userRequest.User_id)
             activate UserFirestore
-            UserFirestore -->> UserService : 13. finalUserData / Error
+            UserFirestore -->> UserService : 11. finalUserData / Error
             deactivate UserFirestore
             
             alt Re-fetch Failed
-                 UserService -->> UserService : 14. Error
-                 UserService -->> UserPutHandler : 15. Error
-                 UserPutHandler -->> Requester : 16. HTTP Error Response
+                 UserService -->> UserService : 12. Error
+                 UserService -->> UserPutHandler : 13. Error
+                 UserPutHandler -->> Requester : 14. HTTP Error Response
             else Re-fetch Succeeded
-                 UserService -->> UserService : 14. finalUser
-                 UserService -->> UserPutHandler : 15. finalUser
-                 UserPutHandler -->> Requester : 16. HTTP 200 OK (finalUser)
+                 UserService -->> UserService : 12. finalUser
+                 UserService -->> UserPutHandler : 13. finalUser
+                 UserPutHandler -->> Requester : 14. HTTP 200 OK (finalUser)
             end
             deactivate UserService
         end

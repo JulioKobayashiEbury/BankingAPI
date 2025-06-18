@@ -11,42 +11,37 @@ entity AccountFirestore <<model/account/firestore.go>>
 Requester -> ClientGetReportHandler : 1. GET /clients/report/:client_id
 activate ClientGetReportHandler
 
-ClientGetReportHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService -->> ClientGetReportHandler : 3. Claims / Error
-deactivate AuthorizeService
-
 alt Authorization Failed
-    ClientGetReportHandler -->> Requester : 4. HTTP Error Response
+    ClientGetReportHandler -->> Requester : 2. HTTP Error Response
 else Authorization Succeeded
-    ClientGetReportHandler -> ClientService : 4. Report(clientID_from_path)
+    ClientGetReportHandler -> ClientService : 2. Report(clientID_from_path)
     activate ClientService
 
-    ClientService -> ClientService : 5. Get(clientID)
+    ClientService -> ClientService : 3. Get(clientID)
     activate ClientService
-    ClientService -> ClientFirestore : 6. Get(&clientID)
+    ClientService -> ClientFirestore : 4. Get(&clientID)
     activate ClientFirestore
-    ClientFirestore -->> ClientService : 7. clientInfo / Error
+    ClientFirestore -->> ClientService : 5. clientInfo / Error
     deactivate ClientFirestore
     deactivate ClientService
 
     alt Get ClientInfo Failed
-        ClientService -->> ClientGetReportHandler : 8. Error
-        ClientGetReportHandler -->> Requester : 9. HTTP Error Response
+        ClientService -->> ClientGetReportHandler : 6. Error
+        ClientGetReportHandler -->> Requester : 7. HTTP Error Response
     else Get ClientInfo Succeeded
-        ClientService -> AccountFirestore : 8. GetFiltered(client_id==clientID)
+        ClientService -> AccountFirestore : 6. GetFiltered(client_id==clientID)
         activate AccountFirestore
-        AccountFirestore -->> ClientService : 10. filteredAccounts / Error
+        AccountFirestore -->> ClientService : 7. filteredAccounts / Error
         deactivate AccountFirestore
         note right of AccountFirestore : Filters accounts by clientID
 
         alt Get Accounts Failed
-            ClientService -->> ClientGetReportHandler : 12. Error
-            ClientGetReportHandler -->> Requester : 13. HTTP Error Response
+            ClientService -->> ClientGetReportHandler : 8. Error
+            ClientGetReportHandler -->> Requester : 9. HTTP Error Response
         else Get Accounts Succeeded
             note right of ClientService : Assembles ClientReport
-            ClientService -->> ClientGetReportHandler : 12. clientReport
-            ClientGetReportHandler -->> Requester : 13. HTTP 200 OK (clientReport)
+            ClientService -->> ClientGetReportHandler : 8. clientReport
+            ClientGetReportHandler -->> Requester : 9. HTTP 200 OK (clientReport)
         end
     end
     deactivate ClientService

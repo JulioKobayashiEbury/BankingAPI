@@ -3,43 +3,40 @@ title Client UnBlock - PUT /clients/:client_id
 
 actor Requester
 boundary ClientPutHandler <<clientHandler.go>>
-control AuthorizeService <<serviceAuthorize.go>>
 control ClientService <<serviceService.go>>
 entity ClientFirestore <<model/client/firestore.go>>
 
-Requester -> ClientPutHandler : 1. PUT /clients/:client_id
 activate Requester
+Requester -> ClientPutHandler : 1. PUT /clients/:client_id
+
 activate ClientPutHandler
-ClientPutHandler -> AuthorizeService : 2. Authorize(Cookie)
-activate AuthorizeService
-AuthorizeService --> ClientPutHandler : 3. Claims / Error
-deactivate AuthorizeService
+
 alt Authorization Failed
-    ClientPutHandler --> Requester : 4. HTTP Error Response
+    ClientPutHandler --> Requester : 2. HTTP Error Response
 else Authorization Succeeded
-    ClientPutHandler -> ClientService : 4. Update(clientID)
+    ClientPutHandler -> ClientService : 2. Update(clientID)
     activate ClientService
-    ClientService -> ClientService : 5. Client(clientID)
-    ClientService -> ClientFirestore : 6. Get(&clientID)
+    ClientService -> ClientService : 3. Client(clientID)
+    ClientService -> ClientFirestore : 4. Get(&clientID)
     activate ClientFirestore
-    ClientFirestore --> ClientService : 7. ClientData / Error
+    ClientFirestore --> ClientService : 5. ClientData / Error
     deactivate ClientFirestore
     alt Get Client Failed
-        ClientService --> ClientService : 8. Error
-        ClientService --> ClientPutHandler : 9. Error
-        ClientPutHandler --> Requester : 10. HTTP Error Response
+        ClientService --> ClientService : 6. Error
+        ClientService --> ClientPutHandler : 7. Error
+        ClientPutHandler --> Requester : 8. HTTP Error Response
     else Get Client Succeeded
-        ClientService --> ClientService : 8. Client
-        ClientService -> ClientFirestore : 9. Update(Client with Status="active")
+        ClientService --> ClientService : 6. Client
+        ClientService -> ClientFirestore : 7. Update(Client with Status="active")
         activate ClientFirestore
-        ClientFirestore --> ClientService : 10. nil / Error
+        ClientFirestore --> ClientService : 8. nil / Error
         deactivate ClientFirestore
         alt Update Client Failed
-            ClientService --> ClientPutHandler : 11. Error
-            ClientPutHandler --> Requester : 12. HTTP Error Response
+            ClientService --> ClientPutHandler : 9. Error
+            ClientPutHandler --> Requester : 10. HTTP Error Response
         else Update Client Succeeded
-            ClientService --> ClientPutHandler : 11. nil
-            ClientPutHandler --> Requester : 12. HTTP 200 OK (Client Blocked)
+            ClientService --> ClientPutHandler : 9. nil
+            ClientPutHandler --> Requester : 10. HTTP 200 OK (Client Blocked)
         end
         deactivate ClientService
     end
