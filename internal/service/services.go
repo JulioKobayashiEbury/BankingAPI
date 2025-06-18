@@ -28,7 +28,7 @@ type ServicesList struct {
 }
 
 type Authentication interface {
-	Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro)
+	Authenticate(typeID *string, password *string) (bool, *model.Erro)
 	GenerateToken(typeID *string) (*string, *model.Erro)
 }
 

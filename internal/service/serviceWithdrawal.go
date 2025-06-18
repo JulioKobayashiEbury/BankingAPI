@@ -118,8 +118,8 @@ func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Wi
 }
 
 func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse *account.Account) (bool, *model.Erro) {
-	if accountResponse.Client_id != withdrawalRequest.Client_id {
-		return false, &model.Erro{Err: errors.New("client ID not valid"), HttpCode: http.StatusBadRequest}
+	if accountResponse.User_id != withdrawalRequest.User_id {
+		return false, &model.Erro{Err: errors.New("user ID not valid"), HttpCode: http.StatusBadRequest}
 	}
 
 	if accountResponse.Agency_id != withdrawalRequest.Agency_id {

@@ -37,7 +37,7 @@ func (db autoDebitFirestore) Create(request interface{}) (interface{}, *model.Er
 
 	entity := map[string]interface{}{
 		"account_id":      autoDebitRequest.Account_id,
-		"client_id":       autoDebitRequest.Client_id,
+		"user_id":         autoDebitRequest.User_id,
 		"agency_id":       autoDebitRequest.Agency_id,
 		"value":           autoDebitRequest.Value,
 		"debit_day":       autoDebitRequest.Debit_day,
@@ -97,7 +97,7 @@ func (db autoDebitFirestore) Update(request interface{}) *model.Erro {
 
 	entity := map[string]interface{}{
 		"account_id":      autoDebitRequest.Account_id,
-		"client_id":       autoDebitRequest.Client_id,
+		"user_id":         autoDebitRequest.User_id,
 		"agency_id":       autoDebitRequest.Agency_id,
 		"value":           autoDebitRequest.Value,
 		"debit_day":       autoDebitRequest.Debit_day,

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	model "BankingAPI/internal/model"
@@ -39,23 +38,13 @@ func AddAccountEndPoints(server *echo.Echo, h AccountHandler) {
 }
 
 func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {
-	userID, err := h.authorizationForAccountEndpoints(&c, nil)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
 	var accountInfo account.Account
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	log.Debug().Msg("Account userID: " + accountInfo.User_id + " UserID:" + *userID)
-	if *userID != accountInfo.User_id {
-		log.Warn().Msg("User ID does not match with accounts User ID")
-		return c.JSON(http.StatusForbidden, model.StandartResponse{Message: "User ID does not match with accounts User ID"})
-	}
 
-	if accountInfo.Agency_id == 0 {
+	if accountInfo.User_id == "" || accountInfo.Agency_id <= 0 {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
@@ -69,10 +58,6 @@ func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {
 
 func (h accountHandlerImpl) AccountGetHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
 	accountResponse, err := h.accountService.Get(&accountID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -83,10 +68,6 @@ func (h accountHandlerImpl) AccountGetHandler(c echo.Context) error {
 
 func (h accountHandlerImpl) AccountDeleteHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
 	if err := h.accountService.Delete(&accountID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -96,10 +77,6 @@ func (h accountHandlerImpl) AccountDeleteHandler(c echo.Context) error {
 
 func (h accountHandlerImpl) AccountPutHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
 	var accountInfo account.Account
 	if err := c.Bind(&accountInfo); err != nil {
 		log.Error().Msg(err.Error())
@@ -117,38 +94,9 @@ func (h accountHandlerImpl) AccountPutHandler(c echo.Context) error {
 
 func (h accountHandlerImpl) AccountGetReportHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
-
-	if _, err := h.authorizationForAccountEndpoints(&c, &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
 	accountReport, err := h.accountService.Report(&accountID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, accountReport)
-}
-
-func (h accountHandlerImpl) authorizationForAccountEndpoints(c *echo.Context, accountID *string) (*string, *model.Erro) {
-	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
-
-	claims, err := service.Authorize(&authorizationHeader)
-	if err != nil {
-		return nil, err
-	}
-
-	if accountID == nil {
-		return &claims.Id, nil
-	}
-
-	account, err := h.accountService.Get(accountID)
-	if err != nil {
-		return nil, err
-	}
-	if account.User_id != claims.Id {
-		log.Error().Msg("User ID does not match with accounts User ID")
-		return nil, &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
-	}
-
-	return nil, nil
 }

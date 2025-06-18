@@ -74,12 +74,6 @@ func (service userServiceImpl) Update(userRequest *user.User) (*user.User, *mode
 	if userRequest.Password != "" {
 		userResponse.Password = userRequest.Password
 	}
-	if userRequest.Status != "" {
-		if !userRequest.Status.IsValid() {
-			return nil, model.InvalidStatus
-		}
-		userResponse.Status = userRequest.Status
-	}
 
 	// monta struct de updat
 
@@ -118,7 +112,6 @@ func (service userServiceImpl) Report(id *string) (*user.UserReport, *model.Erro
 		Name:          userInfo.Name,
 		Document:      userInfo.Document,
 		Register_date: userInfo.Register_date,
-		Status:        userInfo.Status,
 		Clients:       clients,
 		Report_date:   time.Now().Format(timeLayout),
 	}, nil

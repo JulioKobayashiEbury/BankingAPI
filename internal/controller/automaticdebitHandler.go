@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"BankingAPI/internal/model"
@@ -42,11 +41,6 @@ func (h autodebitHandlerImpl) AutodebitPostHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-
-	if _, err := h.authorizationForAutodebitEndpoints(&c, &newAutoDebit.Account_id); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
 	autodebitResponse, err := h.automaticdebitService.ProcessNewAutomaticDebit(&newAutoDebit)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -57,16 +51,8 @@ func (h autodebitHandlerImpl) AutodebitPostHandler(c echo.Context) error {
 
 func (h autodebitHandlerImpl) AutodebitGetHandler(c echo.Context) error {
 	autodebitID := c.Param("debit_id")
-	if _, err := h.authorizationForAutodebitEndpoints(&c, &autodebitID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
 	autodebitResponse, err := h.automaticdebitService.Get(&autodebitID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if _, err := h.authorizationForAutodebitEndpoints(&c, &autodebitResponse.Account_id); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -75,42 +61,10 @@ func (h autodebitHandlerImpl) AutodebitGetHandler(c echo.Context) error {
 
 func (h autodebitHandlerImpl) AutodebitDeleteHandler(c echo.Context) error {
 	autodebitID := c.Param("debit_id")
-	autodebitResponse, err := h.automaticdebitService.Get(&autodebitID)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-
-	if _, err := h.authorizationForAutodebitEndpoints(&c, &autodebitResponse.Account_id); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
 
 	if err := h.automaticdebitService.Delete(&autodebitID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
 	return c.JSON(http.StatusNoContent, model.StandartResponse{Message: "Automatic debit deleted successfully"})
-}
-
-func (h autodebitHandlerImpl) authorizationForAutodebitEndpoints(c *echo.Context, accountID *string) (*string, *model.Erro) {
-	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
-
-	claims, err := service.Authorize(&authorizationHeader)
-	if err != nil {
-		return nil, err
-	}
-
-	if accountID == nil {
-		return &claims.Id, nil
-	}
-
-	account, err := h.accountService.Get(accountID)
-	if err != nil {
-		return nil, err
-	}
-	if account.User_id != claims.Id {
-		log.Error().Msg("User ID does not match with accounts User ID")
-		return nil, &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
-	}
-
-	return nil, nil
 }

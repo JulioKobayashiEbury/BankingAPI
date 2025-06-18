@@ -26,7 +26,7 @@ func NewAuth(userDB model.RepositoryInterface) Authentication {
 	}
 }
 
-func (a auth) Authenticate(typeID *string, password *string, collection string) (bool, *model.Erro) {
+func (a auth) Authenticate(typeID *string, password *string) (bool, *model.Erro) {
 	obj, err := a.userDatabase.Get(typeID)
 	if err != nil {
 		return false, err

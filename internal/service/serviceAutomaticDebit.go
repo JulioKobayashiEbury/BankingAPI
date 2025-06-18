@@ -137,7 +137,7 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 				if autoDebit.Debit_day == uint16(time.Now().Day()) {
 					_, err := service.withdrawalService.ProcessWithdrawal(&withdrawal.Withdrawal{
 						Account_id: autoDebit.Account_id,
-						Client_id:  autoDebit.Client_id,
+						User_id:    autoDebit.User_id,
 						Agency_id:  autoDebit.Agency_id,
 						Withdrawal: autoDebit.Value,
 					})

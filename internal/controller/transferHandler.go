@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	model "BankingAPI/internal/model"
@@ -43,9 +42,10 @@ func (h transferHandlerImpl) TransferPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	if _, err := h.authorizationForTransferEndpoints(&c, &newTransferInfo.Account_id); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+	if newTransferInfo.Account_id == "" || newTransferInfo.Account_to == "" || newTransferInfo.Value <= 0 || newTransferInfo.User_id == "" {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
+
 	transferResponse, err := h.transferService.ProcessNewTransfer(&newTransferInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
@@ -60,47 +60,13 @@ func (h transferHandlerImpl) TransferGetHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	if _, err := h.authorizationForTransferEndpoints(&c, &transferResponse.Account_id); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
 	return c.JSON(http.StatusOK, *transferResponse)
 }
 
 func (h transferHandlerImpl) TransferDeleteHandler(c echo.Context) error {
 	transferID := c.Param("transfer_id")
-	transferResponse, err := h.transferService.Get(&transferID)
-	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
-	if _, err := h.authorizationForTransferEndpoints(&c, &transferResponse.Account_id); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
-	}
 	if err := h.transferService.Delete(&transferID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
-	return c.JSON(http.StatusOK, *transferResponse)
-}
-
-func (h transferHandlerImpl) authorizationForTransferEndpoints(c *echo.Context, accountID *string) (*string, *model.Erro) {
-	authorizationHeader := (*c).Request().Header.Get((echo.HeaderAuthorization))
-
-	claims, err := service.Authorize(&authorizationHeader)
-	if err != nil {
-		return nil, err
-	}
-
-	if accountID == nil {
-		return &claims.Id, nil
-	}
-
-	account, err := h.accountService.Get(accountID)
-	if err != nil {
-		return nil, err
-	}
-	if account.User_id != claims.Id {
-		log.Error().Msg("User ID does not match with accounts User ID")
-		return nil, &model.Erro{Err: errors.New("no match for user id"), HttpCode: http.StatusForbidden}
-	}
-
-	return nil, nil
+	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Transfer Deleted!"})
 }

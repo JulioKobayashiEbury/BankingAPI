@@ -36,7 +36,7 @@ func (db withdrawalFirestore) Create(request interface{}) (interface{}, *model.E
 
 	entity := map[string]interface{}{
 		"account_id":      Withdrawal.Account_id,
-		"client_id":       Withdrawal.Client_id,
+		"user_id":         Withdrawal.User_id,
 		"agency_id":       Withdrawal.Agency_id,
 		"withdrawal":      Withdrawal.Withdrawal,
 		"withdrawal_date": time.Now().Format(model.TimeLayout),
@@ -96,7 +96,7 @@ func (db withdrawalFirestore) Update(request interface{}) *model.Erro {
 
 	entity := map[string]interface{}{
 		"account_id":      withdrawal.Account_id,
-		"client_id":       withdrawal.Client_id,
+		"user_id":         withdrawal.User_id,
 		"agency_id":       withdrawal.Agency_id,
 		"withdrawal":      withdrawal.Withdrawal,
 		"status":          true,

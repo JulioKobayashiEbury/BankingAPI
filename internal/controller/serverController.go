@@ -12,6 +12,7 @@ return
 import (
 	"time"
 
+	"BankingAPI/internal/middleware"
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
@@ -40,6 +41,10 @@ func Server(services *service.ServicesList) {
 	AddAccountEndPoints(server, NewAccountHandler(services.AccountService))
 	AddClientsEndPoints(server, NewClientHandler(services.ClientService))
 	AddUsersEndPoints(server, NewUserHandler(services.UserService, services.AuthenticationService))
+
+	middleware := middleware.NewUserAuthMiddleware(services.UserService, services.AuthenticationService)
+	server.Use(echo.MiddlewareFunc(middleware.AuthorizeMiddleware))
+
 	AddTransferEndPoints(server, NewTransferHandler(services.TransferService, services.AccountService))
 	AddAutodebitEndPoints(server, NewAutodebitHandler(services.AutomaticdebitService, services.AccountService))
 	AddDepositsEndPoints(server, NewDeposithandler(services.DepositService, services.AccountService))

@@ -1,14 +1,9 @@
 package model
 
 import (
-	"context"
 	"errors"
 	"net/http"
-	"os"
 	"strings"
-
-	"cloud.google.com/go/firestore"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -41,22 +36,6 @@ type RepositoryInterface interface {
 	Update(interface{}) *Erro
 	GetAll() (interface{}, *Erro)
 	GetFiltered(*[]string) (interface{}, *Erro)
-}
-
-func GetFireStoreClient() (*firestore.Client, error) {
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-
-	if projectID == "" {
-		log.Error().Msg("GOOGLE_CLOUD_PROJECT environment variable not set.")
-		return nil, errors.New("GOOGLE_CLOUD_PROJECT environment variable not set")
-	}
-
-	client, err := firestore.NewClient(context.Background(), projectID)
-	if err != nil {
-		log.Error().Msg("Failed to create client: %v")
-		return nil, err
-	}
-	return client, nil
 }
 
 func TokenizeFilters(filters *string) *[]string {

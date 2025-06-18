@@ -1,34 +1,77 @@
 @startuml
-actor Owner
-boundary "UserHandler" as UserBoundary
-control "ServiceAuthorize" as AuthorizeControl
-control "Service" as ServiceControl
+actor Client
+boundary EchoServer
+control AuthenticationService
+control UserService
 
-Owner -> UserBoundary : GET /users/:user_id
-activate UserBoundary
-UserBoundary -> UserBoundary : userAuthorization(&c)
-UserBoundary -> AuthorizeControl : Authorize(cookie)
-activate AuthorizeControl
-AuthorizeControl --> UserBoundary : claims, nil
-deactivate AuthorizeControl
-
-alt True
-    UserBoundary -> UserBoundary : &userID, nil
-else False
-    UserBoundary -> UserBoundary: nil, HTTP 401 Unauthorized
+activate Client
+Client -> EchoServer: 1. HTTP Request (e.g., GET /accounts/123, POST /users/auth)
+activate EchoServer
+alt Request to /users/auth and no Authorization Header
+    
+    EchoServer -> EchoServer: 2. Extract user_id and password from form values
+    EchoServer -> AuthenticationService: 3. Authenticate(user_id, password)
+    activate AuthenticationService
+    AuthenticationService --> EchoServer: 4. Authentication Result (ok, error)
+    deactivate AuthenticationService
+    alt Authentication Failed
+        EchoServer --> Client: 5. 401 Unauthorized or 500 Internal Server Error
+    else Authentication Successful
+        EchoServer -> AuthenticationService: 5. GenerateToken(user_id)
+        activate AuthenticationService
+        AuthenticationService --> EchoServer: 6. JWT Token
+        deactivate AuthenticationService
+        EchoServer -> EchoServer: 7. Set Authorization Header in Response: "Bearer " + Token
+        EchoServer -> EchoServer: 8. Call next(c) (proceed to handler)
+    end
+else Any other request or /users/auth with Authorization Header
+    EchoServer -> EchoServer: 2. Check if Authorization Header is missing
+    alt Authorization Header Missing
+        EchoServer --> Client: 3. 401 Unauthorized (Authorization header is missing)
+    else Authorization Header Present
+        EchoServer -> EchoServer: 4. Extract JWT Token from Authorization Header
+        EchoServer -> EchoServer: 5. Authorize(tokenString) (Parse and validate token claims)
+        EchoServer --> EchoServer: 6. Claims (if valid) or Error (if invalid)
+        alt Token Invalid
+            EchoServer --> Client: 7. 401 Unauthorized (token not valid)
+        else Token Valid
+            EchoServer -> UserService: 7. Get(claims.Id) (Get user details from DB)
+            activate UserService
+            UserService --> EchoServer: 8. User details or Error
+            deactivate UserService
+            alt Failed to get user details
+                EchoServer --> Client: 9. 400 Bad Request or 500 Internal Server Error
+            else User details retrieved
+                EchoServer -> EchoServer: 9. Check if user is 'admin'
+                alt User is 'admin'
+                    EchoServer -> EchoServer: 10. Call next(c) (proceed to handler)
+                else User is NOT 'admin'
+                    EchoServer -> EchoServer: 10. Check if request path contains user_id parameter
+                    alt user_id in path exists
+                        EchoServer -> EchoServer: 11. Compare path user_id with claims.Id
+                        alt user_id mismatch
+                            EchoServer --> Client: 12. 401 Unauthorized (user id does not match claims id)
+                        else user_id match
+                            EchoServer -> EchoServer: 12. Call next(c) (proceed to handler)
+                        end
+                    else user_id not in path, check form values
+                        EchoServer -> EchoServer: 11. Check if form value user_id exists
+                        alt form user_id exists
+                            EchoServer -> EchoServer: 12. Compare form user_id with claims.Id
+                            alt user_id mismatch
+                                EchoServer --> Client: 13. 401 Unauthorized (user id does not match claims id)
+                            else user_id match
+                                EchoServer -> EchoServer: 14. Call next(c) (proceed to handler)
+                            end
+                        else No user_id in path or form
+                            EchoServer -> EchoServer: 12. Call next(c) (proceed to handler for requests not tied to specific user_id like POST /clients)
+                        end
+                    end
+                end
+            end
+        end
+    deactivate EchoServer
+    end
 end
-alt Valid
-    activate ServiceControl
-    UserBoundary ->> ServiceControl
-    note right: Business logic proceeds if authorized
-            
-    ServiceControl ->> UserBoundary
-    deactivate ServiceControl
-        
-    UserBoundary -> Owner : HTTP 200 OK (userResponse)
-else NotValid
-    UserBoundary -> Owner: HTTP 401 Unauthorized
-end
-deactivate UserBoundary
-
+deactivate Client
 @enduml

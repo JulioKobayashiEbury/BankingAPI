@@ -27,10 +27,7 @@ func Authorize(authHeader *string) (*model.Claims, *model.Erro) {
 			return jwtKey, nil
 		})
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusUnauthorized}
-		}
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &model.Erro{Err: err, HttpCode: http.StatusUnauthorized}
 	}
 	if !jwtToken.Valid {
 		return nil, &model.Erro{Err: errors.New("token not valid"), HttpCode: http.StatusUnauthorized}

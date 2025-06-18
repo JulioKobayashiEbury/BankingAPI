@@ -100,10 +100,6 @@ func (db MockClientRepository) GetFiltered(filters *[]string) (interface{}, *mod
 				if operator == "==" && clientResponse.User_id != value {
 					match = false
 				}
-			case "status":
-				if operator == "==" && clientResponse.Status != model.Status(value) {
-					match = false
-				}
 			// Add more fields as necessary
 			default:
 				match = false

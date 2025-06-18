@@ -37,14 +37,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserRequest'
       responses:
         "201":
           description: user created sucessfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
         "400":
           description: Bad input parameter
         "500":
@@ -73,6 +73,7 @@ paths:
             Authorization:
               schema:
                 type: string
+                description: Bearer JWT token for user authentication
         "401":
           description: Unauthorized
         "500":
@@ -95,7 +96,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
         "401":
           description: Unauthorized
         "403":
@@ -124,7 +125,7 @@ paths:
     put:
       tags:
         - users
-      summary: update a given piece of information of a certain user
+      summary: update a given piece of information of a certain user, no parameter except user_id is required
       parameters:
         - in: path
           name: user_id
@@ -132,18 +133,18 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserRequest'
       responses:
         "200":
           description: User updated sucessfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
         "401":
           description: Unauthorized
         "403":
@@ -176,48 +177,6 @@ paths:
         "500":
           description: Internal Server Error
 
-  /users/{user_id}/block:
-    put:
-      tags:
-        - users
-      summary: block a user
-      parameters:
-        - in: path
-          name: user_id
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: User Blocked
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal Server Error
-
-  /users/{user_id}/unblock:
-    put:
-      tags:
-        - users
-      summary: unblock a user
-      parameters:
-        - in: path
-          name: user_id
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: User Unblocked
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal Server Error
-
   /clients:
     post:
       tags:
@@ -228,14 +187,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientRequest'
       responses:
         "200":
           description: client created sucessfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Client'
+                $ref: '#/components/schemas/ClientResponse'
         "400":
           description: bad input parameter
         "403":
@@ -260,7 +219,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Client'
+                $ref: '#/components/schemas/ClientResponse'
         "401":
           description: Unauthorized
         "403":
@@ -289,7 +248,7 @@ paths:
     put:
       tags:
         - clients
-      summary: update a given piece of information of a certain client
+      summary: update a given piece of information of a certain client, no parameter except client_id is required
       parameters:
         - in: path
           name: client_id
@@ -297,18 +256,18 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientRequest'
       responses:
         "200":
           description: Client updated sucessfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Client'
+                $ref: '#/components/schemas/ClientResponse'
         "401":
           description: Unauthorized
         "403":
@@ -340,49 +299,6 @@ paths:
           description: Forbidden
         "500":
           description: Internal Server Error
-
-  /clients/{client_id}/block:
-    put:
-      tags:
-        - clients
-      summary: block a client
-      parameters:
-        - in: path
-          name: client_id
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Client Blocked
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal Server Error
-
-  /clients/{client_id}/unblock:
-    put:
-      tags:
-        - clients
-      summary: unblock a client
-      parameters:
-        - in: path
-          name: client_id
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Client Unblocked
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal Server Error
-
   /accounts:
     post:
       tags:
@@ -393,14 +309,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Account'
+              $ref: '#/components/schemas/AccountRequest'
       responses:
         "201":
           description: Account created sucessfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Account'
+                $ref: '#/components/schemas/AccountResponse'
         "400":
           description: bad input parameter
         "403":
@@ -425,7 +341,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Account'
+                $ref: '#/components/schemas/AccountResponse'
         "401":
           description: Unauthorized
         "403":
@@ -454,7 +370,7 @@ paths:
     put:
       tags:
         - accounts
-      summary: update a given piece of information of a certain account
+      summary: update a given piece of information of a certain account, no parameter except account_id is required
       parameters:
         - in: path
           name: account_id
@@ -462,18 +378,18 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Account'
+              $ref: '#/components/schemas/AccountRequest'
       responses:
         "200":
           description: Account updated sucessfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Account'
+                $ref: '#/components/schemas/AccountResponse'
         "401":
           description: Unauthorized
         "403":
@@ -826,7 +742,19 @@ paths:
 
 components:
   schemas:
-    User:
+    UserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Max lenght of 30 characters
+        document:
+          type: string
+          description: Document of the user, must be CNPJ, and of 14 digits (will be validated)
+        password:
+          type: string
+          description: User's password to be used for authentication, must not be null
+    UserResponse:
       type: object
       properties:
         user_id:
@@ -845,10 +773,19 @@ components:
           type: string
           format: date-time
           description: Date when the user was registered in the system, in POST, it is not necessary to be passed, if passed won't be used (RFC3339 format)
-        status:
+    ClientRequest:
+      type: object
+      properties:
+        user_id:
           type: string
-          description: Value indicating if the user is active or not, on POST, default is "active" (possible values "blocked", "active")
-    Client:
+          description: ID of the user that owns the client, mus not be null, and it's existence be will validated
+        name:
+          type: string
+          description: Max lenght of 30 characters
+        document:
+          type: string
+          description: Document of the client, must be CPF, and of 11 digits (will be validated)
+    ClientResponse:
       type: object
       properties:
         client_id:
@@ -867,10 +804,20 @@ components:
           type: string
           format: date-time
           description: Date when the client was registered in the system, in POST, it is not necessary, if passed won't be used (RFC3339 format)
-        status:
+    AccountRequest:
+      type: object
+      properties:
+        client_id:
           type: string
-          description: Value indicating if the client is active or not, on POST, default is "active" (possible values "blocked", "active")
-    Account:
+          description: ID of the client that owns the account, must not be null, and it's existence will be validated 
+        user_id:
+          type: string
+          description: ID of the user that owns the client, must not be null, it's existence will be verified
+        agency_id:
+          type: integer
+          format: uint32
+          description: Identifier of the corresponding agency where the account is based, must not be null 
+    AccountResponse:
       type: object
       properties:
         account_id:
@@ -903,6 +850,9 @@ components:
         transfer_id:
           type: string
           description: Identifier of the transfer in the system. In POST, the system will generate this ID and return, if passed wont't be used!
+        user_id:
+          type: string
+          description: ID of the user initiating the transfer, must not be null, and its existence will be validated.
         account_id:
           type: string
           description: ID of the account that is sending the transfer, must not be null, and it's existence will be validated
@@ -1028,7 +978,7 @@ components:
         clients:
           type: array
           items:
-            $ref: '#/components/schemas/Client'
+            $ref: '#/components/schemas/ClientResponse'
         report_date:
           type: string
           format: date-time
@@ -1058,7 +1008,7 @@ components:
         accounts:
           type: array
           items:
-            $ref: '#/components/schemas/Account'
+            $ref: '#/components/schemas/AccountResponse'
         report_date:
           type: string
           format: date-time

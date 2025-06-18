@@ -81,12 +81,6 @@ func (service clientServiceImpl) Update(clientRequest *client.Client) (*client.C
 	if clientRequest.Document != "" {
 		clientResponse.Document = clientRequest.Document
 	}
-	if clientRequest.Status != "" {
-		if !clientRequest.Status.IsValid() {
-			return nil, model.InvalidStatus
-		}
-		clientResponse.Status = clientRequest.Status
-	}
 	// monta struct de update
 	if err := service.clientDatabase.Update(clientResponse); err != nil {
 		return nil, err
@@ -123,7 +117,6 @@ func (service clientServiceImpl) Report(id *string) (*client.ClientReport, *mode
 		Name:          clientInfo.Name,
 		Document:      clientInfo.Document,
 		Register_date: clientInfo.Register_date,
-		Status:        clientInfo.Status,
 		Accounts:      accounts,
 		Report_date:   time.Now().Format(timeLayout),
 	}, nil
