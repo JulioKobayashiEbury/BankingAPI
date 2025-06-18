@@ -10,7 +10,16 @@ A Banking API using Golang, Firestore DB and RestAPI
 # Docker
 
 # Firestore Emulator Spine3
-sudo docker run --rm -p=4000:4000 -p=8080:8080 -p=9099:9099 -p=5001:5001 -p=9199:9199 -p=9000:9000 -p=8085:8085 --env "GCP_PROJECT=banking" --name database-fs-emulator spine3/firebase-emulator --import /firebase/data
+
+Lunk to the Spine3 docker hub: https://hub.docker.com/r/spine3/firebase-emulator 
+
+```bash
+docker pull spine3/firebase-emulator
+```
+
+```bash
+docker run --rm -p=4000:4000 -p=8080:8080 -p=9099:9099 -p=5001:5001 -p=9199:9199 -p=9000:9000 -p=8085:8085 --env "GCP_PROJECT=banking" --name database-fs-emulator spine3/firebase-emulator --import /firebase/data
+```
 
 # Firestore DB Structure
 ```- users (collection)
