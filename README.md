@@ -31,6 +31,8 @@ Lunk to the Spine3 docker hub: https://hub.docker.com/r/spine3/firebase-emulator
 docker pull spine3/firebase-emulator
 ```
 
+- Make sure yout GCP_PROJECT is the same set in the GOOGLE_CLOUD_PROJECT environment variable. Make sure to expose the 8080 port for the Firestore emulator, and 4000 for the Firebase emulator UI.
+
 ```bash
 docker run --rm -p=4000:4000 -p=8080:8080 -p=9099:9099 -p=5001:5001 -p=9199:9199 -p=9000:9000 -p=8085:8085 --env "GCP_PROJECT=banking" --name database-fs-emulator spine3/firebase-emulator --import /firebase/data
 ```
@@ -108,19 +110,16 @@ docker run --rm -p=4000:4000 -p=8080:8080 -p=9099:9099 -p=5001:5001 -p=9199:9199
     ```bash
     go mod tidy
     ```
-4. Set up Firestore credentials
-    - Create a service account in the Google Cloud Console
-    - Download the JSON key file
-    - Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of the JSON key file
-    ```bash
-    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account-file.json"
-    ```
+4. Set up Firestore
+    - Make sure you have the Firestore emulator running. You can use the Docker command provided above to run the Spine3 emulator.
+    - Ensure that the Firestore emulator is running on port the same port and ip as specified in the FIRESTORE_EMULATOR_HOST environment variable.
+
 5. Run the application
     ```bash
     go run cmd/main.go
     ```
 6. Access the API
-    - Open your browser or use a tool like Postman to access the API at `http://localhost:25565`
+    - Connect via other API or Front-End application or use a tool like Postman to access the API at `http://localhost:25565`
 # API Endpoints
 - **User Endpoints**
     - `POST /users` - Create a new user

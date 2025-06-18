@@ -16,12 +16,12 @@ func main() {
 	os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:8080")
 	os.Setenv("GOOGLE_CLOUD_PROJECT", "banking")
 
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	gcproject := os.Getenv("GOOGLE_CLOUD_PROJECT")
 
 	ctx := context.Background()
 	defer ctx.Done()
 
-	client, err := firestore.NewClient(ctx, projectID)
+	client, err := firestore.NewClient(ctx, gcproject)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return
