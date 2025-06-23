@@ -136,6 +136,8 @@ func (db userFirestore) GetAll() (interface{}, *model.Erro) {
 	return &userResponseSlice, nil
 }
 
+// "key,==.value"
+
 func (db userFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet

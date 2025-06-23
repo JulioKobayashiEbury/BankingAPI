@@ -249,39 +249,46 @@ func TestUserGetAll(t *testing.T) {
 	userService := NewUserService(userMockDB, nil)
 	var usersQTD int = 10
 	users := make([]user.User, 0, usersQTD)
-	for i := 0; i < usersQTD; i++ {
-		testUser := &user.User{
-			User_id:  strconv.Itoa(i + 1),
-			Name:     "Edson Cesar " + strconv.Itoa(i+1),
-			Document: "12345678901234",
-			Password: "edsonPass",
-		}
-		if _, err := userService.Create(testUser); err != nil {
-			t.Fatalf("Failed to create user for update test: %v", err)
-			return
-		} else {
-			users = append(users, *testUser)
-		}
-	}
 	type table []struct {
 		name          string
 		expectedUsers []user.User
 		expectedError *model.Erro
 	}
-	/* testCases := table{
-		{
-			name:          "Get All Users Successfully",
-			expectedUsers: users,
-			expectedError: nil,
-		},
+	testCases := table{
 		{
 			name:          "No users found",
 			expectedUsers: nil,
 			expectedError: model.IDnotFound,
 		},
 		{
-			name: "",
+			name:          "Get All Users Successfully",
+			expectedUsers: users,
+			expectedError: nil,
 		},
 	}
-	*/
+	for _, test := range testCases {
+		got, err := userService.GetAll()
+		if err != test.expectedError {
+			t.Errorf("Test %s failed: expected error %v, got %v", test.name, test.expectedError, err)
+			continue
+		}
+		if !assert.Equal(t, test.expectedUsers, *got) {
+			t.Errorf("Test %s failed: expected users %v, got %v", test.name, test.expectedUsers, *got)
+			continue
+		}
+		for i := 0; i < usersQTD; i++ {
+			testUser := &user.User{
+				User_id:  strconv.Itoa(i + 1),
+				Name:     "Edson Cesar " + strconv.Itoa(i+1),
+				Document: "12345678901234",
+				Password: "edsonPass",
+			}
+			if _, err := userService.Create(testUser); err != nil {
+				t.Fatalf("Failed to create user for update test: %v", err)
+				return
+			} else {
+				users = append(users, *testUser)
+			}
+		}
+	}
 }
