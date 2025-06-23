@@ -2,19 +2,34 @@ package main
 
 import (
 	"context"
+	"io"
 	"os"
+	"time"
 
 	"BankingAPI/internal/controller"
 	"BankingAPI/internal/model/user"
 	"BankingAPI/internal/service"
 
 	"cloud.google.com/go/firestore"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:8080")
+	os.Setenv("FIRESTORE_EMULATOR_HOST", "127.0.0.1:8080")
 	os.Setenv("GOOGLE_CLOUD_PROJECT", "banking")
+
+	logFile, err := os.OpenFile("application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		panic(err)
+	}
+	defer logFile.Close()
+
+	multiWriter := io.MultiWriter(os.Stdout, logFile)
+
+	log.Logger = zerolog.New(multiWriter).With().Timestamp().Logger()
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	gcproject := os.Getenv("GOOGLE_CLOUD_PROJECT")
 

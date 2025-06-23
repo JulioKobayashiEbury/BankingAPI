@@ -109,6 +109,9 @@ func (service depositImpl) ProcessDeposit(depositRequest *deposit.Deposit) (*dep
 }
 
 func verifyDeposit(depositRequest *deposit.Deposit, accountResponse *account.Account) (bool, *model.Erro) {
+	if accountResponse.Status != "active" {
+		return false, &model.Erro{Err: errors.New("account is not active"), HttpCode: http.StatusBadRequest}
+	}
 	if accountResponse.Client_id != depositRequest.Client_id {
 		return false, &model.Erro{Err: errors.New("client ID not valid"), HttpCode: http.StatusBadRequest}
 	}

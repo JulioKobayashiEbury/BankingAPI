@@ -1,10 +1,13 @@
 package user
 
 import (
-	"BankingAPI/internal/model"
 	"errors"
 	"net/http"
 	"sync"
+
+	"BankingAPI/internal/model"
+
+	"github.com/rs/zerolog/log"
 )
 
 /*
@@ -15,8 +18,10 @@ Update(interface{}) *Erro
 GetAll() (interface{}, *Erro)
 */
 
-var once sync.Once
-var singleton model.RepositoryInterface
+var (
+	once      sync.Once
+	singleton model.RepositoryInterface
+)
 
 type MockUserRepository struct {
 	idList   *[]string
@@ -55,6 +60,7 @@ func (m MockUserRepository) Delete(id *string) *model.Erro {
 		return model.IDnotFound
 	}
 	if _, ok := (*m.usersMap)[*id]; !ok {
+		log.Debug().Msg("No user in usermap")
 		return model.IDnotFound
 	}
 	delete(*m.usersMap, *id)

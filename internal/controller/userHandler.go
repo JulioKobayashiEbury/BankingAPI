@@ -13,35 +13,31 @@ import (
 
 type UserHandler interface {
 	UserPostHandler(c echo.Context) error
-	UserAuthHandler(c echo.Context) error
 	UserPutHandler(c echo.Context) error
 	UserGetHandler(c echo.Context) error
 	UserDeleteHandler(c echo.Context) error
 	UserGetReportHandler(c echo.Context) error
 }
 
-type userHanderImpl struct {
-	userService         service.UserService
-	authenticateService service.Authentication
+type userHandlerImpl struct {
+	userService service.UserService
 }
 
 func NewUserHandler(userServe service.UserService, authServe service.Authentication) UserHandler {
-	return &userHanderImpl{
-		userService:         userServe,
-		authenticateService: authServe,
+	return &userHandlerImpl{
+		userService: userServe,
 	}
 }
 
 func AddUsersEndPoints(server *echo.Echo, h UserHandler) {
 	server.POST("/users", h.UserPostHandler)
-	server.PUT("/users/auth", h.UserAuthHandler)
 	server.GET("/users/:user_id", h.UserGetHandler)
 	server.GET("/users/:user_id/report", h.UserGetReportHandler)
 	server.DELETE("/users/:user_id", h.UserDeleteHandler)
 	server.PUT("/users/:user_id", h.UserPutHandler)
 }
 
-func (h userHanderImpl) UserPostHandler(c echo.Context) error {
+func (h userHandlerImpl) UserPostHandler(c echo.Context) error {
 	var userInfo user.User
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
@@ -59,11 +55,7 @@ func (h userHanderImpl) UserPostHandler(c echo.Context) error {
 	return c.JSON(http.StatusCreated, (*userResponse))
 }
 
-func (h userHanderImpl) UserAuthHandler(c echo.Context) error {
-	return c.JSON(http.StatusAccepted, model.StandartResponse{Message: "User Authorized"})
-}
-
-func (h userHanderImpl) UserPutHandler(c echo.Context) error {
+func (h userHandlerImpl) UserPutHandler(c echo.Context) error {
 	var userInfo user.User
 	if err := c.Bind(&userInfo); err != nil {
 		log.Error().Msg(err.Error())
@@ -81,7 +73,7 @@ func (h userHanderImpl) UserPutHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, (*userResponse))
 }
 
-func (h userHanderImpl) UserGetHandler(c echo.Context) error {
+func (h userHandlerImpl) UserGetHandler(c echo.Context) error {
 	userID := c.Param("user_id")
 
 	userResponse, err := h.userService.Get(&userID)
@@ -92,7 +84,7 @@ func (h userHanderImpl) UserGetHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, (*userResponse))
 }
 
-func (h userHanderImpl) UserDeleteHandler(c echo.Context) error {
+func (h userHandlerImpl) UserDeleteHandler(c echo.Context) error {
 	userID := c.Param("user_id")
 
 	if err := h.userService.Delete(&userID); err != nil {
@@ -102,7 +94,7 @@ func (h userHanderImpl) UserDeleteHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User deleted"})
 }
 
-func (h userHanderImpl) UserGetReportHandler(c echo.Context) error {
+func (h userHandlerImpl) UserGetReportHandler(c echo.Context) error {
 	userID := c.Param("user_id")
 
 	userReport, err := h.userService.Report(&userID)

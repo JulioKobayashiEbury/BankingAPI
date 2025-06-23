@@ -7,22 +7,11 @@ control UserService
 activate Client
 Client -> EchoServer: 1. HTTP Request (e.g., GET /accounts/123, POST /users/auth)
 activate EchoServer
-alt Request to /users/auth and no Authorization Header
-    
-    EchoServer -> EchoServer: 2. Extract user_id and password from form values
-    EchoServer -> AuthenticationService: 3. Authenticate(user_id, password)
-    activate AuthenticationService
-    AuthenticationService --> EchoServer: 4. Authentication Result (ok, error)
-    deactivate AuthenticationService
-    alt Authentication Failed
-        EchoServer --> Client: 5. 401 Unauthorized or 500 Internal Server Error
-    else Authentication Successful
-        EchoServer -> AuthenticationService: 5. GenerateToken(user_id)
-        activate AuthenticationService
-        AuthenticationService --> EchoServer: 6. JWT Token
-        deactivate AuthenticationService
-        EchoServer -> EchoServer: 7. Set Authorization Header in Response: "Bearer " + Token
-        EchoServer -> EchoServer: 8. Call next(c) (proceed to handler)
+alt No Authorization Header and no User Id provided
+    alt The path is "/auth/token"
+        EchoServer -> EchoServer: 2. next(c) to proceed with Authentication
+    else The path is NOT "/auth/token"
+        EchoServer -> Client: 2. 401 Unauthorized (authorization header is missing)
     end
 else Any other request or /users/auth with Authorization Header
     EchoServer -> EchoServer: 2. Check if Authorization Header is missing

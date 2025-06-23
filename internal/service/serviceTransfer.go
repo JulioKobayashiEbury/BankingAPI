@@ -1,6 +1,9 @@
 package service
 
 import (
+	"errors"
+	"net/http"
+
 	"BankingAPI/internal/model"
 
 	"BankingAPI/internal/model/transfer"
@@ -73,6 +76,9 @@ func (service transferImpl) ProcessNewTransfer(transferRequest *transfer.Transfe
 	accountFrom, err := service.accountService.Get(&transferRequest.Account_id)
 	if err == model.IDnotFound || err != nil {
 		return nil, err
+	}
+	if accountFrom.Status != "active" || accountTo.Status != "active" {
+		return nil, &model.Erro{Err: errors.New("one of the accounts is not active"), HttpCode: http.StatusBadRequest}
 	}
 
 	accountTo.Balance += transferRequest.Value

@@ -23,19 +23,35 @@ The swagger is compliant with OpenAPI.
 
 # Docker
 
-# Firestore Emulator Spine3
+# Firestore Emulator (Para rodar localmente)
 
-Lunk to the Spine3 docker hub: https://hub.docker.com/r/spine3/firebase-emulator 
-
+- Download Firebase CLI
 ```bash
-docker pull spine3/firebase-emulator
+    npm install -g firebase-tools
 ```
+- No diretório que o projeto firestore estará faça:
+    - Crie um firebase.json que contenha um conteúdo simples
+        Utilizei o nano para criar o arquivo com o seguinte conteúdo:
+        "
+            {
+                "emulators": {
+                    "firestore": {
+                    "port": 8080
+                    }
+                }
+            }
+        "
+    - Crie o diretório firestore-data:
+    ```bash
+        mkdir firestore-data
+    ```
+    - Inicie o emulador com um ID de projeto fictício (sempre inicie com o mesmo ID):
+    ```bash
+        firebase emulators:start --only firestore --import=./firestore-data --export-on-exit --project banking
+    ```
+    - Utilize o IP e porta dados ao iniciar o firestore e coloque em uma environment variable chamada "FIRESTORE_EMULATOR_HOST".
 
-- Make sure yout GCP_PROJECT is the same set in the GOOGLE_CLOUD_PROJECT environment variable. Make sure to expose the 8080 port for the Firestore emulator, and 4000 for the Firebase emulator UI.
 
-```bash
-docker run --rm -p=4000:4000 -p=8080:8080 -p=9099:9099 -p=5001:5001 -p=9199:9199 -p=9000:9000 -p=8085:8085 --name database-fs-emulator spine3/firebase-emulator --import /firebase/data
-```
 
 # Firestore DB Structure
 ```- users (collection)

@@ -10,8 +10,6 @@ return
 */
 
 import (
-	"time"
-
 	"BankingAPI/internal/middleware"
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
@@ -25,7 +23,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/labstack/echo"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -42,16 +39,14 @@ func Server(services *service.ServicesList) {
 	AddClientsEndPoints(server, NewClientHandler(services.ClientService))
 	AddUsersEndPoints(server, NewUserHandler(services.UserService, services.AuthenticationService))
 
-	middleware := middleware.NewUserAuthMiddleware(services.UserService, services.AuthenticationService)
+	middleware := middleware.NewUserAuthMiddleware(services.UserService)
 	server.Use(echo.MiddlewareFunc(middleware.AuthorizeMiddleware))
 
+	AddAuthenticationEndpoints(server, NewAuthenticationHandler(services.AuthenticationService))
 	AddTransferEndPoints(server, NewTransferHandler(services.TransferService, services.AccountService))
 	AddAutodebitEndPoints(server, NewAutodebitHandler(services.AutomaticdebitService, services.AccountService))
 	AddDepositsEndPoints(server, NewDeposithandler(services.DepositService, services.AccountService))
 	AddWithdrawalEndPoints(server, NewWithdrawalHandler(services.WithdrawalService, services.AccountService))
-
-	zerolog.TimeFieldFormat = time.RFC3339Nano
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	services.AutomaticdebitService.Scheduled()
 
