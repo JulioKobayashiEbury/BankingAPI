@@ -77,13 +77,6 @@ func (service serviceAutoDebitImpl) GetAll() (*[]automaticdebit.AutomaticDebit, 
 	return autodebits, nil
 }
 
-func (service serviceAutoDebitImpl) Update(autodebitRequest *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
-	if err := service.autoDebitFirestore.Update(autodebitRequest); err != nil {
-		return nil, err
-	}
-	return autodebitRequest, nil
-}
-
 func (service serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
 	if !isValidDate(autoDebit.Expiration_date) {
 		log.Warn().Msg("Invalid date format")
@@ -114,42 +107,34 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 		log.Error().Msg(err.Err.Error())
 		return
 	}
-	for index := 0; index < len(*(autoDebitList)); index++ {
-		autoDebit := (*autoDebitList)[index]
-		if autoDebit.Status == model.ValidStatus[1] {
-			log.Warn().Msg("Debit is expired")
+	for _, autoDebit := range *autoDebitList {
+		logger := log.With().Fields(autoDebit).Logger()
+		expirationDate, err := time.Parse(timeLayout, autoDebit.Expiration_date)
+		if err != nil {
+			logger.Error().Msg(err.Error())
 			return
-		} else {
-			expirationDate, err := time.Parse(timeLayout, autoDebit.Expiration_date)
-			if err != nil {
-				log.Error().Msg(err.Error())
-				return
-			}
-			if expirationDate.Unix() < time.Now().Unix() {
-				autoDebit.Status = model.ValidStatus[1]
-				if _, err := service.Update(&autoDebit); err != nil {
-					log.Error().Msg("Failed to update automatic debit status to expired")
-					return
-				}
-				log.Warn().Msg("Debit is expired")
-				return
-			} else {
-				if autoDebit.Debit_day == uint16(time.Now().Day()) {
-					_, err := service.withdrawalService.ProcessWithdrawal(&withdrawal.Withdrawal{
-						Account_id: autoDebit.Account_id,
-						User_id:    autoDebit.User_id,
-						Agency_id:  autoDebit.Agency_id,
-						Withdrawal: autoDebit.Value,
-					})
-					if err != nil {
-						log.Error().Msg(err.Err.Error())
-						return
-					}
-					log.Info().Msg("Auto debit is logged as Withdrawal together with Account")
-				}
-			}
 		}
-
+		if expirationDate.Unix() < time.Now().Unix() {
+			if err := service.Delete(&autoDebit.Debit_id); err != nil {
+				logger.Error().Msg("Failed to delete expired automatic debit")
+				return
+			}
+			logger.Warn().Msg("Debit is expired, deleted this automatic debit")
+			continue
+		}
+		if autoDebit.Debit_day == uint16(time.Now().Day()) {
+			_, err := service.withdrawalService.ProcessWithdrawal(&withdrawal.Withdrawal{
+				Account_id: autoDebit.Account_id,
+				User_id:    autoDebit.User_id,
+				Agency_id:  autoDebit.Agency_id,
+				Withdrawal: autoDebit.Value,
+			})
+			if err != nil {
+				logger.Error().Msg(err.Err.Error())
+				return
+			}
+			logger.Info().Msg("Auto debit is logged as Withdrawal together with Account")
+		}
 	}
 }
 
@@ -178,8 +163,7 @@ func (service serviceAutoDebitImpl) Scheduled() {
 		return
 	}
 	scheduler.Start()
-	log.Info().Msg(job.ID().String())
-	fmt.Print("Scheduler running...")
+	log.Info().Msg("Job ID for automatic debit checking: " + job.ID().String())
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {

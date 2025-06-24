@@ -1,4 +1,49 @@
-{"level":"info","time":"2025-06-23T14:16:11.490863528-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
-{"level":"info","time":"2025-06-23T14:16:11.491204663-03:00","message":"26eebee6-210c-4c8d-9fbe-ff52d1d634ce"}
-{"level":"info","time":"2025-06-23T14:16:16.858093841-03:00","message":"Authenticated entrance: 7OWiXsvnVYuDAJ2w32cS"}
-{"level":"info","time":"2025-06-23T14:16:27.34083809-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-06-24T09:05:04.967455776-03:00","message":"User created: uy5E2NHvdL4cE3T6Qvkj"}
+{"level":"info","time":"2025-06-24T09:05:04.967521534-03:00","message":"Admin user created with ID: uy5E2NHvdL4cE3T6Qvkj"}
+{"level":"info","time":"2025-06-24T09:05:04.967852141-03:00","message":"Job ID for automatic debit checking: 10e91188-e35c-447a-827e-ce39f5e1a429"}
+{"level":"info","time":"2025-06-24T09:06:00.054526882-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:08:00.099259207-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:10:00.007338562-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:12:00.099304256-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:14:00.099272053-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:16:00.099848178-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:18:00.09928633-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:20:00.098306593-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:22:00.09568219-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:24:00.099310322-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:26:00.099313103-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:28:00.099269198-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:30:00.099425406-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:32:00.099260689-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:34:00.099264944-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:36:00.054425467-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:38:00.099263368-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:40:00.099480902-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:42:00.099323092-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:44:00.099294081-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:46:00.099260813-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:48:00.099270176-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:50:00.099444559-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:52:00.099293757-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:54:00.052968375-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:56:00.095927121-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T09:58:00.099543054-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:00:00.097662298-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:02:00.09943711-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:04:00.099274487-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:06:00.099295111-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:08:00.099366167-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:10:00.099364574-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:12:00.098946333-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:14:00.099387308-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:16:00.09938563-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:18:00.09929243-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:20:00.099507984-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:22:00.09830054-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:24:00.099320679-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:26:00.099258668-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:28:00.099261261-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:30:00.099308949-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:32:00.099447845-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:34:00.099371984-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-06-24T10:35:15.026247804-03:00","message":"Interruption signal received, terminating gracefully..."}

@@ -67,6 +67,7 @@ func (db MockAutoDebitRepository) Update(request interface{}) *model.Erro {
 	(*db.AutoDebitMap)[autoDebitRequest.Debit_id] = *autoDebitRequest
 	return nil
 }
+
 func (db MockAutoDebitRepository) GetAll() (interface{}, *model.Erro) {
 	if len(*db.AutoDebitMap) == 0 {
 		return nil, model.IDnotFound
@@ -99,11 +100,6 @@ func (db MockAutoDebitRepository) GetFiltered(filters *[]string) (interface{}, *
 				if operator == "==" && autodebit.Account_id != value {
 					match = false
 				}
-			case "status":
-				if operator == "==" && autodebit.Status != model.Status(value) {
-					match = false
-				}
-			// Add more fields as necessary
 			default:
 				match = false
 			}
