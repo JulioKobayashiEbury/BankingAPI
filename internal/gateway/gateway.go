@@ -1,8 +1,13 @@
 package gateway
 
-import "github.com/labstack/echo"
+import (
+	"BankingAPI/internal/model"
+)
 
 type Gateway interface {
-	Send(interface{}) error
-	Receive(c echo.Context) error
+	Send(interface{}) *model.Erro
+}
+
+type GatewaysList struct {
+	ExternalTransferGateway Gateway
 }

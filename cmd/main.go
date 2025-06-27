@@ -43,7 +43,9 @@ func main() {
 	}
 
 	repositories := controller.InstantiateRepo(client)
-	services := controller.InstantiateServices(repositories)
+	gateways := controller.InstantiateGateways()
+
+	services := controller.InstantiateServices(repositories, gateways)
 
 	if err := createAdminUser(services.UserService); err != nil {
 		log.Panic().Msg("Not able to create admin user!")

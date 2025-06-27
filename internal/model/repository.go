@@ -1,8 +1,6 @@
 package model
 
 import (
-	"errors"
-	"net/http"
 	"strings"
 )
 
@@ -15,18 +13,7 @@ const (
 	AutoDebitLog    = "autodebitlog"
 	DepositPath     = "deposits"
 	WithdrawalsPath = "withdrawals"
-)
-
-var (
-	InvalidFilterFormat = &Erro{Err: errors.New("repository Error: Invalid fitler format"), HttpCode: http.StatusBadRequest}
-	FilterNotSet        = &Erro{Err: errors.New("repository Error: filter value not set"), HttpCode: http.StatusBadRequest}
-	ResquestNotSet      = &Erro{Err: errors.New("repository Error: Request value not set"), HttpCode: http.StatusBadRequest}
-	FailCreatingClient  = &Erro{Err: errors.New("repository Error: Failed to create DB client"), HttpCode: http.StatusInternalServerError}
-	IDnotFound          = &Erro{Err: errors.New("repository Error: Id not found"), HttpCode: http.StatusBadRequest}
-	DataTypeWrong       = &Erro{Err: errors.New("repository Error: Invalid argument passed"), HttpCode: http.StatusBadRequest}
-	InvalidStatus       = &Erro{Err: errors.New("invalid status value"), HttpCode: http.StatusBadRequest}
-
-	ValidStatus = []Status{"active", "blocked"}
+	CacheDuration   = 2
 )
 
 type RepositoryInterface interface {

@@ -1,0 +1,82 @@
+@startuml
+actor User
+boundary "TransferHandler" as Controller
+control "TransferService" as TransferService
+control "AccountService" as AccountService
+boundary "ExternalTransferGateway" as Gateway
+entity "TransferDatabase" as TransferDB
+entity "AccountDatabase" as AccountDB
+
+User -> Controller: 1. POST /external-transfers (Transfer Request)
+activate Controller
+Controller -> TransferService: 2. ProcessExternalTransfer(newTransferInfo)
+activate TransferService
+
+TransferService -> AccountService: 3. Get(transferRequest.Account_id)
+activate AccountService
+AccountService -> AccountDB: 4. et(account_id)
+activate AccountDB
+AccountDB --> AccountService: 5. Account Info
+deactivate AccountDB
+AccountService --> TransferService: 6. Account Info (account_id)
+deactivate AccountService
+
+alt Account_id not found (Outside to Inside Transfer)
+    TransferService -> TransferService: 7. OutsideToInside(transferRequest)
+    activate TransferService
+    TransferService -> AccountService: 8. Get(transferRequest.Account_to)
+    activate AccountService
+    AccountService -> AccountDB: 9. Get(account_to)
+    activate AccountDB
+    AccountDB --> AccountService: 10. Account Info
+    deactivate AccountDB
+    AccountService --> TransferService: 11. Account Info (account_to)
+    deactivate AccountService
+
+    TransferService -> TransferDB: 12. Create(transferRequest)
+    activate TransferDB
+    TransferDB --> TransferService: 13. Created Transfer
+    deactivate TransferDB
+
+    TransferService -> AccountService: 14. Update(accountTo)
+    activate AccountService
+    AccountService -> AccountDB: 15. Update(accountTo)
+    activate AccountDB
+    AccountDB --> AccountService: 16. Update Confirmation
+    deactivate AccountDB
+    AccountService --> TransferService: 17. Updated Account
+    deactivate AccountService
+    TransferService --> Controller: 18. Success (transferResponse)
+    Controller --> User: 19. HTTP Status 200 OK
+
+else Account_to not found (Inside to Outside Transfer)
+    TransferService -> TransferService: 7. InsideToOutside(transferRequest)
+    activate TransferService
+    TransferService -> Gateway: 8. Send(transferRequest)
+    activate Gateway
+    Gateway --> TransferService: 9. Success
+    deactivate Gateway
+
+    TransferService -> TransferDB: 10. Create(transferRequest)
+    activate TransferDB
+    TransferDB --> TransferService: 11. Created Transfer
+    deactivate TransferDB
+
+    TransferService -> AccountService: 12. Update(accountFrom)
+    activate AccountService
+    AccountService -> AccountDB: 13. Update(accountFrom)
+    activate AccountDB
+    AccountDB --> AccountService: 14. Update Confirmation
+    deactivate AccountDB
+    AccountService --> TransferService: 15. Updated Account
+    deactivate AccountService
+    TransferService --> Controller: 16. Success (transferResponse)
+    deactivate TransferService
+    deactivate TransferService
+    Controller --> User: 17. HTTP Status 200 OK
+
+else Both accounts not found (Error)
+    TransferService --> Controller: 7. Error: Neither account to or account from are from this system!
+    Controller --> User: 8. HTTP 400 Bad Request 
+end
+@enduml

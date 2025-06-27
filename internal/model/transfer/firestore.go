@@ -40,6 +40,7 @@ func (db transferFirestore) Create(request interface{}) (interface{}, *model.Err
 		"account_to":    transferRequest.Account_to,
 		"value":         transferRequest.Value,
 		"user_id":       transferRequest.User_id,
+		"user_to":       transferRequest.User_to,
 		"register_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)

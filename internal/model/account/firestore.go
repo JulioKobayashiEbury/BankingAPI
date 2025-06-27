@@ -138,6 +138,7 @@ func (db accountFirestore) GetAll() (interface{}, *model.Erro) {
 }
 
 func (db accountFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+	//"user_id,==,1"
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}

@@ -48,6 +48,7 @@ func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
+	/*passaria o contexto aqui-> */
 	accountResponse, err := h.accountService.Create(&accountInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())

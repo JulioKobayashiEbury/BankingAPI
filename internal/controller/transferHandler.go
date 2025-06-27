@@ -15,6 +15,7 @@ type TransferHandler interface {
 	TransferPostHandler(c echo.Context) error
 	TransferGetHandler(c echo.Context) error
 	TransferDeleteHandler(c echo.Context) error
+	ExternalTransferPostHandler(c echo.Context) error
 }
 
 type transferHandlerImpl struct {
@@ -31,6 +32,7 @@ func NewTransferHandler(transferServe service.TransferService, accountServe serv
 
 func AddTransferEndPoints(server *echo.Echo, h TransferHandler) {
 	server.POST("/transfers", h.TransferPostHandler)
+	server.POST("/external-transfers", h.TransferPostHandler)
 	server.GET("/transfers/:transfer_id", h.TransferGetHandler)
 	server.DELETE("/transfers/:transfer_id", h.TransferDeleteHandler)
 }
@@ -42,7 +44,7 @@ func (h transferHandlerImpl) TransferPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	if newTransferInfo.Account_id == "" || newTransferInfo.Account_to == "" || newTransferInfo.Value <= 0 || newTransferInfo.User_id == "" {
+	if newTransferInfo.Account_id == "" || newTransferInfo.Account_to == "" || newTransferInfo.Value <= 0 || newTransferInfo.User_id == "" || newTransferInfo.User_to == "" {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
@@ -69,4 +71,23 @@ func (h transferHandlerImpl) TransferDeleteHandler(c echo.Context) error {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Transfer Deleted!"})
+}
+
+func (h transferHandlerImpl) ExternalTransferPostHandler(c echo.Context) error {
+	var newTransferInfo transfer.Transfer
+	if err := c.Bind(&newTransferInfo); err != nil {
+		log.Error().Msg(err.Error())
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	if newTransferInfo.Account_id == "" || newTransferInfo.Account_to == "" || newTransferInfo.Value <= 0 || newTransferInfo.User_id == "" || newTransferInfo.User_to == "" {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
+	}
+
+	transferResponse, err := h.transferService.ProcessExternalTransfer(&newTransferInfo)
+	if err != nil {
+		return c.JSON(err.HttpCode, err.Err.Error())
+	}
+
+	return c.JSON(http.StatusOK, *transferResponse)
 }

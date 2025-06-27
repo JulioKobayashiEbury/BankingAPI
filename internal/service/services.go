@@ -91,4 +91,5 @@ type TransferService interface {
 	Get(id *string) (*transfer.Transfer, *model.Erro)
 	GetAll() (*[]transfer.Transfer, *model.Erro)
 	ProcessNewTransfer(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
+	ProcessExternalTransfer(transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro)
 }

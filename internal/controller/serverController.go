@@ -10,6 +10,8 @@ return
 */
 
 import (
+	"BankingAPI/internal/gateway"
+	"BankingAPI/internal/gateway/externaltransfer"
 	"BankingAPI/internal/middleware"
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
@@ -69,7 +71,7 @@ func InstantiateRepo(databaseClient *firestore.Client) *model.RepositoryList {
 	}
 }
 
-func InstantiateServices(repositories *model.RepositoryList) *service.ServicesList {
+func InstantiateServices(repositories *model.RepositoryList, gateways *gateway.GatewaysList) *service.ServicesList {
 	userServe := service.NewUserService(repositories.UserDatabase, repositories.ClientDatabase)
 	clientServe := service.NewClientService(repositories.ClientDatabase, userServe, repositories.AccountDatabase)
 	accountServe := service.NewAccountService(repositories.AccountDatabase,
@@ -83,7 +85,8 @@ func InstantiateServices(repositories *model.RepositoryList) *service.ServicesLi
 	withdrawalServe := service.NewWithdrawalService(repositories.WithdrawalDatabase, accountServe)
 	depositServe := service.NewDepositService(repositories.DepositDatabase, accountServe)
 	automaticdebitServe := service.NewAutoDebit(repositories.AutomaticDebitDatabase, withdrawalServe)
-	transferServe := service.NewTransferService(repositories.TransferDatabase, accountServe)
+
+	transferServe := service.NewTransferService(repositories.TransferDatabase, accountServe, userServe, gateways.ExternalTransferGateway)
 	authentication := service.NewAuth(repositories.UserDatabase)
 
 	return &service.ServicesList{
@@ -95,5 +98,11 @@ func InstantiateServices(repositories *model.RepositoryList) *service.ServicesLi
 		AutomaticdebitService: automaticdebitServe,
 		TransferService:       transferServe,
 		AuthenticationService: authentication,
+	}
+}
+
+func InstantiateGateways() *gateway.GatewaysList {
+	return &gateway.GatewaysList{
+		ExternalTransferGateway: externaltransfer.NewExternalTransferGateway(),
 	}
 }
