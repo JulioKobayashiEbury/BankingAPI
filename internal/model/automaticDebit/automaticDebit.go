@@ -1,5 +1,10 @@
 package automaticdebit
 
+import "BankingAPI/internal/model"
+
+type AutoDebitRepository interface {
+	model.Repository[AutomaticDebit]
+}
 type AutomaticDebit struct {
 	Debit_id        string  `json:"debit_id" xml:"debit_id"`
 	Account_id      string  `json:"account_id" xml:"account_id"`

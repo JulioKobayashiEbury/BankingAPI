@@ -20,27 +20,19 @@ type depositFirestore struct {
 	databaseClient *firestore.Client
 }
 
-func NewDepositFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+func NewDepositFirestore(dbClient *firestore.Client) DepositRepository {
 	return depositFirestore{
 		databaseClient: dbClient,
 	}
 }
 
-func (db depositFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	depositRequest, ok := request.(*Deposit)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db depositFirestore) Create(ctx context.Context, request *Deposit) (*Deposit, *model.Erro) {
 	entity := map[string]interface{}{
-		"account_id":   depositRequest.Account_id,
-		"client_id":    depositRequest.Client_id,
-		"agency_id":    depositRequest.Agency_id,
-		"user_id":      depositRequest.User_id,
-		"deposit":      depositRequest.Deposit,
+		"account_id":   request.Account_id,
+		"client_id":    request.Client_id,
+		"agency_id":    request.Agency_id,
+		"user_id":      request.User_id,
+		"deposit":      request.Deposit,
 		"deposit_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
@@ -48,13 +40,10 @@ func (db depositFirestore) Create(request interface{}) (interface{}, *model.Erro
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return db.Get(&docRef.ID)
+	return db.Get(ctx, &docRef.ID)
 }
 
-func (db depositFirestore) Delete(id *string) *model.Erro {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db depositFirestore) Delete(ctx context.Context, id *string) *model.Erro {
 	docRef := db.databaseClient.Collection(collection).Doc(*id)
 
 	if _, err := docRef.Delete(ctx); err != nil {
@@ -64,10 +53,7 @@ func (db depositFirestore) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db depositFirestore) Get(id *string) (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db depositFirestore) Get(ctx context.Context, id *string) (*Deposit, *model.Erro) {
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
@@ -86,37 +72,27 @@ func (db depositFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &deposit, nil
 }
 
-func (db depositFirestore) Update(request interface{}) *model.Erro {
-	depositRequest, ok := request.(*Deposit)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db depositFirestore) Update(ctx context.Context, request *Deposit) *model.Erro {
 	entity := map[string]interface{}{
-		"account_id":   depositRequest.Account_id,
-		"client_id":    depositRequest.Client_id,
-		"agency_id":    depositRequest.Agency_id,
-		"user_id":      depositRequest.User_id,
-		"deposit":      depositRequest.Deposit,
-		"deposit_date": depositRequest.Deposit_date,
+		"account_id":   request.Account_id,
+		"client_id":    request.Client_id,
+		"agency_id":    request.Agency_id,
+		"user_id":      request.User_id,
+		"deposit":      request.Deposit,
+		"deposit_date": request.Deposit_date,
 	}
-	docRef := db.databaseClient.Collection(collection).Doc(depositRequest.Deposit_id)
+	docRef := db.databaseClient.Collection(collection).Doc(request.Deposit_id)
 	_, err := docRef.Set(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	log.Info().Msg("Account: " + depositRequest.Deposit_id + " has been updated")
+	log.Info().Msg("Account: " + request.Deposit_id + " has been updated")
 
 	return nil
 }
 
-func (db depositFirestore) GetAll() (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db depositFirestore) GetAll(ctx context.Context) (*[]Deposit, *model.Erro) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
@@ -138,25 +114,21 @@ func (db depositFirestore) GetAll() (interface{}, *model.Erro) {
 	return &DepositSlice, nil
 }
 
-func (db depositFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db depositFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]Deposit, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
-
-	ctx := context.Background()
-	defer ctx.Done()
-
 	query := db.databaseClient.Collection(collection).Query
+	/*
+		for _, filter := range *filters {
+			token := model.TokenizeFilters(&filter)
+			if len(*token) != 3 {
+				return nil, model.InvalidFilterFormat
+			}
 
-	for _, filter := range *filters {
-		token := model.TokenizeFilters(&filter)
-		if len(*token) != 3 {
-			return nil, model.InvalidFilterFormat
+			query = query.Where((*token)[0], (*token)[1], (*token)[2])
 		}
-
-		query = query.Where((*token)[0], (*token)[1], (*token)[2])
-	}
-
+	*/
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

@@ -13,7 +13,6 @@ import (
 	"BankingAPI/internal/gateway"
 	"BankingAPI/internal/gateway/externaltransfer"
 	"BankingAPI/internal/middleware"
-	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/model/client"
@@ -27,6 +26,16 @@ import (
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
+
+type RepositoryList struct {
+	UserDatabase           user.UserRepository
+	ClientDatabase         client.ClientRepository
+	AccountDatabase        account.AccountRepository
+	AutomaticDebitDatabase automaticdebit.AutoDebitRepository
+	DepositDatabase        deposit.DepositRepository
+	TransferDatabase       transfer.TransferRepository
+	WithdrawalDatabase     withdrawal.WithdrawalRepository
+}
 
 const (
 	documentLenghtForUser   = 14
@@ -59,8 +68,8 @@ func Server(services *service.ServicesList) {
 	log.Info().Msg("Server started on port 25565")
 }
 
-func InstantiateRepo(databaseClient *firestore.Client) *model.RepositoryList {
-	return &model.RepositoryList{
+func InstantiateRepo(databaseClient *firestore.Client) *RepositoryList {
+	return &RepositoryList{
 		UserDatabase:           user.NewUserFireStore(databaseClient),
 		ClientDatabase:         client.NewClientFirestore(databaseClient),
 		AccountDatabase:        account.NewAccountFirestore(databaseClient),
@@ -71,7 +80,7 @@ func InstantiateRepo(databaseClient *firestore.Client) *model.RepositoryList {
 	}
 }
 
-func InstantiateServices(repositories *model.RepositoryList, gateways *gateway.GatewaysList) *service.ServicesList {
+func InstantiateServices(repositories *RepositoryList, gateways *gateway.GatewaysList) *service.ServicesList {
 	userServe := service.NewUserService(repositories.UserDatabase, repositories.ClientDatabase)
 	clientServe := service.NewClientService(repositories.ClientDatabase, userServe, repositories.AccountDatabase)
 	accountServe := service.NewAccountService(repositories.AccountDatabase,

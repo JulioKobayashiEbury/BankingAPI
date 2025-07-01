@@ -1,5 +1,10 @@
 package client
 
+import "BankingAPI/internal/model"
+
+type ClientRepository interface {
+	model.Repository[Client]
+}
 type Client struct {
 	Client_id     string `json:"client_id" xml:"client_id"`
 	User_id       string `json:"user_id" xml:"user_id"`

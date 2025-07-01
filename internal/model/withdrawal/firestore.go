@@ -20,25 +20,18 @@ type withdrawalFirestore struct {
 	databaseClient *firestore.Client
 }
 
-func NewWithdrawalFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+func NewWithdrawalFirestore(dbClient *firestore.Client) WithdrawalRepository {
 	return withdrawalFirestore{
 		databaseClient: dbClient,
 	}
 }
 
-func (db withdrawalFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	Withdrawal, ok := request.(*Withdrawal)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db withdrawalFirestore) Create(ctx context.Context, request *Withdrawal) (*Withdrawal, *model.Erro) {
 	entity := map[string]interface{}{
-		"account_id":      Withdrawal.Account_id,
-		"user_id":         Withdrawal.User_id,
-		"agency_id":       Withdrawal.Agency_id,
-		"withdrawal":      Withdrawal.Withdrawal,
+		"account_id":      request.Account_id,
+		"user_id":         request.User_id,
+		"agency_id":       request.Agency_id,
+		"withdrawal":      request.Withdrawal,
 		"withdrawal_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
@@ -47,12 +40,10 @@ func (db withdrawalFirestore) Create(request interface{}) (interface{}, *model.E
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 	// Add withdrawal to account list
-	return db.Get(&docRef.ID)
+	return db.Get(ctx, &docRef.ID)
 }
 
-func (db withdrawalFirestore) Delete(id *string) *model.Erro {
-	ctx := context.Background()
-	defer ctx.Done()
+func (db withdrawalFirestore) Delete(ctx context.Context, id *string) *model.Erro {
 	docRef := db.databaseClient.Collection(collection).Doc(*id)
 
 	if _, err := docRef.Delete(ctx); err != nil {
@@ -63,10 +54,7 @@ func (db withdrawalFirestore) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db withdrawalFirestore) Get(id *string) (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db withdrawalFirestore) Get(ctx context.Context, id *string) (*Withdrawal, *model.Erro) {
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
@@ -86,47 +74,37 @@ func (db withdrawalFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &withdrawal, nil
 }
 
-func (db withdrawalFirestore) Update(request interface{}) *model.Erro {
-	withdrawal, ok := request.(*Withdrawal)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db withdrawalFirestore) Update(ctx context.Context, request *Withdrawal) *model.Erro {
 	entity := map[string]interface{}{
-		"account_id":      withdrawal.Account_id,
-		"user_id":         withdrawal.User_id,
-		"agency_id":       withdrawal.Agency_id,
-		"withdrawal":      withdrawal.Withdrawal,
+		"account_id":      request.Account_id,
+		"user_id":         request.User_id,
+		"agency_id":       request.Agency_id,
+		"withdrawal":      request.Withdrawal,
 		"status":          true,
-		"withdrawal_date": withdrawal.Withdrawal_date,
+		"withdrawal_date": request.Withdrawal_date,
 	}
-	docRef := db.databaseClient.Collection(collection).Doc(withdrawal.Withdrawal_id)
+	docRef := db.databaseClient.Collection(collection).Doc(request.Withdrawal_id)
 	_, err := docRef.Set(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	log.Info().Msg("Account: " + withdrawal.Withdrawal_id + " has been updated")
+	log.Info().Msg("Account: " + request.Withdrawal_id + " has been updated")
 
 	return nil
 }
 
-func (db withdrawalFirestore) GetAll() (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db withdrawalFirestore) GetAll(ctx context.Context) (*[]Withdrawal, *model.Erro) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	WithdrawalSlice := make([]*Withdrawal, 0, len(docSnapshots))
+	WithdrawalSlice := make([]Withdrawal, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
 		docSnap := docSnapshots[index]
-		Withdrawal := &Withdrawal{}
+		Withdrawal := Withdrawal{}
 		if err := docSnap.DataTo(&Withdrawal); err != nil {
 			log.Error().Msg(err.Error())
 			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
@@ -138,16 +116,14 @@ func (db withdrawalFirestore) GetAll() (interface{}, *model.Erro) {
 	return &WithdrawalSlice, nil
 }
 
-func (db withdrawalFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db withdrawalFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]Withdrawal, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
-	ctx := context.Background()
-	defer ctx.Done()
 
 	query := db.databaseClient.Collection(collection).Query
 
-	for _, filter := range *filters {
+	/* for _, filter := range *filters {
 		token := model.TokenizeFilters(&filter)
 		if len(*token) != 3 {
 			return nil, model.InvalidFilterFormat
@@ -156,7 +132,7 @@ func (db withdrawalFirestore) GetFiltered(filters *[]string) (interface{}, *mode
 		query = query.Where((*token)[0], (*token)[1], (*token)[2])
 
 	}
-
+	*/
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

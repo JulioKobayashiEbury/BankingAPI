@@ -39,7 +39,6 @@ func AddClientsEndPoints(server *echo.Echo, h ClientHandler) {
 }
 
 func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {
-
 	var clientInfo client.Client
 	if err := c.Bind(&clientInfo); err != nil {
 		log.Error().Msg(err.Error())
@@ -50,7 +49,7 @@ func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	Client, err := h.clientService.Create(&clientInfo)
+	Client, err := h.clientService.Create(c.Request().Context(), &clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -60,7 +59,7 @@ func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {
 
 func (h clientHandlerImpl) ClientGetHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	clientInfo, err := h.clientService.Get(&clientID)
+	clientInfo, err := h.clientService.Get(c.Request().Context(), &clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -70,7 +69,7 @@ func (h clientHandlerImpl) ClientGetHandler(c echo.Context) error {
 
 func (h clientHandlerImpl) ClientDeleteHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
-	if err := h.clientService.Delete(&clientID); err != nil {
+	if err := h.clientService.Delete(c.Request().Context(), &clientID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -86,7 +85,7 @@ func (h clientHandlerImpl) ClientPutHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	clientInfo.Client_id = clientID
-	Client, err := h.clientService.Update(&clientInfo)
+	Client, err := h.clientService.Update(c.Request().Context(), &clientInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -97,7 +96,7 @@ func (h clientHandlerImpl) ClientPutHandler(c echo.Context) error {
 func (h clientHandlerImpl) ClientGetReportHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
 
-	clientReport, err := h.clientService.Report(&clientID)
+	clientReport, err := h.clientService.Report(c.Request().Context(), &clientID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}

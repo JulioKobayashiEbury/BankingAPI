@@ -48,7 +48,7 @@ func (h authMiddlewareImpl) AuthorizeMiddleware(next echo.HandlerFunc) echo.Hand
 			return c.JSON(err.HttpCode, err.Err.Error())
 		}
 
-		userResponse, err := h.userService.Get(&claims.Id)
+		userResponse, err := h.userService.Get(c.Request().Context(), &claims.Id)
 		if err != nil {
 			log.Error().Msg("failed to get user: " + err.Err.Error())
 			return c.JSON(err.HttpCode, err.Err.Error())

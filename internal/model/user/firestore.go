@@ -15,74 +15,61 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const collection = "users"
+const (
+	collection    = "users"
+	cacheDuration = time.Minute * 30
+)
 
 type userFirestore struct {
 	databaseClient *firestore.Client
 	cache          map[string]User
-	routineMap     map[string](chan int64)
 	mutex          *sync.Mutex
 }
 
 func (db userFirestore) manageDataOnCache(dataID *string) {
-	var timeLimit int64 = time.Now().Unix() + model.CacheDuration
+	var timeLimit int64 = time.Now().Unix() + int64(cacheDuration)
 	for {
-		select {
-		case newTime := <-db.routineMap[*dataID]:
-			timeLimit += int64(newTime)
-		default:
-			if time.Now().Unix() > timeLimit {
-				user, ok := db.cache[*dataID]
-				if !ok {
-					// log.Info().Msg("user already deleted from cachce")
-					return
-				}
-				for {
-					if err := db.Update(&user); err != nil {
-						log.Error().Msg("error updating user on DB")
-						time.Sleep(time.Duration(1))
-						continue
-					}
-					break
-				}
-				close(db.routineMap[*dataID])
-				delete(db.routineMap, *dataID)
-				delete(db.cache, *dataID)
-				// log.Info().Msg("stopped routine for data on cache")
+		if time.Now().Unix() > timeLimit {
+			user, ok := db.cache[*dataID]
+			if !ok {
+				// log.Info().Msg("user already deleted from cachce")
 				return
 			}
+			ctx := context.Background()
+			for {
+				if err := db.Update(ctx, &user); err != nil {
+					log.Error().Msg("error updating user on DB")
+					time.Sleep(time.Duration(1))
+					continue
+				}
+				break
+			}
+			ctx.Done()
+			delete(db.cache, *dataID)
+			// log.Info().Msg("stopped routine for data on cache")
+			return
 		}
 	}
 }
 
-func NewUserFireStore(dbClient *firestore.Client) model.RepositoryInterface {
+func NewUserFireStore(dbClient *firestore.Client) UserRepository {
 	return userFirestore{
 		databaseClient: dbClient,
 		cache:          map[string]User{},
-		routineMap:     map[string](chan int64){},
 		mutex:          &sync.Mutex{},
 	}
 }
 
-func (db userFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	userRequest, ok := request.(*User)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
+func (db userFirestore) Create(ctx context.Context, request *User) (*User, *model.Erro) {
 	db.mutex.Lock()
-	db.cache[userRequest.User_id] = *userRequest
-	db.routineMap[userRequest.User_id] = make(chan int64, 1)
-	go db.manageDataOnCache(&userRequest.User_id)
+	db.cache[request.User_id] = *request
+	go db.manageDataOnCache(&request.User_id)
 	db.mutex.Unlock()
 
-	ctx := context.Background()
-	defer ctx.Done()
-
 	entity := map[string]interface{}{
-		"name":          userRequest.Name,
-		"document":      userRequest.Document,
-		"password":      userRequest.Password,
+		"name":          request.Name,
+		"document":      request.Document,
+		"password":      request.Password,
 		"register_date": time.Now().Format(model.TimeLayout),
 		"status":        model.ValidStatus[0],
 	}
@@ -91,19 +78,13 @@ func (db userFirestore) Create(request interface{}) (interface{}, *model.Erro) {
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return db.Get(&docRef.ID)
+	return db.Get(ctx, &docRef.ID)
 }
 
-func (db userFirestore) Delete(id *string) *model.Erro {
+func (db userFirestore) Delete(ctx context.Context, id *string) *model.Erro {
 	db.mutex.Lock()
-	if _, ok := db.cache[*id]; ok {
-		delete(db.cache, *id)
-		delete(db.routineMap, *id)
-	}
+	delete(db.cache, *id)
 	db.mutex.Unlock()
-
-	ctx := context.Background()
-	defer ctx.Done()
 
 	docRef := db.databaseClient.Collection(collection).Doc(*id)
 
@@ -114,18 +95,14 @@ func (db userFirestore) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db userFirestore) Get(id *string) (interface{}, *model.Erro) {
+func (db userFirestore) Get(ctx context.Context, id *string) (*User, *model.Erro) {
 	db.mutex.Lock()
 	if response, ok := db.cache[*id]; ok {
-		db.routineMap[*id] <- model.CacheDuration
 		log.Info().Msg("retrieved user from cache")
 		db.mutex.Unlock()
 		return &response, nil
 	}
 	db.mutex.Unlock()
-
-	ctx := context.Background()
-	defer ctx.Done()
 
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
@@ -144,54 +121,41 @@ func (db userFirestore) Get(id *string) (interface{}, *model.Erro) {
 
 	db.mutex.Lock()
 	db.cache[userResponse.User_id] = userResponse
-	db.routineMap[userResponse.User_id] = make(chan int64, 1)
 	go db.manageDataOnCache(&userResponse.User_id)
 	db.mutex.Unlock()
 
 	return &userResponse, nil
 }
 
-func (db userFirestore) Update(request interface{}) *model.Erro {
-	userRequest, ok := request.(*User)
-	if !ok {
-		return model.DataTypeWrong
-	}
-
+func (db userFirestore) Update(ctx context.Context, request *User) *model.Erro {
 	db.mutex.Lock()
-	if _, ok := db.cache[userRequest.User_id]; ok {
-		db.cache[userRequest.User_id] = *userRequest
+	if _, ok := db.cache[request.User_id]; ok {
+		db.cache[request.User_id] = *request
 
-		db.routineMap[userRequest.User_id] <- model.CacheDuration
 		db.mutex.Unlock()
 		return nil
 	}
 	db.mutex.Unlock()
 
-	ctx := context.Background()
-	defer ctx.Done()
-
 	entity := map[string]interface{}{
-		"name":          userRequest.Name,
-		"document":      userRequest.Document,
-		"password":      userRequest.Password,
-		"register_date": userRequest.Register_date,
+		"name":          request.Name,
+		"document":      request.Document,
+		"password":      request.Password,
+		"register_date": request.Register_date,
 	}
 
-	docRef := db.databaseClient.Collection(collection).Doc(userRequest.User_id)
+	docRef := db.databaseClient.Collection(collection).Doc(request.User_id)
 	if _, err := docRef.Set(ctx, entity); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 
-	log.Info().Msg("user: " + userRequest.User_id + "has been updated")
+	log.Info().Msg("user: " + request.User_id + "has been updated")
 
 	return nil
 }
 
-func (db userFirestore) GetAll() (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db userFirestore) GetAll(ctx context.Context) (*[]User, *model.Erro) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
@@ -215,16 +179,14 @@ func (db userFirestore) GetAll() (interface{}, *model.Erro) {
 
 // "key,==.value"
 
-func (db userFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db userFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]User, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
-	ctx := context.Background()
-	defer ctx.Done()
 
 	query := db.databaseClient.Collection(collection).Query
 
-	for _, filter := range *filters {
+	/* for _, filter := range *filters {
 		token := model.TokenizeFilters(&filter)
 		if len(*token) != 3 {
 			return nil, model.InvalidFilterFormat
@@ -232,6 +194,7 @@ func (db userFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro
 
 		query = query.Where((*token)[0], (*token)[1], (*token)[2])
 	}
+	*/
 
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {

@@ -42,14 +42,14 @@ func (h authenticationHandlerImpl) PostAuthenticationHandler(c echo.Context) err
 		}
 		return c.JSON(obj.Code, obj.Internal.Error())
 	}
-	if ok, err := h.authenticationService.Authenticate(&userAuthInfo.User_Id, &userAuthInfo.Password); err != nil {
+	if ok, err := h.authenticationService.Authenticate(c.Request().Context(), &userAuthInfo.User_Id, &userAuthInfo.Password); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	} else {
 		if !ok {
 			log.Error().Msg("authentication failed for user: " + userAuthInfo.User_Id)
 			return c.JSON(http.StatusUnauthorized, model.StandartResponse{Message: "authentication failed"})
 		}
-		token, err := h.authenticationService.GenerateToken(&userAuthInfo.User_Id)
+		token, err := h.authenticationService.GenerateToken(c.Request().Context(), &userAuthInfo.User_Id)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, model.StandartResponse{Message: err.Err.Error()})
 		}

@@ -1,16 +1,18 @@
 package account
 
 import (
+	"context"
+
 	"BankingAPI/internal/model"
 )
 
-var singleton *model.RepositoryInterface
+var singleton *AccountRepository
 
 type MockAccountRepository struct {
 	AccountMap *map[string]Account
 }
 
-func NewMockAccountRepository() *model.RepositoryInterface {
+func NewMockAccountRepository() *AccountRepository {
 	if singleton != nil {
 		return singleton
 	}
@@ -21,11 +23,7 @@ func NewMockAccountRepository() *model.RepositoryInterface {
 	return singleton
 }
 
-func (db MockAccountRepository) Create(request interface{}) (interface{}, *model.Erro) {
-	accountRequest, ok := request.(*Account)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
+func (db MockAccountRepository) Create(ctx context.Context, request *Account) (*Account, *model.Erro) {
 	/*
 		for {
 			transferID := randomstring.String(10)
@@ -36,11 +34,11 @@ func (db MockAccountRepository) Create(request interface{}) (interface{}, *model
 			}
 		}
 	*/
-	(*db.AccountMap)[accountRequest.Account_id] = *accountRequest
-	return &accountRequest, nil
+	(*db.AccountMap)[request.Account_id] = *request
+	return request, nil
 }
 
-func (db MockAccountRepository) Delete(id *string) *model.Erro {
+func (db MockAccountRepository) Delete(ctx context.Context, id *string) *model.Erro {
 	if _, ok := (*db.AccountMap)[*id]; !ok {
 		return model.IDnotFound
 	}
@@ -48,7 +46,7 @@ func (db MockAccountRepository) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db MockAccountRepository) Get(id *string) (interface{}, *model.Erro) {
+func (db MockAccountRepository) Get(ctx context.Context, id *string) (*Account, *model.Erro) {
 	if account, ok := (*db.AccountMap)[*id]; !ok {
 		return nil, model.IDnotFound
 	} else {
@@ -56,18 +54,15 @@ func (db MockAccountRepository) Get(id *string) (interface{}, *model.Erro) {
 	}
 }
 
-func (db MockAccountRepository) Update(request interface{}) *model.Erro {
-	accountRequest, ok := request.(*Account)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	if _, ok := (*db.AccountMap)[accountRequest.Account_id]; !ok {
+func (db MockAccountRepository) Update(ctx context.Context, request *Account) *model.Erro {
+	if _, ok := (*db.AccountMap)[request.Account_id]; !ok {
 		return model.IDnotFound
 	}
-	(*db.AccountMap)[accountRequest.Account_id] = *accountRequest
+	(*db.AccountMap)[request.Account_id] = *request
 	return nil
 }
-func (db MockAccountRepository) GetAll() (interface{}, *model.Erro) {
+
+func (db MockAccountRepository) GetAll(ctx context.Context) (*[]Account, *model.Erro) {
 	if len(*db.AccountMap) == 0 {
 		return nil, model.IDnotFound
 	}
@@ -75,16 +70,15 @@ func (db MockAccountRepository) GetAll() (interface{}, *model.Erro) {
 	for _, account := range *db.AccountMap {
 		accounts = append(accounts, account)
 	}
-	return accounts, nil
+	return &accounts, nil
 }
 
-func (db MockAccountRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
-
+func (db MockAccountRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]Account, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
 
-	accountSlice := make([]Account, 0, len(*db.AccountMap))
+	/* accountSlice := make([]Account, 0, len(*db.AccountMap))
 	for _, account := range *db.AccountMap {
 		match := true
 		for _, filter := range *filters {
@@ -114,6 +108,6 @@ func (db MockAccountRepository) GetFiltered(filters *[]string) (interface{}, *mo
 			accountSlice = append(accountSlice, account)
 		}
 	}
-
+	*/
 	return nil, nil
 }

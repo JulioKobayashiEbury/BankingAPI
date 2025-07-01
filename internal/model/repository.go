@@ -1,7 +1,7 @@
 package model
 
 import (
-	"strings"
+	"context"
 )
 
 const (
@@ -16,16 +16,17 @@ const (
 	CacheDuration   = 2
 )
 
-type RepositoryInterface interface {
-	Create(interface{}) (interface{}, *Erro)
-	Delete(*string) *Erro
-	Get(id *string) (interface{}, *Erro)
-	Update(interface{}) *Erro
-	GetAll() (interface{}, *Erro)
-	GetFiltered(*[]string) (interface{}, *Erro)
+type Repository[T any] interface {
+	Create(context.Context, *T) (*T, *Erro)
+	Delete(context.Context, *string) *Erro
+	Get(context.Context, *string) (*T, *Erro)
+	Update(context.Context, *T) *Erro
+	GetAll(context.Context) (*[]T, *Erro)
+	GetFilteredByID(context.Context, *string) (*[]T, *Erro)
 }
 
-func TokenizeFilters(filters *string) *[]string {
+/* func TokenizeFilters(filters *string) *[]string {
 	tokens := strings.Split(*filters, ",")
 	return &tokens
 }
+*/

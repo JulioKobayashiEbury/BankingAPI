@@ -48,7 +48,7 @@ func (h userHandlerImpl) UserPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	userResponse, err := h.userService.Create(&userInfo)
+	userResponse, err := h.userService.Create(c.Request().Context(), &userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -66,7 +66,7 @@ func (h userHandlerImpl) UserPutHandler(c echo.Context) error {
 
 	userInfo.User_id = userID
 
-	userResponse, err := h.userService.Update(&userInfo)
+	userResponse, err := h.userService.Update(c.Request().Context(), &userInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -76,7 +76,7 @@ func (h userHandlerImpl) UserPutHandler(c echo.Context) error {
 func (h userHandlerImpl) UserGetHandler(c echo.Context) error {
 	userID := c.Param("user_id")
 
-	userResponse, err := h.userService.Get(&userID)
+	userResponse, err := h.userService.Get(c.Request().Context(), &userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -87,7 +87,7 @@ func (h userHandlerImpl) UserGetHandler(c echo.Context) error {
 func (h userHandlerImpl) UserDeleteHandler(c echo.Context) error {
 	userID := c.Param("user_id")
 
-	if err := h.userService.Delete(&userID); err != nil {
+	if err := h.userService.Delete(c.Request().Context(), &userID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -97,7 +97,7 @@ func (h userHandlerImpl) UserDeleteHandler(c echo.Context) error {
 func (h userHandlerImpl) UserGetReportHandler(c echo.Context) error {
 	userID := c.Param("user_id")
 
-	userReport, err := h.userService.Report(&userID)
+	userReport, err := h.userService.Report(c.Request().Context(), &userID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}

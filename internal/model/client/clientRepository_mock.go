@@ -1,16 +1,18 @@
 package client
 
 import (
+	"context"
+
 	"BankingAPI/internal/model"
 )
 
-var singleton *model.RepositoryInterface
+var singleton *ClientRepository
 
 type MockClientRepository struct {
 	ClientMap *map[string]Client
 }
 
-func NewMockClientReposiory() model.RepositoryInterface {
+func NewMockClientReposiory() ClientRepository {
 	if singleton != nil {
 		return *singleton
 	}
@@ -21,11 +23,7 @@ func NewMockClientReposiory() model.RepositoryInterface {
 	return *singleton
 }
 
-func (db MockClientRepository) Create(request interface{}) (interface{}, *model.Erro) {
-	clientRequest, ok := request.(*Client)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
+func (db MockClientRepository) Create(ctx context.Context, request *Client) (*Client, *model.Erro) {
 	/*
 		for {
 			clientID := randomstring.String(10)
@@ -36,11 +34,11 @@ func (db MockClientRepository) Create(request interface{}) (interface{}, *model.
 			}
 		}
 	*/
-	(*db.ClientMap)[clientRequest.Client_id] = *clientRequest
-	return &clientRequest, nil
+	(*db.ClientMap)[request.Client_id] = *request
+	return request, nil
 }
 
-func (db MockClientRepository) Delete(id *string) *model.Erro {
+func (db MockClientRepository) Delete(ctx context.Context, id *string) *model.Erro {
 	if _, ok := (*db.ClientMap)[*id]; !ok {
 		return model.IDnotFound
 	}
@@ -48,27 +46,22 @@ func (db MockClientRepository) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db MockClientRepository) Get(id *string) (interface{}, *model.Erro) {
+func (db MockClientRepository) Get(ctx context.Context, id *string) (*Client, *model.Erro) {
 	if clientResponse, ok := (*db.ClientMap)[*id]; !ok {
 		return nil, model.IDnotFound
 	} else {
 		return &clientResponse, nil
 	}
-
 }
 
-func (db MockClientRepository) Update(request interface{}) *model.Erro {
-	clientRequest, ok := request.(*Client)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	if _, ok := (*db.ClientMap)[clientRequest.Client_id]; !ok {
+func (db MockClientRepository) Update(ctx context.Context, request *Client) *model.Erro {
+	if _, ok := (*db.ClientMap)[request.Client_id]; !ok {
 		return model.IDnotFound
 	}
 	return nil
 }
 
-func (db MockClientRepository) GetAll() (interface{}, *model.Erro) {
+func (db MockClientRepository) GetAll(ctx context.Context) (*[]Client, *model.Erro) {
 	if len(*db.ClientMap) == 0 {
 		return nil, model.IDnotFound
 	}
@@ -76,15 +69,15 @@ func (db MockClientRepository) GetAll() (interface{}, *model.Erro) {
 	for _, client := range *db.ClientMap {
 		clients = append(clients, client)
 	}
-	return clients, nil
+	return &clients, nil
 }
 
-func (db MockClientRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db MockClientRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]Client, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
 	clientSlice := make([]Client, 0, len(*db.ClientMap))
-	for _, clientResponse := range *db.ClientMap {
+	/* for _, clientResponse := range *db.ClientMap {
 		match := true
 		for _, filter := range *filters {
 			token := model.TokenizeFilters(&filter)
@@ -109,5 +102,6 @@ func (db MockClientRepository) GetFiltered(filters *[]string) (interface{}, *mod
 			clientSlice = append(clientSlice, clientResponse)
 		}
 	}
+	*/
 	return &clientSlice, nil
 }

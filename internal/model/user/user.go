@@ -1,5 +1,10 @@
 package user
 
+import "BankingAPI/internal/model"
+
+type UserRepository interface {
+	model.Repository[User]
+}
 type User struct {
 	User_id       string `json:"user_id" xml:"user_id"`
 	Name          string `json:"name" xml:"name" validate:"required"`

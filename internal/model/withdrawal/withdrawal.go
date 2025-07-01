@@ -1,5 +1,10 @@
 package withdrawal
 
+import "BankingAPI/internal/model"
+
+type WithdrawalRepository interface {
+	model.Repository[Withdrawal]
+}
 type Withdrawal struct {
 	Withdrawal_id   string  `json:"withdrawal_id" xml:"withdrawal_id"`
 	Account_id      string  `json:"account_id" xml:"account_id"`

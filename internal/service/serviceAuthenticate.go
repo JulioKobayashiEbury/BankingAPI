@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -17,33 +18,27 @@ const expirationMin = 30
 var jwtKey = []byte("bankingapi-key")
 
 type auth struct {
-	userDatabase model.RepositoryInterface
+	userDatabase user.UserRepository
 }
 
-func NewAuth(userDB model.RepositoryInterface) Authentication {
+func NewAuth(userDB user.UserRepository) Authentication {
 	return auth{
 		userDatabase: userDB,
 	}
 }
 
-func (a auth) Authenticate(typeID *string, password *string) (bool, *model.Erro) {
-	obj, err := a.userDatabase.Get(typeID)
+func (a auth) Authenticate(ctx context.Context, typeID *string, password *string) (bool, *model.Erro) {
+	userAuth, err := a.userDatabase.Get(ctx, typeID)
 	if err != nil {
 		return false, err
 	}
-
-	userAuth, ok := obj.(*user.User)
-	if !ok {
-		return false, model.DataTypeWrong
-	}
-
 	if *password != userAuth.Password {
 		return false, &model.Erro{Err: errors.New("password is wrong"), HttpCode: http.StatusBadRequest}
 	}
 	return true, nil
 }
 
-func (a auth) GenerateToken(typeID *string) (*string, *model.Erro) {
+func (a auth) GenerateToken(ctx context.Context, typeID *string) (*string, *model.Erro) {
 	expirationTime := time.Now().Add(time.Minute * expirationMin)
 	Claim := &model.Claims{
 		Id: (*typeID),

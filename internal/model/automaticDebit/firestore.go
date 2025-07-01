@@ -20,28 +20,20 @@ type autoDebitFirestore struct {
 	databaseClient *firestore.Client
 }
 
-func NewAutoDebitFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+func NewAutoDebitFirestore(dbClient *firestore.Client) AutoDebitRepository {
 	return autoDebitFirestore{
 		databaseClient: dbClient,
 	}
 }
 
-func (db autoDebitFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	autoDebitRequest, ok := request.(*AutomaticDebit)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db autoDebitFirestore) Create(ctx context.Context, request *AutomaticDebit) (*AutomaticDebit, *model.Erro) {
 	entity := map[string]interface{}{
-		"account_id":      autoDebitRequest.Account_id,
-		"user_id":         autoDebitRequest.User_id,
-		"agency_id":       autoDebitRequest.Agency_id,
-		"value":           autoDebitRequest.Value,
-		"debit_day":       autoDebitRequest.Debit_day,
-		"expiration_date": autoDebitRequest.Expiration_date,
+		"account_id":      request.Account_id,
+		"user_id":         request.User_id,
+		"agency_id":       request.Agency_id,
+		"value":           request.Value,
+		"debit_day":       request.Debit_day,
+		"expiration_date": request.Expiration_date,
 		"status":          model.ValidStatus[0],
 		"register_date":   time.Now().Format(model.TimeLayout),
 	}
@@ -50,13 +42,10 @@ func (db autoDebitFirestore) Create(request interface{}) (interface{}, *model.Er
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return db.Get(&docRef.ID)
+	return db.Get(ctx, &docRef.ID)
 }
 
-func (db autoDebitFirestore) Delete(id *string) *model.Erro {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db autoDebitFirestore) Delete(ctx context.Context, id *string) *model.Erro {
 	docRef := db.databaseClient.Collection(collection).Doc(*id)
 
 	if _, err := docRef.Delete(ctx); err != nil {
@@ -66,10 +55,7 @@ func (db autoDebitFirestore) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db autoDebitFirestore) Get(id *string) (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db autoDebitFirestore) Get(ctx context.Context, id *string) (*AutomaticDebit, *model.Erro) {
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
@@ -87,40 +73,30 @@ func (db autoDebitFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &autoDebitResponse, nil
 }
 
-func (db autoDebitFirestore) Update(request interface{}) *model.Erro {
-	autoDebitRequest, ok := request.(*AutomaticDebit)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db autoDebitFirestore) Update(ctx context.Context, request *AutomaticDebit) *model.Erro {
 	entity := map[string]interface{}{
-		"account_id":      autoDebitRequest.Account_id,
-		"user_id":         autoDebitRequest.User_id,
-		"agency_id":       autoDebitRequest.Agency_id,
-		"value":           autoDebitRequest.Value,
-		"debit_day":       autoDebitRequest.Debit_day,
-		"expiration_date": autoDebitRequest.Expiration_date,
+		"account_id":      request.Account_id,
+		"user_id":         request.User_id,
+		"agency_id":       request.Agency_id,
+		"value":           request.Value,
+		"debit_day":       request.Debit_day,
+		"expiration_date": request.Expiration_date,
 		"status":          true,
-		"register_date":   autoDebitRequest.Register_date,
+		"register_date":   request.Register_date,
 	}
-	docRef := db.databaseClient.Collection(collection).Doc(autoDebitRequest.Debit_id)
+	docRef := db.databaseClient.Collection(collection).Doc(request.Debit_id)
 
 	if _, err := docRef.Set(ctx, entity); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
 
-	log.Info().Msg("Account: " + autoDebitRequest.Debit_id + " has been updated")
+	log.Info().Msg("Account: " + request.Debit_id + " has been updated")
 
 	return nil
 }
 
-func (db autoDebitFirestore) GetAll() (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db autoDebitFirestore) GetAll(ctx context.Context) (*[]AutomaticDebit, *model.Erro) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
@@ -142,23 +118,21 @@ func (db autoDebitFirestore) GetAll() (interface{}, *model.Erro) {
 	return &autoebitResponseSlice, nil
 }
 
-func (db autoDebitFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db autoDebitFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]AutomaticDebit, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
-	ctx := context.Background()
-	defer ctx.Done()
 
 	query := db.databaseClient.Collection(collection).Query
 
-	for _, filter := range *filters {
+	/* for _, filter := range *filters {
 		token := model.TokenizeFilters(&filter)
 		if len(*token) != 3 {
 			return nil, model.InvalidFilterFormat
 		}
 		query = query.Where((*token)[0], (*token)[1], (*token)[2])
 	}
-
+	*/
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

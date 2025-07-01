@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -12,47 +13,43 @@ import (
 )
 
 type withdrawalImpl struct {
-	withdrawalDatabase model.RepositoryInterface
+	withdrawalDatabase withdrawal.WithdrawalRepository
 	accountService     AccountService
 }
 
-func NewWithdrawalService(withdrawalDB model.RepositoryInterface, accountServe AccountService) WithdrawalService {
+func NewWithdrawalService(withdrawalDB withdrawal.WithdrawalRepository, accountServe AccountService) WithdrawalService {
 	return withdrawalImpl{
 		withdrawalDatabase: withdrawalDB,
 		accountService:     accountServe,
 	}
 }
 
-func (service withdrawalImpl) Create(withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
-	obj, err := service.withdrawalDatabase.Create(withdrawalRequest)
+func (service withdrawalImpl) Create(ctx context.Context, withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
+	withdrawalResponse, err := service.withdrawalDatabase.Create(ctx, withdrawalRequest)
 	if err != nil {
 		return nil, err
-	}
-	withdrawalResponse, ok := obj.(*withdrawal.Withdrawal)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return withdrawalResponse, nil
 }
 
-func (service withdrawalImpl) Delete(id *string) *model.Erro {
+func (service withdrawalImpl) Delete(ctx context.Context, id *string) *model.Erro {
 	// modificar para dar rollback
-	withdrawalResponse, err := service.Get(id)
+	withdrawalResponse, err := service.Get(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	accountResponse, err := service.accountService.Get(&withdrawalResponse.Account_id)
+	accountResponse, err := service.accountService.Get(ctx, &withdrawalResponse.Account_id)
 	if err != nil {
 		return err
 	}
 
 	accountResponse.Balance += withdrawalResponse.Withdrawal
 
-	if _, err := service.accountService.Update(accountResponse); err != nil {
+	if _, err := service.accountService.Update(ctx, accountResponse); err != nil {
 		return err
 	} else {
-		if err := service.withdrawalDatabase.Delete(id); err != nil {
+		if err := service.withdrawalDatabase.Delete(ctx, id); err != nil {
 			return err
 		}
 	}
@@ -60,35 +57,25 @@ func (service withdrawalImpl) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (service withdrawalImpl) Get(id *string) (*withdrawal.Withdrawal, *model.Erro) {
-	obj, err := service.withdrawalDatabase.Get(id)
+func (service withdrawalImpl) Get(ctx context.Context, id *string) (*withdrawal.Withdrawal, *model.Erro) {
+	withdrawalResponse, err := service.withdrawalDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
-	withdrawalResponse, ok := obj.(*withdrawal.Withdrawal)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
 	return withdrawalResponse, nil
 }
 
-func (service withdrawalImpl) GetAll() (*[]withdrawal.Withdrawal, *model.Erro) {
-	obj, err := service.withdrawalDatabase.GetAll()
+func (service withdrawalImpl) GetAll(ctx context.Context) (*[]withdrawal.Withdrawal, *model.Erro) {
+	withdrawals, err := service.withdrawalDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
-	}
-	withdrawals, ok := obj.(*[]withdrawal.Withdrawal)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return withdrawals, nil
 }
 
-func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
+func (service withdrawalImpl) ProcessWithdrawal(ctx context.Context, withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
 	// monta update
-	accountResponse, err := service.accountService.Get(&withdrawalRequest.Account_id)
+	accountResponse, err := service.accountService.Get(ctx, &withdrawalRequest.Account_id)
 	if err != nil {
 		return nil, err
 	}
@@ -97,15 +84,15 @@ func (service withdrawalImpl) ProcessWithdrawal(withdrawalRequest *withdrawal.Wi
 		return nil, err
 	}
 
-	withdrawalResponse, err := service.Create(withdrawalRequest)
+	withdrawalResponse, err := service.Create(ctx, withdrawalRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	accountResponse.Balance = accountResponse.Balance - withdrawalRequest.Withdrawal
 
-	if _, err := service.accountService.Update(accountResponse); err != nil {
-		if err := service.Delete(&withdrawalResponse.Withdrawal_id); err != nil {
+	if _, err := service.accountService.Update(ctx, accountResponse); err != nil {
+		if err := service.Delete(ctx, &withdrawalResponse.Withdrawal_id); err != nil {
 			log.Error().Msg("Account and Withdrawals DB changes failed during processing withdrawal")
 			return nil, err
 		}

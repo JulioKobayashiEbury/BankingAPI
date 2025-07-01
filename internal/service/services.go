@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -28,68 +29,68 @@ type ServicesList struct {
 }
 
 type Authentication interface {
-	Authenticate(typeID *string, password *string) (bool, *model.Erro)
-	GenerateToken(typeID *string) (*string, *model.Erro)
+	Authenticate(ctx context.Context, typeID *string, password *string) (bool, *model.Erro)
+	GenerateToken(ctx context.Context, typeID *string) (*string, *model.Erro)
 }
 
 type UserService interface {
-	Create(*user.User) (*user.User, *model.Erro)
-	Delete(*string) *model.Erro
-	Get(*string) (*user.User, *model.Erro)
-	Update(*user.User) (*user.User, *model.Erro)
-	GetAll() (*[]user.User, *model.Erro)
-	Report(*string) (*user.UserReport, *model.Erro)
+	Create(context.Context, *user.User) (*user.User, *model.Erro)
+	Delete(context.Context, *string) *model.Erro
+	Get(context.Context, *string) (*user.User, *model.Erro)
+	Update(context.Context, *user.User) (*user.User, *model.Erro)
+	GetAll(context.Context) (*[]user.User, *model.Erro)
+	Report(context.Context, *string) (*user.UserReport, *model.Erro)
 }
 
 type ClientService interface {
-	Create(*client.Client) (*client.Client, *model.Erro)
-	Delete(*string) *model.Erro
-	Get(*string) (*client.Client, *model.Erro)
-	Update(*client.Client) (*client.Client, *model.Erro)
-	GetAll() (*[]client.Client, *model.Erro)
-	Report(*string) (*client.ClientReport, *model.Erro)
+	Create(context.Context, *client.Client) (*client.Client, *model.Erro)
+	Delete(context.Context, *string) *model.Erro
+	Get(context.Context, *string) (*client.Client, *model.Erro)
+	Update(context.Context, *client.Client) (*client.Client, *model.Erro)
+	GetAll(context.Context) (*[]client.Client, *model.Erro)
+	Report(context.Context, *string) (*client.ClientReport, *model.Erro)
 }
 
 type AccountService interface {
-	Create(*account.Account) (*account.Account, *model.Erro)
-	Delete(*string) *model.Erro
-	Get(*string) (*account.Account, *model.Erro)
-	Update(*account.Account) (*account.Account, *model.Erro)
-	GetAll() (*[]account.Account, *model.Erro)
-	Report(*string) (*account.AccountReport, *model.Erro)
+	Create(context.Context, *account.Account) (*account.Account, *model.Erro)
+	Delete(context.Context, *string) *model.Erro
+	Get(context.Context, *string) (*account.Account, *model.Erro)
+	Update(context.Context, *account.Account) (*account.Account, *model.Erro)
+	GetAll(context.Context) (*[]account.Account, *model.Erro)
+	Report(context.Context, *string) (*account.AccountReport, *model.Erro)
 }
 
 type WithdrawalService interface {
-	Create(*withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
-	Delete(*string) *model.Erro
-	Get(*string) (*withdrawal.Withdrawal, *model.Erro)
-	GetAll() (*[]withdrawal.Withdrawal, *model.Erro)
-	ProcessWithdrawal(withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
+	Create(context.Context, *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
+	Delete(context.Context, *string) *model.Erro
+	Get(context.Context, *string) (*withdrawal.Withdrawal, *model.Erro)
+	GetAll(context.Context) (*[]withdrawal.Withdrawal, *model.Erro)
+	ProcessWithdrawal(context.Context, *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
 }
 
 type DepositService interface {
-	Create(*deposit.Deposit) (*deposit.Deposit, *model.Erro)
-	Delete(*string) *model.Erro
-	Get(*string) (*deposit.Deposit, *model.Erro)
-	GetAll() (*[]deposit.Deposit, *model.Erro)
-	ProcessDeposit(depositRequest *deposit.Deposit) (*deposit.Deposit, *model.Erro)
+	Create(context.Context, *deposit.Deposit) (*deposit.Deposit, *model.Erro)
+	Delete(context.Context, *string) *model.Erro
+	Get(context.Context, *string) (*deposit.Deposit, *model.Erro)
+	GetAll(context.Context) (*[]deposit.Deposit, *model.Erro)
+	ProcessDeposit(context.Context, *deposit.Deposit) (*deposit.Deposit, *model.Erro)
 }
 
 type AutomaticDebitService interface {
-	Create(*automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
-	Delete(*string) *model.Erro
-	Get(*string) (*automaticdebit.AutomaticDebit, *model.Erro)
-	GetAll() (*[]automaticdebit.AutomaticDebit, *model.Erro)
-	ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
+	Create(context.Context, *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
+	Delete(context.Context, *string) *model.Erro
+	Get(context.Context, *string) (*automaticdebit.AutomaticDebit, *model.Erro)
+	GetAll(context.Context) (*[]automaticdebit.AutomaticDebit, *model.Erro)
+	ProcessNewAutomaticDebit(context.Context, *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
 	CheckAutomaticDebits()
 	Scheduled()
 }
 
 type TransferService interface {
-	Create(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
-	Delete(*string) *model.Erro
-	Get(id *string) (*transfer.Transfer, *model.Erro)
-	GetAll() (*[]transfer.Transfer, *model.Erro)
-	ProcessNewTransfer(*transfer.Transfer) (*transfer.Transfer, *model.Erro)
-	ProcessExternalTransfer(transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro)
+	Create(context.Context, *transfer.Transfer) (*transfer.Transfer, *model.Erro)
+	Delete(context.Context, *string) *model.Erro
+	Get(context.Context, *string) (*transfer.Transfer, *model.Erro)
+	GetAll(context.Context) (*[]transfer.Transfer, *model.Erro)
+	ProcessNewTransfer(context.Context, *transfer.Transfer) (*transfer.Transfer, *model.Erro)
+	ProcessExternalTransfer(context.Context, *transfer.Transfer) (*transfer.Transfer, *model.Erro)
 }

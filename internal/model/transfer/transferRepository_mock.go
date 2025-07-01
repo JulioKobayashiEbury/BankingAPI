@@ -1,14 +1,18 @@
 package transfer
 
-import "BankingAPI/internal/model"
+import (
+	"context"
 
-var singleton *model.RepositoryInterface
+	"BankingAPI/internal/model"
+)
+
+var singleton *TransferRepository
 
 type MockTransferRepository struct {
 	TransferMap *map[string]Transfer
 }
 
-func NewMockTransferRepository() model.RepositoryInterface {
+func NewMockTransferRepository() TransferRepository {
 	if singleton != nil {
 		return *singleton
 	}
@@ -19,11 +23,7 @@ func NewMockTransferRepository() model.RepositoryInterface {
 	return *singleton
 }
 
-func (t MockTransferRepository) Create(request interface{}) (interface{}, *model.Erro) {
-	transferRequest, ok := request.(*Transfer)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
+func (t MockTransferRepository) Create(ctx context.Context, request *Transfer) (*Transfer, *model.Erro) {
 	/*
 		for {
 			transferID := randomstring.String(10)
@@ -34,11 +34,11 @@ func (t MockTransferRepository) Create(request interface{}) (interface{}, *model
 			}
 		}
 	*/
-	(*t.TransferMap)[transferRequest.Transfer_id] = *transferRequest
-	return &transferRequest, nil
+	(*t.TransferMap)[request.Transfer_id] = *request
+	return request, nil
 }
 
-func (t MockTransferRepository) Delete(id *string) *model.Erro {
+func (t MockTransferRepository) Delete(ctx context.Context, id *string) *model.Erro {
 	if _, ok := (*t.TransferMap)[*id]; !ok {
 		return model.IDnotFound
 	}
@@ -46,7 +46,7 @@ func (t MockTransferRepository) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (t MockTransferRepository) Get(id *string) (interface{}, *model.Erro) {
+func (t MockTransferRepository) Get(ctx context.Context, id *string) (*Transfer, *model.Erro) {
 	if transfer, ok := (*t.TransferMap)[*id]; !ok {
 		return nil, model.IDnotFound
 	} else {
@@ -54,19 +54,15 @@ func (t MockTransferRepository) Get(id *string) (interface{}, *model.Erro) {
 	}
 }
 
-func (t MockTransferRepository) Update(request interface{}) *model.Erro {
-	transferRequest, ok := request.(*Transfer)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	if _, ok := (*t.TransferMap)[transferRequest.Transfer_id]; !ok {
+func (t MockTransferRepository) Update(ctx context.Context, request *Transfer) *model.Erro {
+	if _, ok := (*t.TransferMap)[request.Transfer_id]; !ok {
 		return model.IDnotFound
 	}
-	(*t.TransferMap)[transferRequest.Transfer_id] = *transferRequest
+	(*t.TransferMap)[request.Transfer_id] = *request
 	return nil
 }
 
-func (t MockTransferRepository) GetAll() (interface{}, *model.Erro) {
+func (t MockTransferRepository) GetAll(ctx context.Context) (*[]Transfer, *model.Erro) {
 	if len(*t.TransferMap) == 0 {
 		return nil, model.IDnotFound
 	}
@@ -74,15 +70,15 @@ func (t MockTransferRepository) GetAll() (interface{}, *model.Erro) {
 	for _, user := range *t.TransferMap {
 		users = append(users, user)
 	}
-	return users, nil
+	return &users, nil
 }
 
-func (db MockTransferRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db MockTransferRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]Transfer, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
 	transferSlice := make([]Transfer, 0, len(*db.TransferMap))
-	for _, transferResponse := range *db.TransferMap {
+	/* for _, transferResponse := range *db.TransferMap {
 		match := true
 		for _, filter := range *filters {
 			token := model.TokenizeFilters(&filter)
@@ -111,5 +107,6 @@ func (db MockTransferRepository) GetFiltered(filters *[]string) (interface{}, *m
 			transferSlice = append(transferSlice, transferResponse)
 		}
 	}
+	*/
 	return &transferSlice, nil
 }

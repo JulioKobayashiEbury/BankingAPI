@@ -1,5 +1,11 @@
 package transfer
 
+import "BankingAPI/internal/model"
+
+type TransferRepository interface {
+	model.Repository[Transfer]
+}
+
 type Transfer struct {
 	Transfer_id   string  `json:"transfer_id" xml:"transfer_id"`
 	User_id       string  `json:"user_id" xml:"user_id"`

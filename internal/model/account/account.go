@@ -2,6 +2,10 @@ package account
 
 import "BankingAPI/internal/model"
 
+type AccountRepository interface {
+	model.Repository[Account]
+}
+
 type Account struct {
 	Account_id    string       `json:"account_id" xml:"account_id"`
 	Client_id     string       `json:"client_id" xml:"client_id"`

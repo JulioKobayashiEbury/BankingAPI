@@ -20,27 +20,19 @@ type transferFirestore struct {
 	databaseClient *firestore.Client
 }
 
-func NewTransferFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+func NewTransferFirestore(dbClient *firestore.Client) TransferRepository {
 	return transferFirestore{
 		databaseClient: dbClient,
 	}
 }
 
-func (db transferFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	transferRequest, ok := request.(*Transfer)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db transferFirestore) Create(ctx context.Context, request *Transfer) (*Transfer, *model.Erro) {
 	entity := map[string]interface{}{
-		"account_id":    transferRequest.Account_id,
-		"account_to":    transferRequest.Account_to,
-		"value":         transferRequest.Value,
-		"user_id":       transferRequest.User_id,
-		"user_to":       transferRequest.User_to,
+		"account_id":    request.Account_id,
+		"account_to":    request.Account_to,
+		"value":         request.Value,
+		"user_id":       request.User_id,
+		"user_to":       request.User_to,
 		"register_date": time.Now().Format(model.TimeLayout),
 	}
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
@@ -48,13 +40,10 @@ func (db transferFirestore) Create(request interface{}) (interface{}, *model.Err
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return db.Get(&docRef.ID)
+	return db.Get(ctx, &docRef.ID)
 }
 
-func (db transferFirestore) Delete(id *string) *model.Erro {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db transferFirestore) Delete(ctx context.Context, id *string) *model.Erro {
 	docRef := db.databaseClient.Collection(collection).Doc(*id)
 
 	if _, err := docRef.Delete(ctx); err != nil {
@@ -64,10 +53,7 @@ func (db transferFirestore) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db transferFirestore) Get(id *string) (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db transferFirestore) Get(ctx context.Context, id *string) (*Transfer, *model.Erro) {
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
@@ -87,21 +73,14 @@ func (db transferFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &transferResponse, nil
 }
 
-func (db transferFirestore) Update(request interface{}) *model.Erro {
-	transferRequest, ok := request.(*Transfer)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db transferFirestore) Update(ctx context.Context, request *Transfer) *model.Erro {
 	entity := map[string]interface{}{
-		"account_id":    transferRequest.Account_id,
-		"account_to":    transferRequest.Account_to,
-		"value":         transferRequest.Value,
-		"register_date": transferRequest.Register_date,
+		"account_id":    request.Account_id,
+		"account_to":    request.Account_to,
+		"value":         request.Value,
+		"register_date": request.Register_date,
 	}
-	docRef := db.databaseClient.Collection(collection).Doc(transferRequest.Transfer_id)
+	docRef := db.databaseClient.Collection(collection).Doc(request.Transfer_id)
 	_, err := docRef.Set(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
@@ -111,10 +90,7 @@ func (db transferFirestore) Update(request interface{}) *model.Erro {
 	return nil
 }
 
-func (db transferFirestore) GetAll() (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db transferFirestore) GetAll(ctx context.Context) (*[]Transfer, *model.Erro) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
@@ -135,15 +111,13 @@ func (db transferFirestore) GetAll() (interface{}, *model.Erro) {
 	return &transferResponseSlice, nil
 }
 
-func (db transferFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db transferFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]Transfer, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
-	ctx := context.Background()
-	defer ctx.Done()
 
 	query := db.databaseClient.Collection(collection).Query
-	for _, filter := range *filters {
+	/* for _, filter := range *filters {
 		token := model.TokenizeFilters(&filter)
 		if len(*token) != 3 {
 			return nil, model.InvalidFilterFormat
@@ -151,7 +125,7 @@ func (db transferFirestore) GetFiltered(filters *[]string) (interface{}, *model.
 
 		query = query.Where((*token)[0], (*token)[1], (*token)[2])
 	}
-
+	*/
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}

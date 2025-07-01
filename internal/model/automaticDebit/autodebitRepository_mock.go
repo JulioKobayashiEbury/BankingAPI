@@ -1,16 +1,18 @@
 package automaticdebit
 
 import (
+	"context"
+
 	"BankingAPI/internal/model"
 )
 
-var singleton *model.RepositoryInterface
+var singleton *AutoDebitRepository
 
 type MockAutoDebitRepository struct {
 	AutoDebitMap *map[string]AutomaticDebit
 }
 
-func NewMockAutoDebitRepository() model.RepositoryInterface {
+func NewMockAutoDebitRepository() AutoDebitRepository {
 	if singleton != nil {
 		return *singleton
 	}
@@ -21,11 +23,7 @@ func NewMockAutoDebitRepository() model.RepositoryInterface {
 	return *singleton
 }
 
-func (db MockAutoDebitRepository) Create(request interface{}) (interface{}, *model.Erro) {
-	autoDebitRequest, ok := request.(*AutomaticDebit)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
+func (db MockAutoDebitRepository) Create(ctx context.Context, request *AutomaticDebit) (*AutomaticDebit, *model.Erro) {
 	/*
 		for {
 			transferID := randomstring.String(10)
@@ -36,11 +34,11 @@ func (db MockAutoDebitRepository) Create(request interface{}) (interface{}, *mod
 			}
 		}
 	*/
-	(*db.AutoDebitMap)[autoDebitRequest.Debit_id] = *autoDebitRequest
-	return &autoDebitRequest, nil
+	(*db.AutoDebitMap)[request.Debit_id] = *request
+	return request, nil
 }
 
-func (db MockAutoDebitRepository) Delete(id *string) *model.Erro {
+func (db MockAutoDebitRepository) Delete(ctx context.Context, id *string) *model.Erro {
 	if _, ok := (*db.AutoDebitMap)[*id]; !ok {
 		return model.IDnotFound
 	}
@@ -48,7 +46,7 @@ func (db MockAutoDebitRepository) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db MockAutoDebitRepository) Get(id *string) (interface{}, *model.Erro) {
+func (db MockAutoDebitRepository) Get(ctx context.Context, id *string) (*AutomaticDebit, *model.Erro) {
 	if autoDebit, ok := (*db.AutoDebitMap)[*id]; !ok {
 		return nil, model.IDnotFound
 	} else {
@@ -56,19 +54,15 @@ func (db MockAutoDebitRepository) Get(id *string) (interface{}, *model.Erro) {
 	}
 }
 
-func (db MockAutoDebitRepository) Update(request interface{}) *model.Erro {
-	autoDebitRequest, ok := request.(*AutomaticDebit)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	if _, ok := (*db.AutoDebitMap)[autoDebitRequest.Debit_id]; !ok {
+func (db MockAutoDebitRepository) Update(ctx context.Context, request *AutomaticDebit) *model.Erro {
+	if _, ok := (*db.AutoDebitMap)[request.Debit_id]; !ok {
 		return model.IDnotFound
 	}
-	(*db.AutoDebitMap)[autoDebitRequest.Debit_id] = *autoDebitRequest
+	(*db.AutoDebitMap)[request.Debit_id] = *request
 	return nil
 }
 
-func (db MockAutoDebitRepository) GetAll() (interface{}, *model.Erro) {
+func (db MockAutoDebitRepository) GetAll(ctx context.Context) (*[]AutomaticDebit, *model.Erro) {
 	if len(*db.AutoDebitMap) == 0 {
 		return nil, model.IDnotFound
 	}
@@ -76,15 +70,15 @@ func (db MockAutoDebitRepository) GetAll() (interface{}, *model.Erro) {
 	for _, autoDebit := range *db.AutoDebitMap {
 		autoDebits = append(autoDebits, autoDebit)
 	}
-	return autoDebits, nil
+	return &autoDebits, nil
 }
 
-func (db MockAutoDebitRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db MockAutoDebitRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]AutomaticDebit, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
 	autodebitSlice := make([]AutomaticDebit, 0, len(*db.AutoDebitMap))
-	for _, autodebit := range *db.AutoDebitMap {
+	/* for _, autodebit := range *db.AutoDebitMap {
 		match := true
 		for _, filter := range *filters {
 			token := model.TokenizeFilters(&filter)
@@ -108,5 +102,6 @@ func (db MockAutoDebitRepository) GetFiltered(filters *[]string) (interface{}, *
 			autodebitSlice = append(autodebitSlice, autodebit)
 		}
 	}
+	*/
 	return &autodebitSlice, nil
 }

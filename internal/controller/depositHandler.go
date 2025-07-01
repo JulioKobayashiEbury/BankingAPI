@@ -44,7 +44,7 @@ func (h depositHandlerImpl) PostDepositHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	depositResponse, err := h.depositService.ProcessDeposit(&newDepositInfo)
+	depositResponse, err := h.depositService.ProcessDeposit(c.Request().Context(), &newDepositInfo)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -55,7 +55,7 @@ func (h depositHandlerImpl) PostDepositHandler(c echo.Context) error {
 func (h depositHandlerImpl) DeleteDepositHandler(c echo.Context) error {
 	depositID := c.Param("deposit_id")
 
-	if err := h.depositService.Delete(&depositID); err != nil {
+	if err := h.depositService.Delete(c.Request().Context(), &depositID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Deposit deleted succesfully!"})
@@ -64,7 +64,7 @@ func (h depositHandlerImpl) DeleteDepositHandler(c echo.Context) error {
 func (h depositHandlerImpl) GetDepositHandler(c echo.Context) error {
 	depositID := c.Param("deposit_id")
 
-	depositInfo, err := h.depositService.Get(&depositID)
+	depositInfo, err := h.depositService.Get(c.Request().Context(), &depositID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}

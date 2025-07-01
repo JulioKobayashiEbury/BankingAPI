@@ -1,66 +1,60 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"BankingAPI/internal/model"
+	"BankingAPI/internal/model/client"
 	"BankingAPI/internal/model/user"
 
 	"github.com/rs/zerolog/log"
 )
 
 type userServiceImpl struct {
-	userDatabase   model.RepositoryInterface
-	clientDatabase model.RepositoryInterface
+	userDatabase   user.UserRepository
+	clientDatabase client.ClientRepository
 }
 
-func NewUserService(userDB model.RepositoryInterface, clientDB model.RepositoryInterface) UserService {
+func NewUserService(userDB user.UserRepository, clientDB client.ClientRepository) UserService {
 	return userServiceImpl{
 		userDatabase:   userDB,
 		clientDatabase: clientDB,
 	}
 }
 
-func (service userServiceImpl) Create(userRequest *user.User) (*user.User, *model.Erro) {
+func (service userServiceImpl) Create(ctx context.Context, userRequest *user.User) (*user.User, *model.Erro) {
 	if userRequest.Name == "" || userRequest.Document == "" || userRequest.Password == "" {
 		log.Warn().Msg("Missing informations on creating user")
 		return nil, ErrorMissingCredentials
 	}
-	obj, err := service.userDatabase.Create(userRequest)
+	userResponse, err := service.userDatabase.Create(ctx, userRequest)
 	if err != nil {
 		return nil, err
-	}
-	userResponse, ok := obj.(*user.User)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 
 	log.Info().Msg("User created: " + userResponse.User_id)
 	return userResponse, nil
 }
 
-func (service userServiceImpl) Delete(id *string) *model.Erro {
-	if err := service.userDatabase.Delete(id); err != nil {
+func (service userServiceImpl) Delete(ctx context.Context, id *string) *model.Erro {
+	if err := service.userDatabase.Delete(ctx, id); err != nil {
 		return err
 	}
 	log.Info().Msg("User deleted: " + *id)
 	return nil
 }
 
-func (service userServiceImpl) Get(id *string) (*user.User, *model.Erro) {
-	obj, err := service.userDatabase.Get(id)
+func (service userServiceImpl) Get(ctx context.Context, id *string) (*user.User, *model.Erro) {
+	userResponse, err := service.userDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-	userResponse, ok := obj.(*user.User)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return userResponse, nil
 }
 
-func (service userServiceImpl) Update(userRequest *user.User) (*user.User, *model.Erro) {
-	userResponse, err := service.Get(&(userRequest.User_id))
+func (service userServiceImpl) Update(ctx context.Context, userRequest *user.User) (*user.User, *model.Erro) {
+	userResponse, err := service.Get(ctx, &(userRequest.User_id))
 	if err != nil {
 		return nil, err
 	}
@@ -77,33 +71,29 @@ func (service userServiceImpl) Update(userRequest *user.User) (*user.User, *mode
 
 	// monta struct de updat
 
-	if err := service.userDatabase.Update(userResponse); err != nil {
+	if err := service.userDatabase.Update(ctx, userResponse); err != nil {
 		return nil, err
 	}
 
 	log.Info().Msg("Update was succesful (user): " + userRequest.User_id)
 
-	return service.Get(&userRequest.User_id)
+	return service.Get(ctx, &userRequest.User_id)
 }
 
-func (service userServiceImpl) GetAll() (*[]user.User, *model.Erro) {
-	obj, err := service.userDatabase.GetAll()
+func (service userServiceImpl) GetAll(ctx context.Context) (*[]user.User, *model.Erro) {
+	users, err := service.userDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
-	}
-	users, ok := obj.(*[]user.User)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return users, nil
 }
 
-func (service userServiceImpl) Report(id *string) (*user.UserReport, *model.Erro) {
-	userInfo, err := service.Get(id)
+func (service userServiceImpl) Report(ctx context.Context, userId *string) (*user.UserReport, *model.Erro) {
+	userInfo, err := service.Get(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
-	clients, err := service.clientDatabase.GetFiltered(&[]string{"user_id,==," + *id})
+	clients, err := service.clientDatabase.GetFilteredByID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}

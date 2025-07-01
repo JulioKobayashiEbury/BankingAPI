@@ -25,16 +25,6 @@ var (
 	ValidStatus = []Status{"active", "blocked"}
 )
 
-type RepositoryList struct {
-	UserDatabase           RepositoryInterface
-	ClientDatabase         RepositoryInterface
-	AccountDatabase        RepositoryInterface
-	AutomaticDebitDatabase RepositoryInterface
-	DepositDatabase        RepositoryInterface
-	TransferDatabase       RepositoryInterface
-	WithdrawalDatabase     RepositoryInterface
-}
-
 type StandartResponse struct {
 	Message string `json:"message" xml:"message"`
 }

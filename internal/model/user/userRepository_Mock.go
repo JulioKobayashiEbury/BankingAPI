@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sync"
@@ -20,7 +21,7 @@ GetAll() (interface{}, *Erro)
 
 var (
 	once      sync.Once
-	singleton model.RepositoryInterface
+	singleton *UserRepository
 )
 
 type MockUserRepository struct {
@@ -28,34 +29,30 @@ type MockUserRepository struct {
 	usersMap *map[string]User
 }
 
-func NewMockUserRepository() model.RepositoryInterface {
+func NewMockUserRepository() UserRepository {
 	once.Do(func() {
 		mapUsers := make(map[string]User)
 		listId := make([]string, 0)
-		singleton = MockUserRepository{
+		*singleton = MockUserRepository{
 			idList:   &listId,
 			usersMap: &mapUsers,
 		}
 	})
-	return singleton
+	return *singleton
 }
 
-func (m MockUserRepository) Create(request interface{}) (interface{}, *model.Erro) {
-	user, ok := request.(*User)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-	if _, ok := (*m.usersMap)[user.User_id]; ok {
+func (m MockUserRepository) Create(ctx context.Context, request *User) (*User, *model.Erro) {
+	if _, ok := (*m.usersMap)[request.User_id]; ok {
 		return nil, &model.Erro{Err: errors.New("id already exists"), HttpCode: http.StatusBadRequest}
 	}
 
-	(*m.idList) = append((*m.idList), user.User_id)
-	(*m.usersMap)[user.User_id] = *user
+	(*m.idList) = append((*m.idList), request.User_id)
+	(*m.usersMap)[request.User_id] = *request
 
 	return request, nil
 }
 
-func (m MockUserRepository) Delete(id *string) *model.Erro {
+func (m MockUserRepository) Delete(ctx context.Context, id *string) *model.Erro {
 	if id == nil || *id == "" {
 		return model.IDnotFound
 	}
@@ -81,7 +78,7 @@ func (m MockUserRepository) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (m MockUserRepository) Get(id *string) (interface{}, *model.Erro) {
+func (m MockUserRepository) Get(ctx context.Context, id *string) (*User, *model.Erro) {
 	if id == nil || *id == "" {
 		return nil, model.ResquestNotSet
 	}
@@ -95,19 +92,15 @@ func (m MockUserRepository) Get(id *string) (interface{}, *model.Erro) {
 	return nil, model.IDnotFound
 }
 
-func (m MockUserRepository) Update(request interface{}) *model.Erro {
-	user, ok := request.(*User)
-	if !ok {
-		return model.DataTypeWrong
-	}
-	if _, ok := (*m.usersMap)[user.User_id]; !ok {
+func (m MockUserRepository) Update(ctx context.Context, request *User) *model.Erro {
+	if _, ok := (*m.usersMap)[request.User_id]; !ok {
 		return model.IDnotFound
 	}
-	(*m.usersMap)[user.User_id] = *user
+	(*m.usersMap)[request.User_id] = *request
 	return nil
 }
 
-func (m MockUserRepository) GetAll() (interface{}, *model.Erro) {
+func (m MockUserRepository) GetAll(ctx context.Context) (*[]User, *model.Erro) {
 	if len(*m.usersMap) == 0 {
 		return nil, model.IDnotFound
 	}
@@ -122,12 +115,12 @@ func (m MockUserRepository) GetAll() (interface{}, *model.Erro) {
 	return &users, nil
 }
 
-func (db MockUserRepository) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db MockUserRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]User, *model.Erro) {
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
 	userSlice := make([]User, 0, len(*db.usersMap))
-	for _, userId := range *db.idList {
+	/* for _, userId := range *db.idList {
 		userResponse := (*db.usersMap)[userId]
 		match := true
 		for _, filter := range *filters {
@@ -156,5 +149,6 @@ func (db MockUserRepository) GetFiltered(filters *[]string) (interface{}, *model
 			userSlice = append(userSlice, userResponse)
 		}
 	}
+	*/
 	return &userSlice, nil
 }

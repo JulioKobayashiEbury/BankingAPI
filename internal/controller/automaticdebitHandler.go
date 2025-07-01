@@ -41,7 +41,7 @@ func (h autodebitHandlerImpl) AutodebitPostHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	autodebitResponse, err := h.automaticdebitService.ProcessNewAutomaticDebit(&newAutoDebit)
+	autodebitResponse, err := h.automaticdebitService.ProcessNewAutomaticDebit(c.Request().Context(), &newAutoDebit)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -51,7 +51,7 @@ func (h autodebitHandlerImpl) AutodebitPostHandler(c echo.Context) error {
 
 func (h autodebitHandlerImpl) AutodebitGetHandler(c echo.Context) error {
 	autodebitID := c.Param("debit_id")
-	autodebitResponse, err := h.automaticdebitService.Get(&autodebitID)
+	autodebitResponse, err := h.automaticdebitService.Get(c.Request().Context(), &autodebitID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -62,7 +62,7 @@ func (h autodebitHandlerImpl) AutodebitGetHandler(c echo.Context) error {
 func (h autodebitHandlerImpl) AutodebitDeleteHandler(c echo.Context) error {
 	autodebitID := c.Param("debit_id")
 
-	if err := h.automaticdebitService.Delete(&autodebitID); err != nil {
+	if err := h.automaticdebitService.Delete(c.Request().Context(), &autodebitID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 

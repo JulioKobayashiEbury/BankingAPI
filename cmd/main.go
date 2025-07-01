@@ -56,7 +56,10 @@ func main() {
 }
 
 func createAdminUser(userService service.UserService) error {
-	allUsers, err := userService.GetAll()
+	ctx := context.Background()
+	defer ctx.Done()
+
+	allUsers, err := userService.GetAll(ctx)
 	if err != nil {
 		return err.Err
 	}
@@ -68,7 +71,7 @@ func createAdminUser(userService service.UserService) error {
 		}
 	}
 
-	userResponse, err := userService.Create(&user.User{
+	userResponse, err := userService.Create(ctx, &user.User{
 		Name:     "admin",
 		Document: "00000000000000",
 		Password: "admin",

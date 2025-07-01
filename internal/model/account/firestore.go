@@ -20,24 +20,17 @@ type accountFirestore struct {
 	databaseClient *firestore.Client
 }
 
-func NewAccountFirestore(dbClient *firestore.Client) model.RepositoryInterface {
+func NewAccountFirestore(dbClient *firestore.Client) AccountRepository {
 	return accountFirestore{
 		databaseClient: dbClient,
 	}
 }
 
-func (db accountFirestore) Create(request interface{}) (interface{}, *model.Erro) {
-	accountRequest, ok := request.(*Account)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db accountFirestore) Create(ctx context.Context, request *Account) (*Account, *model.Erro) {
 	entity := map[string]interface{}{
-		"client_id":     accountRequest.Client_id,
-		"user_id":       accountRequest.User_id,
-		"agency_id":     accountRequest.Agency_id,
+		"client_id":     request.Client_id,
+		"user_id":       request.User_id,
+		"agency_id":     request.Agency_id,
 		"balance":       0.0,
 		"register_date": time.Now().Format(model.TimeLayout),
 		"status":        model.ValidStatus[0],
@@ -47,13 +40,10 @@ func (db accountFirestore) Create(request interface{}) (interface{}, *model.Erro
 		log.Error().Msg(err.Error())
 		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	return db.Get(&docRef.ID)
+	return db.Get(ctx, &docRef.ID)
 }
 
-func (db accountFirestore) Delete(id *string) *model.Erro {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db accountFirestore) Delete(ctx context.Context, id *string) *model.Erro {
 	docRef := db.databaseClient.Collection(collection).Doc(*id)
 
 	if _, err := docRef.Delete(ctx); err != nil {
@@ -63,10 +53,7 @@ func (db accountFirestore) Delete(id *string) *model.Erro {
 	return nil
 }
 
-func (db accountFirestore) Get(id *string) (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db accountFirestore) Get(ctx context.Context, id *string) (*Account, *model.Erro) {
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
@@ -84,38 +71,27 @@ func (db accountFirestore) Get(id *string) (interface{}, *model.Erro) {
 	return &accountResponse, nil
 }
 
-func (db accountFirestore) Update(request interface{}) *model.Erro {
-	accountRequest, ok := request.(*Account)
-	if !ok {
-		return model.DataTypeWrong
-	}
-
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db accountFirestore) Update(ctx context.Context, request *Account) *model.Erro {
 	entity := map[string]interface{}{
-		"client_id":     accountRequest.Client_id,
-		"user_id":       accountRequest.User_id,
-		"agency_id":     accountRequest.Agency_id,
-		"balance":       accountRequest.Balance,
-		"register_date": accountRequest.Register_date,
-		"status":        accountRequest.Status,
+		"client_id":     request.Client_id,
+		"user_id":       request.User_id,
+		"agency_id":     request.Agency_id,
+		"balance":       request.Balance,
+		"register_date": request.Register_date,
+		"status":        request.Status,
 	}
-	docRef := db.databaseClient.Collection(collection).Doc(accountRequest.Account_id)
+	docRef := db.databaseClient.Collection(collection).Doc(request.Account_id)
 
 	if _, err := docRef.Set(ctx, entity); err != nil {
 		log.Error().Msg(err.Error())
 		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
 	}
-	log.Info().Msg("Account: " + accountRequest.Account_id + " has been updated")
+	log.Info().Msg("Account: " + request.Account_id + " has been updated")
 
 	return nil
 }
 
-func (db accountFirestore) GetAll() (interface{}, *model.Erro) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (db accountFirestore) GetAll(ctx context.Context) (*[]Account, *model.Erro) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
@@ -137,17 +113,15 @@ func (db accountFirestore) GetAll() (interface{}, *model.Erro) {
 	return &accountResponseSlice, nil
 }
 
-func (db accountFirestore) GetFiltered(filters *[]string) (interface{}, *model.Erro) {
+func (db accountFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]Account, *model.Erro) {
 	//"user_id,==,1"
 	if filters == nil || len(*filters) == 0 {
 		return nil, model.FilterNotSet
 	}
-	ctx := context.Background()
-	defer ctx.Done()
 
 	query := db.databaseClient.Collection(collection).Query
 
-	for _, filter := range *filters {
+	/* for _, filter := range *filters {
 		tokens := model.TokenizeFilters(&filter)
 		if len(*tokens) != 3 {
 			log.Error().Msg("Invalid filter format: " + filter)
@@ -155,6 +129,7 @@ func (db accountFirestore) GetFiltered(filters *[]string) (interface{}, *model.E
 		}
 		query = query.Where((*tokens)[0], (*tokens)[1], (*tokens)[2])
 	}
+	*/
 
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {

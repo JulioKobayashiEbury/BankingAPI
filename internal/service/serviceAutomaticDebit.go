@@ -1,8 +1,8 @@
 package service
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,86 +23,71 @@ const (
 )
 
 type serviceAutoDebitImpl struct {
-	autoDebitFirestore model.RepositoryInterface
+	autoDebitFirestore automaticdebit.AutoDebitRepository
 	withdrawalService  WithdrawalService
 }
 
-func NewAutoDebit(autodebitDB model.RepositoryInterface, withdrawal WithdrawalService) AutomaticDebitService {
+func NewAutoDebit(autodebitDB automaticdebit.AutoDebitRepository, withdrawal WithdrawalService) AutomaticDebitService {
 	return serviceAutoDebitImpl{
 		autoDebitFirestore: autodebitDB,
 		withdrawalService:  withdrawal,
 	}
 }
 
-func (service serviceAutoDebitImpl) Create(autodebitRequest *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
-	obj, err := service.autoDebitFirestore.Create(autodebitRequest)
+func (service serviceAutoDebitImpl) Create(ctx context.Context, autodebitRequest *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
+	automaticDebit, err := service.autoDebitFirestore.Create(ctx, autodebitRequest)
 	if err != nil {
 		return nil, err
-	}
-	automaticDebit, ok := obj.(*automaticdebit.AutomaticDebit)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return automaticDebit, nil
 }
 
-func (service serviceAutoDebitImpl) Delete(id *string) *model.Erro {
-	if err := service.autoDebitFirestore.Delete(id); err != nil {
+func (service serviceAutoDebitImpl) Delete(ctx context.Context, id *string) *model.Erro {
+	if err := service.autoDebitFirestore.Delete(ctx, id); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (service serviceAutoDebitImpl) Get(id *string) (*automaticdebit.AutomaticDebit, *model.Erro) {
-	obj, err := service.autoDebitFirestore.Get(id)
+func (service serviceAutoDebitImpl) Get(ctx context.Context, id *string) (*automaticdebit.AutomaticDebit, *model.Erro) {
+	autodebit, err := service.autoDebitFirestore.Get(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-	autodebit, ok := obj.(*automaticdebit.AutomaticDebit)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return autodebit, nil
 }
 
-func (service serviceAutoDebitImpl) GetAll() (*[]automaticdebit.AutomaticDebit, *model.Erro) {
-	obj, err := service.autoDebitFirestore.GetAll()
+func (service serviceAutoDebitImpl) GetAll(ctx context.Context) (*[]automaticdebit.AutomaticDebit, *model.Erro) {
+	autodebits, err := service.autoDebitFirestore.GetAll(ctx)
 	if err != nil {
 		return nil, err
-	}
-	autodebits, ok := obj.(*[]automaticdebit.AutomaticDebit)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return autodebits, nil
 }
 
-func (service serviceAutoDebitImpl) ProcessNewAutomaticDebit(autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
+func (service serviceAutoDebitImpl) ProcessNewAutomaticDebit(ctx context.Context, autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
 	if !isValidDate(autoDebit.Expiration_date) {
 		log.Warn().Msg("Invalid date format")
 		return nil, &model.Erro{Err: errors.New("invalid date format"), HttpCode: http.StatusBadRequest}
 	}
-	obj, err := service.autoDebitFirestore.Create(autoDebit)
+	autodebitResponse, err := service.autoDebitFirestore.Create(ctx, autoDebit)
 	if err != nil {
 		return nil, err
-	}
-	autodebitResponse, ok := obj.(*automaticdebit.AutomaticDebit)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	log.Info().Msg("Automatic debit created: " + autodebitResponse.Debit_id)
 	return autodebitResponse, nil
 }
 
 func isValidDate(date string) bool {
-	fmt.Println(date)
 	_, err := time.Parse(model.TimeLayout, date)
 	return err == nil
 }
 
 func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 	log.Info().Msg("Checking for auto debits...")
-	autoDebitList, err := service.GetAll()
+	ctx := context.Background()
+	defer ctx.Done()
+	autoDebitList, err := service.GetAll(ctx)
 	if err != nil {
 		log.Error().Msg(err.Err.Error())
 		return
@@ -115,7 +100,7 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 			return
 		}
 		if expirationDate.Unix() < time.Now().Unix() {
-			if err := service.Delete(&autoDebit.Debit_id); err != nil {
+			if err := service.Delete(ctx, &autoDebit.Debit_id); err != nil {
 				logger.Error().Msg("Failed to delete expired automatic debit")
 				return
 			}
@@ -123,7 +108,7 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 			continue
 		}
 		if autoDebit.Debit_day == uint16(time.Now().Day()) {
-			_, err := service.withdrawalService.ProcessWithdrawal(&withdrawal.Withdrawal{
+			_, err := service.withdrawalService.ProcessWithdrawal(ctx, &withdrawal.Withdrawal{
 				Account_id: autoDebit.Account_id,
 				User_id:    autoDebit.User_id,
 				Agency_id:  autoDebit.Agency_id,

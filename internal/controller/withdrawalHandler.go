@@ -44,7 +44,7 @@ func (h withdrawalHandlerImpl) PostWithdrawalHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	withdrawalReponse, err := h.withdrawalService.ProcessWithdrawal(&withdrawalInfo)
+	withdrawalReponse, err := h.withdrawalService.ProcessWithdrawal(c.Request().Context(), &withdrawalInfo)
 	if err != nil {
 		c.JSON(err.HttpCode, err.Err.Error())
 	}
@@ -55,7 +55,7 @@ func (h withdrawalHandlerImpl) PostWithdrawalHandler(c echo.Context) error {
 func (h withdrawalHandlerImpl) DeleteWithdrawalHandler(c echo.Context) error {
 	withdrawalID := c.Param("withdrawal_id")
 
-	if err := h.withdrawalService.Delete(&withdrawalID); err != nil {
+	if err := h.withdrawalService.Delete(c.Request().Context(), &withdrawalID); err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}
 
@@ -65,7 +65,7 @@ func (h withdrawalHandlerImpl) DeleteWithdrawalHandler(c echo.Context) error {
 func (h withdrawalHandlerImpl) GetWithdrawalHandler(c echo.Context) error {
 	withdrawalID := c.Param("withdrawal_id")
 
-	withdrawalResponse, err := h.withdrawalService.Get(&withdrawalID)
+	withdrawalResponse, err := h.withdrawalService.Get(c.Request().Context(), &withdrawalID)
 	if err != nil {
 		return c.JSON(err.HttpCode, err.Err.Error())
 	}

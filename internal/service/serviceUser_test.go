@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -12,6 +13,9 @@ import (
 )
 
 func TestUserCreate(t *testing.T) {
+	ctx := context.Background()
+	defer ctx.Done()
+
 	userMockDB := user.NewMockUserRepository()
 	userService := NewUserService(userMockDB, nil)
 
@@ -74,7 +78,7 @@ func TestUserCreate(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		got, err := userService.Create(test.userRequest)
+		got, err := userService.Create(ctx, test.userRequest)
 		if err != test.expectedError {
 			t.Errorf("Test %s failed: expected error %v, got %v", test.name, test.expectedError, err)
 			continue
@@ -86,10 +90,13 @@ func TestUserCreate(t *testing.T) {
 }
 
 func TestUserDelete(t *testing.T) {
+	ctx := context.Background()
+	defer ctx.Done()
+
 	userMockDB := user.NewMockUserRepository()
 	userService := NewUserService(userMockDB, nil)
 
-	if _, err := userService.Create(&user.User{
+	if _, err := userService.Create(ctx, &user.User{
 		User_id:  "1",
 		Name:     "Edson Cesar",
 		Document: "12345678901234",
@@ -116,7 +123,7 @@ func TestUserDelete(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		if err := userService.Delete(&test.id); err != test.expectedError {
+		if err := userService.Delete(ctx, &test.id); err != test.expectedError {
 			t.Errorf("Test %s failed: expected error %v, got %v", test.name, test.expectedError, err)
 			continue
 		}
@@ -124,6 +131,9 @@ func TestUserDelete(t *testing.T) {
 }
 
 func TestUserGet(t *testing.T) {
+	ctx := context.Background()
+	defer ctx.Done()
+
 	userMockDB := user.NewMockUserRepository()
 	userService := NewUserService(userMockDB, nil)
 
@@ -134,7 +144,7 @@ func TestUserGet(t *testing.T) {
 		Password: "edsonPass",
 	}
 
-	if _, err := userService.Create(testUser); err != nil {
+	if _, err := userService.Create(ctx, testUser); err != nil {
 		t.Fatalf("Failed to create user for get test: %v", err)
 		return
 	}
@@ -158,7 +168,7 @@ func TestUserGet(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		got, err := userService.Get(&test.id)
+		got, err := userService.Get(ctx, &test.id)
 		if err != test.expectedError {
 			t.Errorf("Test %s failed: expected error %v, got %v", test.name, test.expectedError, err)
 			continue
@@ -171,6 +181,9 @@ func TestUserGet(t *testing.T) {
 }
 
 func TestUserUpdate(t *testing.T) {
+	ctx := context.Background()
+	defer ctx.Done()
+
 	userMockDB := user.NewMockUserRepository()
 	userService := NewUserService(userMockDB, nil)
 	type table []struct {
@@ -185,7 +198,7 @@ func TestUserUpdate(t *testing.T) {
 		Document: "12345678901234",
 		Password: "edsonPass",
 	}
-	if _, err := userService.Create(testUser); err != nil {
+	if _, err := userService.Create(ctx, testUser); err != nil {
 		t.Fatalf("Failed to create user for update test: %v", err)
 		return
 	}
@@ -236,7 +249,7 @@ func TestUserUpdate(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		got, err := userService.Update(test.userRequest)
+		got, err := userService.Update(ctx, test.userRequest)
 		if err != test.expectedError {
 			t.Errorf("Test %s failed: expected error %v, got %v", test.name, test.expectedError, err)
 			continue
@@ -249,6 +262,9 @@ func TestUserUpdate(t *testing.T) {
 }
 
 func TestUserGetAll(t *testing.T) {
+	ctx := context.Background()
+	defer ctx.Done()
+
 	userMockDB := user.NewMockUserRepository()
 	userService := NewUserService(userMockDB, nil)
 	var usersQTD int = 10
@@ -260,7 +276,7 @@ func TestUserGetAll(t *testing.T) {
 			Document: "12345678901234",
 			Password: "edsonPass",
 		}
-		if _, err := userService.Create(testUser); err != nil {
+		if _, err := userService.Create(ctx, testUser); err != nil {
 			t.Fatalf("Failed to create user for update test: %v", err)
 			return
 		} else {
@@ -285,7 +301,7 @@ func TestUserGetAll(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		got, err := userService.GetAll()
+		got, err := userService.GetAll(ctx)
 		if err != test.expectedError {
 			t.Errorf("Test %s failed: expected error %v, got %v", test.name, test.expectedError, err)
 			continue
@@ -296,7 +312,7 @@ func TestUserGetAll(t *testing.T) {
 		}
 		if test.name != "No users found" {
 			for _, user := range users {
-				if err := userService.Delete(&user.User_id); err != nil {
+				if err := userService.Delete(ctx, &user.User_id); err != nil {
 					fmt.Println(err.Err.Error())
 				}
 			}

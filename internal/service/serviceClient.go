@@ -1,21 +1,23 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/client"
 
 	"github.com/rs/zerolog/log"
 )
 
 type clientServiceImpl struct {
-	clientDatabase  model.RepositoryInterface
+	clientDatabase  client.ClientRepository
 	userService     UserService
-	accountDatabase model.RepositoryInterface
+	accountDatabase account.AccountRepository
 }
 
-func NewClientService(clientDB model.RepositoryInterface, userServe UserService, accountDB model.RepositoryInterface) ClientService {
+func NewClientService(clientDB client.ClientRepository, userServe UserService, accountDB account.AccountRepository) ClientService {
 	return clientServiceImpl{
 		clientDatabase:  clientDB,
 		userService:     userServe,
@@ -23,51 +25,44 @@ func NewClientService(clientDB model.RepositoryInterface, userServe UserService,
 	}
 }
 
-func (service clientServiceImpl) Create(clientRequest *client.Client) (*client.Client, *model.Erro) {
+func (service clientServiceImpl) Create(ctx context.Context, clientRequest *client.Client) (*client.Client, *model.Erro) {
 	if clientRequest.User_id == "" || clientRequest.Document == "" || clientRequest.Name == "" {
 		log.Warn().Msg("Missing credentials on creating client")
 		return nil, ErrorMissingCredentials
 	}
 
-	if _, err := service.userService.Get(&clientRequest.User_id); err == model.IDnotFound || err != nil {
+	if _, err := service.userService.Get(ctx, &clientRequest.User_id); err == model.IDnotFound || err != nil {
 		return nil, err
 	}
 	// verify user id exists, PERMISSION MUST BE of user to create
-	obj, err := service.clientDatabase.Create(clientRequest)
+	clientResponse, err := service.clientDatabase.Create(ctx, clientRequest)
 	if err != nil {
 		return nil, err
 	}
-	clientResponse, ok := obj.(*client.Client)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
+
 	log.Info().Msg("Client created: " + clientResponse.Client_id)
 	return clientResponse, nil
 }
 
-func (service clientServiceImpl) Delete(id *string) *model.Erro {
-	if err := service.clientDatabase.Delete(id); err != nil {
+func (service clientServiceImpl) Delete(ctx context.Context, id *string) *model.Erro {
+	if err := service.clientDatabase.Delete(ctx, id); err != nil {
 		return err
 	}
 	log.Info().Msg("Client deleted: " + *id)
 	return nil
 }
 
-func (service clientServiceImpl) Get(id *string) (*client.Client, *model.Erro) {
-	obj, err := service.clientDatabase.Get(id)
+func (service clientServiceImpl) Get(ctx context.Context, id *string) (*client.Client, *model.Erro) {
+	client, err := service.clientDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-	client, ok := obj.(*client.Client)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	log.Info().Msg("Client returned: " + *id)
 	return client, nil
 }
 
-func (service clientServiceImpl) Update(clientRequest *client.Client) (*client.Client, *model.Erro) {
-	clientResponse, err := service.Get(&clientRequest.Client_id)
+func (service clientServiceImpl) Update(ctx context.Context, clientRequest *client.Client) (*client.Client, *model.Erro) {
+	clientResponse, err := service.Get(ctx, &clientRequest.Client_id)
 	if err != nil {
 		return nil, err
 	}
@@ -82,32 +77,27 @@ func (service clientServiceImpl) Update(clientRequest *client.Client) (*client.C
 		clientResponse.Document = clientRequest.Document
 	}
 	// monta struct de update
-	if err := service.clientDatabase.Update(clientResponse); err != nil {
+	if err := service.clientDatabase.Update(ctx, clientResponse); err != nil {
 		return nil, err
 	}
 	log.Info().Msg("Update was succesful (client): " + clientResponse.Client_id)
-	return service.Get(&clientResponse.Client_id)
+	return service.Get(ctx, &clientResponse.Client_id)
 }
 
-func (service clientServiceImpl) GetAll() (*[]client.Client, *model.Erro) {
-	obj, err := service.clientDatabase.GetAll()
+func (service clientServiceImpl) GetAll(ctx context.Context) (*[]client.Client, *model.Erro) {
+	clients, err := service.clientDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-	clients, ok := obj.(*[]client.Client)
-	if !ok {
-		return nil, model.DataTypeWrong
-	}
-
 	return clients, nil
 }
 
-func (service clientServiceImpl) Report(id *string) (*client.ClientReport, *model.Erro) {
-	clientInfo, err := service.Get(id)
+func (service clientServiceImpl) Report(ctx context.Context, clientId *string) (*client.ClientReport, *model.Erro) {
+	clientInfo, err := service.Get(ctx, clientId)
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := service.accountDatabase.GetFiltered(&[]string{"client_id,==," + *id})
+	accounts, err := service.accountDatabase.GetFilteredByID(ctx, clientId)
 	if err != nil {
 		return nil, err
 	}

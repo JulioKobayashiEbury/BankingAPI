@@ -1,5 +1,11 @@
 package deposit
 
+import "BankingAPI/internal/model"
+
+type DepositRepository interface {
+	model.Repository[Deposit]
+}
+
 type Deposit struct {
 	Deposit_id   string  `json:"deposit_id" xml:"deposit_id"`
 	Account_id   string  `json:"account_id" xml:"account_id"`

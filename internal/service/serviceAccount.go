@@ -1,12 +1,17 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
 
 	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
+	automaticdebit "BankingAPI/internal/model/automaticDebit"
+	"BankingAPI/internal/model/deposit"
+	"BankingAPI/internal/model/transfer"
+	"BankingAPI/internal/model/withdrawal"
 
 	"github.com/rs/zerolog/log"
 )
@@ -14,21 +19,22 @@ import (
 type accountServiceImpl struct {
 	userService     UserService
 	clientService   ClientService
-	accountDatabase model.RepositoryInterface
+	accountDatabase account.AccountRepository
 
-	withdrawalDatabase model.RepositoryInterface
-	depositDatabase    model.RepositoryInterface
-	transferDatabase   model.RepositoryInterface
-	autodebitDatabase  model.RepositoryInterface
+	withdrawalDatabase withdrawal.WithdrawalRepository
+	depositDatabase    deposit.DepositRepository
+	transferDatabase   transfer.TransferRepository
+	autodebitDatabase  automaticdebit.AutoDebitRepository
 }
 
-func NewAccountService(accountDB model.RepositoryInterface,
+func NewAccountService(accountDB account.AccountRepository,
 	userServe UserService,
 	clientServe ClientService,
-	withdrawalDB model.RepositoryInterface,
-	depositDB model.RepositoryInterface,
-	transferDB model.RepositoryInterface,
-	autodebitDB model.RepositoryInterface) AccountService {
+	withdrawalDB withdrawal.WithdrawalRepository,
+	depositDB deposit.DepositRepository,
+	transferDB transfer.TransferRepository,
+	autodebitDB automaticdebit.AutoDebitRepository,
+) AccountService {
 	return accountServiceImpl{
 		accountDatabase:    accountDB,
 		userService:        userServe,
@@ -40,48 +46,40 @@ func NewAccountService(accountDB model.RepositoryInterface,
 	}
 }
 
-func (service accountServiceImpl) Create(accountRequest *account.Account) (*account.Account, *model.Erro) {
+func (service accountServiceImpl) Create(ctx context.Context, accountRequest *account.Account) (*account.Account, *model.Erro) {
 	if accountRequest.User_id == "" || accountRequest.Client_id == "" {
 		log.Warn().Msg("Missing credentials on creating account")
 		return nil, ErrorMissingCredentials
 	}
 	// verify if client and user exists, PERMISSION MUST BE of user
-	if _, err := service.userService.Get(&accountRequest.User_id); err == model.IDnotFound || err != nil {
+	if _, err := service.userService.Get(ctx, &accountRequest.User_id); err == model.IDnotFound || err != nil {
 		return nil, err
 	}
 
-	if _, err := service.clientService.Get(&accountRequest.Client_id); err == model.IDnotFound || err != nil {
+	if _, err := service.clientService.Get(ctx, &accountRequest.Client_id); err == model.IDnotFound || err != nil {
 		return nil, err
 	}
 
-	obj, err := service.accountDatabase.Create(accountRequest)
+	accountResponse, err := service.accountDatabase.Create(ctx, accountRequest)
 	if err != nil {
 		return nil, err
-	}
-	accountResponse, ok := obj.(*account.Account)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 
 	log.Info().Msg("Account created")
 	return accountResponse, nil
 }
 
-func (service accountServiceImpl) Get(accountID *string) (*account.Account, *model.Erro) {
-	obj, err := service.accountDatabase.Get(accountID)
+func (service accountServiceImpl) Get(ctx context.Context, accountID *string) (*account.Account, *model.Erro) {
+	accountResponse, err := service.accountDatabase.Get(ctx, accountID)
 	if err != nil {
 		return nil, err
-	}
-	accountResponse, ok := obj.(*account.Account)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	log.Info().Msg("Account returned: " + *accountID)
 	return accountResponse, nil
 }
 
-func (service accountServiceImpl) Update(accountRequest *account.Account) (*account.Account, *model.Erro) {
-	accountResponse, err := service.Get(&accountRequest.Account_id)
+func (service accountServiceImpl) Update(ctx context.Context, accountRequest *account.Account) (*account.Account, *model.Erro) {
+	accountResponse, err := service.Get(ctx, &accountRequest.Account_id)
 	if err != nil {
 		return nil, err
 	}
@@ -109,29 +107,25 @@ func (service accountServiceImpl) Update(accountRequest *account.Account) (*acco
 		}
 		accountResponse.Status = accountRequest.Status
 	}
-	if err := service.accountDatabase.Update(accountResponse); err != nil {
+	if err := service.accountDatabase.Update(ctx, accountResponse); err != nil {
 		return nil, err
 	}
 
 	log.Info().Msg("Update was succesful (account): " + accountRequest.Account_id)
 
-	return service.Get(&accountRequest.Account_id)
+	return service.Get(ctx, &accountRequest.Account_id)
 }
 
-func (service accountServiceImpl) GetAll() (*[]account.Account, *model.Erro) {
-	obj, err := service.accountDatabase.GetAll()
+func (service accountServiceImpl) GetAll(ctx context.Context) (*[]account.Account, *model.Erro) {
+	accountSlice, err := service.accountDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
-	}
-	accountSlice, ok := obj.(*[]account.Account)
-	if !ok {
-		return nil, model.DataTypeWrong
 	}
 	return accountSlice, nil
 }
 
-func (service accountServiceImpl) Delete(accountID *string) *model.Erro {
-	if err := service.accountDatabase.Delete(accountID); err != nil {
+func (service accountServiceImpl) Delete(ctx context.Context, accountID *string) *model.Erro {
+	if err := service.accountDatabase.Delete(ctx, accountID); err != nil {
 		return err
 	}
 	log.Info().Msg("Account deleted: " + *accountID)
@@ -153,27 +147,25 @@ func (service accountServiceImpl) Status(accountID *string, status bool) *model.
 }
 */
 
-func (service accountServiceImpl) Report(accountID *string) (*account.AccountReport, *model.Erro) {
-	accountInfo, err := service.Get(accountID)
+func (service accountServiceImpl) Report(ctx context.Context, accountID *string) (*account.AccountReport, *model.Erro) {
+	accountInfo, err := service.Get(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
-	filters := []string{"account_id,==," + *accountID}
-
-	transfers, err := service.transferDatabase.GetFiltered(&filters)
+	transfers, err := service.transferDatabase.GetFilteredByID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	deposits, err := service.depositDatabase.GetFiltered(&filters)
+	deposits, err := service.depositDatabase.GetFilteredByID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
-	withdrawals, err := service.withdrawalDatabase.GetFiltered(&filters)
+	withdrawals, err := service.withdrawalDatabase.GetFilteredByID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
-	automaticDebits, err := service.autodebitDatabase.GetFiltered(&filters)
+	automaticDebits, err := service.autodebitDatabase.GetFilteredByID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
