@@ -1,52 +1,70 @@
 package withdrawal
 
-import "BankingAPI/internal/model"
+import (
+	"context"
+
+	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
+)
 
 type MockWithdrawalRepository struct {
 	WithdrawalMap *map[string]Withdrawal
 }
 
-func (db MockWithdrawalRepository) Create(request interface{}) (interface{}, *model.Erro) {
-	withdrawal, ok := request.(*Withdrawal)
-	if !ok {
-		return nil, model.DataTypeWrong
+func NewMockWithdrawalRepository() WithdrawalRepository {
+	return &MockWithdrawalRepository{
+		WithdrawalMap: &map[string]Withdrawal{},
 	}
-	(*db.WithdrawalMap)[withdrawal.Withdrawal_id] = *withdrawal
-	return db.Get(&withdrawal.Withdrawal_id)
 }
 
-func (db MockWithdrawalRepository) Delete(id *string) *model.Erro {
+func (db MockWithdrawalRepository) Create(ctx context.Context, request *Withdrawal) (*Withdrawal, *echo.HTTPError) {
+	(*db.WithdrawalMap)[request.Withdrawal_id] = *request
+	return db.Get(ctx, &request.Withdrawal_id)
+}
+
+func (db MockWithdrawalRepository) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if _, ok := (*db.WithdrawalMap)[*id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	delete(*db.WithdrawalMap, *id)
 	return nil
 }
 
-func (db MockWithdrawalRepository) Get(id *string) (interface{}, *model.Erro) {
+func (db MockWithdrawalRepository) Get(ctx context.Context, id *string) (*Withdrawal, *echo.HTTPError) {
 	if withdrawal, ok := (*db.WithdrawalMap)[*id]; !ok {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	} else {
 		return &withdrawal, nil
 	}
 }
 
-func (db MockWithdrawalRepository) Update(request interface{}) *model.Erro {
-	withdrawal, ok := request.(*Withdrawal)
-	if !ok {
-		return model.DataTypeWrong
+func (db MockWithdrawalRepository) Update(ctx context.Context, request *Withdrawal) *echo.HTTPError {
+	if _, ok := (*db.WithdrawalMap)[request.Withdrawal_id]; !ok {
+		return model.ErrIDnotFound
 	}
-	if _, ok := (*db.WithdrawalMap)[withdrawal.Withdrawal_id]; !ok {
-		return model.IDnotFound
-	}
-	(*db.WithdrawalMap)[withdrawal.Withdrawal_id] = *withdrawal
+	(*db.WithdrawalMap)[request.Withdrawal_id] = *request
 	return nil
 }
 
-func (db MockWithdrawalRepository) GetAll() (interface{}, *model.Erro) {
+func (db MockWithdrawalRepository) GetAll(ctx context.Context) (*[]Withdrawal, *echo.HTTPError) {
 	withdrawals := make([]Withdrawal, 0, len(*db.WithdrawalMap))
 	for _, withdrawal := range *db.WithdrawalMap {
 		withdrawals = append(withdrawals, withdrawal)
 	}
 	return &withdrawals, nil
+}
+
+func (db MockWithdrawalRepository) GetFilteredByAccountID(ctx context.Context, accountID *string) (*[]Withdrawal, *echo.HTTPError) {
+	if accountID == nil || len(*accountID) == 0 {
+		return nil, model.ErrFilterNotSet
+	}
+
+	withdrawalSlice := make([]Withdrawal, 0, len(*db.WithdrawalMap))
+	for _, withdrawal := range *db.WithdrawalMap {
+		if withdrawal.Account_id == *accountID {
+			withdrawalSlice = append(withdrawalSlice, withdrawal)
+		}
+	}
+	return &withdrawalSlice, nil
 }

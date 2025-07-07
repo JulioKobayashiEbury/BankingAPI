@@ -43,7 +43,7 @@ func (h authenticationHandlerImpl) PostAuthenticationHandler(c echo.Context) err
 		return c.JSON(obj.Code, obj.Internal.Error())
 	}
 	if ok, err := h.authenticationService.Authenticate(c.Request().Context(), &userAuthInfo.User_Id, &userAuthInfo.Password); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	} else {
 		if !ok {
 			log.Error().Msg("authentication failed for user: " + userAuthInfo.User_Id)
@@ -51,7 +51,7 @@ func (h authenticationHandlerImpl) PostAuthenticationHandler(c echo.Context) err
 		}
 		token, err := h.authenticationService.GenerateToken(c.Request().Context(), &userAuthInfo.User_Id)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, model.StandartResponse{Message: err.Err.Error()})
+			return c.JSON(http.StatusInternalServerError, model.StandartResponse{Message: err.Error()})
 		}
 		c.Response().Header().Set(echo.HeaderAuthorization, "Bearer "+*token)
 		return c.JSON(http.StatusOK, model.StandartResponse{Message: "User Authorized"})

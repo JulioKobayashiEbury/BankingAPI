@@ -8,6 +8,7 @@ import (
 	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/client"
 
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,13 +26,13 @@ func NewClientService(clientDB client.ClientRepository, userServe UserService, a
 	}
 }
 
-func (service clientServiceImpl) Create(ctx context.Context, clientRequest *client.Client) (*client.Client, *model.Erro) {
+func (service clientServiceImpl) Create(ctx context.Context, clientRequest *client.Client) (*client.Client, *echo.HTTPError) {
 	if clientRequest.User_id == "" || clientRequest.Document == "" || clientRequest.Name == "" {
 		log.Warn().Msg("Missing credentials on creating client")
-		return nil, ErrorMissingCredentials
+		return nil, model.ErrMissingCredentials
 	}
 
-	if _, err := service.userService.Get(ctx, &clientRequest.User_id); err == model.IDnotFound || err != nil {
+	if _, err := service.userService.Get(ctx, &clientRequest.User_id); err == model.ErrIDnotFound || err != nil {
 		return nil, err
 	}
 	// verify user id exists, PERMISSION MUST BE of user to create
@@ -44,7 +45,7 @@ func (service clientServiceImpl) Create(ctx context.Context, clientRequest *clie
 	return clientResponse, nil
 }
 
-func (service clientServiceImpl) Delete(ctx context.Context, id *string) *model.Erro {
+func (service clientServiceImpl) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if err := service.clientDatabase.Delete(ctx, id); err != nil {
 		return err
 	}
@@ -52,7 +53,7 @@ func (service clientServiceImpl) Delete(ctx context.Context, id *string) *model.
 	return nil
 }
 
-func (service clientServiceImpl) Get(ctx context.Context, id *string) (*client.Client, *model.Erro) {
+func (service clientServiceImpl) Get(ctx context.Context, id *string) (*client.Client, *echo.HTTPError) {
 	client, err := service.clientDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (service clientServiceImpl) Get(ctx context.Context, id *string) (*client.C
 	return client, nil
 }
 
-func (service clientServiceImpl) Update(ctx context.Context, clientRequest *client.Client) (*client.Client, *model.Erro) {
+func (service clientServiceImpl) Update(ctx context.Context, clientRequest *client.Client) (*client.Client, *echo.HTTPError) {
 	clientResponse, err := service.Get(ctx, &clientRequest.Client_id)
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (service clientServiceImpl) Update(ctx context.Context, clientRequest *clie
 	return service.Get(ctx, &clientResponse.Client_id)
 }
 
-func (service clientServiceImpl) GetAll(ctx context.Context) (*[]client.Client, *model.Erro) {
+func (service clientServiceImpl) GetAll(ctx context.Context) (*[]client.Client, *echo.HTTPError) {
 	clients, err := service.clientDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -92,12 +93,12 @@ func (service clientServiceImpl) GetAll(ctx context.Context) (*[]client.Client, 
 	return clients, nil
 }
 
-func (service clientServiceImpl) Report(ctx context.Context, clientId *string) (*client.ClientReport, *model.Erro) {
+func (service clientServiceImpl) Report(ctx context.Context, clientId *string) (*client.ClientReport, *echo.HTTPError) {
 	clientInfo, err := service.Get(ctx, clientId)
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := service.accountDatabase.GetFilteredByID(ctx, clientId)
+	accounts, err := service.accountDatabase.GetFilteredByClientID(ctx, clientId)
 	if err != nil {
 		return nil, err
 	}

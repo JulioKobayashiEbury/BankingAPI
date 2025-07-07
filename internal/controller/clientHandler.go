@@ -51,7 +51,7 @@ func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {
 
 	Client, err := h.clientService.Create(c.Request().Context(), &clientInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, (*Client))
@@ -61,7 +61,7 @@ func (h clientHandlerImpl) ClientGetHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
 	clientInfo, err := h.clientService.Get(c.Request().Context(), &clientID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, (*clientInfo))
@@ -70,7 +70,7 @@ func (h clientHandlerImpl) ClientGetHandler(c echo.Context) error {
 func (h clientHandlerImpl) ClientDeleteHandler(c echo.Context) error {
 	clientID := c.Param("client_id")
 	if err := h.clientService.Delete(c.Request().Context(), &clientID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Client deleted seccesfully"})
@@ -87,7 +87,7 @@ func (h clientHandlerImpl) ClientPutHandler(c echo.Context) error {
 	clientInfo.Client_id = clientID
 	Client, err := h.clientService.Update(c.Request().Context(), &clientInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, (*Client))
@@ -98,7 +98,7 @@ func (h clientHandlerImpl) ClientGetReportHandler(c echo.Context) error {
 
 	clientReport, err := h.clientService.Report(c.Request().Context(), &clientID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusOK, (*clientReport))
 }

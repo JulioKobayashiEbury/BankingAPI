@@ -43,14 +43,13 @@ func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	if accountInfo.User_id == "" || accountInfo.Agency_id <= 0 {
+	if !validateInput(nil, &accountInfo) {
 		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
 	}
 
-	/*passaria o contexto aqui-> */
 	accountResponse, err := h.accountService.Create(c.Request().Context(), &accountInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, accountResponse)
@@ -58,9 +57,13 @@ func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {
 
 func (h accountHandlerImpl) AccountGetHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
+	if !validateInput(&accountID, nil) {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
+	}
+
 	accountResponse, err := h.accountService.Get(c.Request().Context(), &accountID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, *accountResponse)
@@ -68,8 +71,12 @@ func (h accountHandlerImpl) AccountGetHandler(c echo.Context) error {
 
 func (h accountHandlerImpl) AccountDeleteHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
+	if !validateInput(&accountID, nil) {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
+	}
+
 	if err := h.accountService.Delete(c.Request().Context(), &accountID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Account Deleted"})
@@ -82,11 +89,15 @@ func (h accountHandlerImpl) AccountPutHandler(c echo.Context) error {
 		log.Error().Msg(err.Error())
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
+	if !validateInput(&accountID, &accountInfo) {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
+	}
+
 	accountInfo.Account_id = accountID
 
 	accountResponse, err := h.accountService.Update(c.Request().Context(), &accountInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, accountResponse)
@@ -94,9 +105,33 @@ func (h accountHandlerImpl) AccountPutHandler(c echo.Context) error {
 
 func (h accountHandlerImpl) AccountGetReportHandler(c echo.Context) error {
 	accountID := c.Param("account_id")
+	if !validateInput(&accountID, nil) {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "Parameters are not ideal"})
+	}
+
 	accountReport, err := h.accountService.Report(c.Request().Context(), &accountID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusOK, accountReport)
+}
+
+func validateInput(param *string, accountRequest *account.Account) bool {
+	if param != nil {
+		if len(*param) > 20 {
+			return false
+		}
+	}
+	if accountRequest != nil {
+		if len(accountRequest.Client_id) > 20 || len(accountRequest.Register_date) > 20 || len(accountRequest.User_id) > 20 {
+			return false
+		}
+		if accountRequest.Agency_id <= 0 || accountRequest.User_id == "" {
+			return false
+		}
+	}
+	if accountRequest == nil && param == nil {
+		return false
+	}
+	return true
 }

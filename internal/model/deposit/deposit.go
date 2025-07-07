@@ -1,9 +1,16 @@
 package deposit
 
-import "BankingAPI/internal/model"
+import (
+	"context"
+
+	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
+)
 
 type DepositRepository interface {
 	model.Repository[Deposit]
+	GetFilteredByAccountID(context.Context, *string) (*[]Deposit, *echo.HTTPError)
 }
 
 type Deposit struct {

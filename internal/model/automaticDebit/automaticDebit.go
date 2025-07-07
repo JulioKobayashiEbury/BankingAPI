@@ -1,9 +1,16 @@
 package automaticdebit
 
-import "BankingAPI/internal/model"
+import (
+	"context"
+
+	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
+)
 
 type AutoDebitRepository interface {
 	model.Repository[AutomaticDebit]
+	GetFilteredByAccountID(context.Context, *string) (*[]AutomaticDebit, *echo.HTTPError)
 }
 type AutomaticDebit struct {
 	Debit_id        string  `json:"debit_id" xml:"debit_id"`

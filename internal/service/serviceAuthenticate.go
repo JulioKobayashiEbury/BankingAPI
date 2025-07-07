@@ -10,6 +10,7 @@ import (
 	"BankingAPI/internal/model/user"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -27,18 +28,18 @@ func NewAuth(userDB user.UserRepository) Authentication {
 	}
 }
 
-func (a auth) Authenticate(ctx context.Context, typeID *string, password *string) (bool, *model.Erro) {
+func (a auth) Authenticate(ctx context.Context, typeID *string, password *string) (bool, *echo.HTTPError) {
 	userAuth, err := a.userDatabase.Get(ctx, typeID)
 	if err != nil {
 		return false, err
 	}
 	if *password != userAuth.Password {
-		return false, &model.Erro{Err: errors.New("password is wrong"), HttpCode: http.StatusBadRequest}
+		return false, &echo.HTTPError{Internal: errors.New("password is wrong"), Code: http.StatusBadRequest, Message: "password is wrong"}
 	}
 	return true, nil
 }
 
-func (a auth) GenerateToken(ctx context.Context, typeID *string) (*string, *model.Erro) {
+func (a auth) GenerateToken(ctx context.Context, typeID *string) (*string, *echo.HTTPError) {
 	expirationTime := time.Now().Add(time.Minute * expirationMin)
 	Claim := &model.Claims{
 		Id: (*typeID),
@@ -49,7 +50,7 @@ func (a auth) GenerateToken(ctx context.Context, typeID *string) (*string, *mode
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, *Claim)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 	log.Info().Msg("Authenticated entrance: " + *typeID)
 

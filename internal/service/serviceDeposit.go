@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
-	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/deposit"
 
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -24,7 +23,7 @@ func NewDepositService(depositDB deposit.DepositRepository, accountServe Account
 	}
 }
 
-func (service depositImpl) Create(ctx context.Context, depositRequest *deposit.Deposit) (*deposit.Deposit, *model.Erro) {
+func (service depositImpl) Create(ctx context.Context, depositRequest *deposit.Deposit) (*deposit.Deposit, *echo.HTTPError) {
 	depositResponse, err := service.depositDatabase.Create(ctx, depositRequest)
 	if err != nil {
 		return nil, err
@@ -32,7 +31,7 @@ func (service depositImpl) Create(ctx context.Context, depositRequest *deposit.D
 	return depositResponse, nil
 }
 
-func (service depositImpl) Delete(ctx context.Context, id *string) *model.Erro {
+func (service depositImpl) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	deposit, err := service.Get(ctx, id)
 	if err != nil {
 		return err
@@ -54,7 +53,7 @@ func (service depositImpl) Delete(ctx context.Context, id *string) *model.Erro {
 	return nil
 }
 
-func (service depositImpl) Get(ctx context.Context, id *string) (*deposit.Deposit, *model.Erro) {
+func (service depositImpl) Get(ctx context.Context, id *string) (*deposit.Deposit, *echo.HTTPError) {
 	depositResponse, err := service.depositDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -62,7 +61,7 @@ func (service depositImpl) Get(ctx context.Context, id *string) (*deposit.Deposi
 	return depositResponse, nil
 }
 
-func (service depositImpl) GetAll(ctx context.Context) (*[]deposit.Deposit, *model.Erro) {
+func (service depositImpl) GetAll(ctx context.Context) (*[]deposit.Deposit, *echo.HTTPError) {
 	deposits, err := service.depositDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -70,7 +69,7 @@ func (service depositImpl) GetAll(ctx context.Context) (*[]deposit.Deposit, *mod
 	return deposits, nil
 }
 
-func (service depositImpl) ProcessDeposit(ctx context.Context, depositRequest *deposit.Deposit) (*deposit.Deposit, *model.Erro) {
+func (service depositImpl) ProcessDeposit(ctx context.Context, depositRequest *deposit.Deposit) (*deposit.Deposit, *echo.HTTPError) {
 	accountRequest, err := service.accountService.Get(ctx, &depositRequest.Account_id)
 	if err != nil {
 		return nil, err
@@ -87,7 +86,7 @@ func (service depositImpl) ProcessDeposit(ctx context.Context, depositRequest *d
 
 	if _, err := service.accountService.Update(ctx, accountRequest); err != nil {
 		if err := service.Delete(ctx, &depositResponse.Deposit_id); err != nil {
-			log.Panic().Msg("Error deleting deposit after update failure: " + err.Err.Error())
+			log.Panic().Msg("Error deleting deposit after update failure: " + err.Error())
 		}
 		return nil, err
 	}
@@ -95,18 +94,18 @@ func (service depositImpl) ProcessDeposit(ctx context.Context, depositRequest *d
 	return depositResponse, nil
 }
 
-func verifyDeposit(depositRequest *deposit.Deposit, accountResponse *account.Account) (bool, *model.Erro) {
+func verifyDeposit(depositRequest *deposit.Deposit, accountResponse *account.Account) (bool, *echo.HTTPError) {
 	if accountResponse.Status != "active" {
-		return false, &model.Erro{Err: errors.New("account is not active"), HttpCode: http.StatusBadRequest}
+		return false, model.ErrAccountNotActive
 	}
 	if accountResponse.Client_id != depositRequest.Client_id {
-		return false, &model.Erro{Err: errors.New("client ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, model.ErrClientIDNotValid
 	}
 	if accountResponse.User_id != depositRequest.User_id {
-		return false, &model.Erro{Err: errors.New("user ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, model.ErrUserIDNotValid
 	}
 	if accountResponse.Agency_id != depositRequest.Agency_id {
-		return false, &model.Erro{Err: errors.New("agency ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, model.ErrAgencyIDNotValid
 	}
 	return true, nil
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
 )
 
 var singleton *TransferRepository
@@ -23,7 +25,7 @@ func NewMockTransferRepository() TransferRepository {
 	return *singleton
 }
 
-func (t MockTransferRepository) Create(ctx context.Context, request *Transfer) (*Transfer, *model.Erro) {
+func (t MockTransferRepository) Create(ctx context.Context, request *Transfer) (*Transfer, *echo.HTTPError) {
 	/*
 		for {
 			transferID := randomstring.String(10)
@@ -38,33 +40,33 @@ func (t MockTransferRepository) Create(ctx context.Context, request *Transfer) (
 	return request, nil
 }
 
-func (t MockTransferRepository) Delete(ctx context.Context, id *string) *model.Erro {
+func (t MockTransferRepository) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if _, ok := (*t.TransferMap)[*id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	delete(*t.TransferMap, *id)
 	return nil
 }
 
-func (t MockTransferRepository) Get(ctx context.Context, id *string) (*Transfer, *model.Erro) {
+func (t MockTransferRepository) Get(ctx context.Context, id *string) (*Transfer, *echo.HTTPError) {
 	if transfer, ok := (*t.TransferMap)[*id]; !ok {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	} else {
 		return &transfer, nil
 	}
 }
 
-func (t MockTransferRepository) Update(ctx context.Context, request *Transfer) *model.Erro {
+func (t MockTransferRepository) Update(ctx context.Context, request *Transfer) *echo.HTTPError {
 	if _, ok := (*t.TransferMap)[request.Transfer_id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	(*t.TransferMap)[request.Transfer_id] = *request
 	return nil
 }
 
-func (t MockTransferRepository) GetAll(ctx context.Context) (*[]Transfer, *model.Erro) {
+func (t MockTransferRepository) GetAll(ctx context.Context) (*[]Transfer, *echo.HTTPError) {
 	if len(*t.TransferMap) == 0 {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	}
 	users := make([]Transfer, 0, len(*t.TransferMap))
 	for _, user := range *t.TransferMap {
@@ -73,11 +75,17 @@ func (t MockTransferRepository) GetAll(ctx context.Context) (*[]Transfer, *model
 	return &users, nil
 }
 
-func (db MockTransferRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]Transfer, *model.Erro) {
-	if filters == nil || len(*filters) == 0 {
-		return nil, model.FilterNotSet
+func (db MockTransferRepository) GetFilteredByAccountID(ctx context.Context, accountID *string) (*[]Transfer, *echo.HTTPError) {
+	if accountID == nil || len(*accountID) == 0 {
+		return nil, model.ErrFilterNotSet
 	}
 	transferSlice := make([]Transfer, 0, len(*db.TransferMap))
+
+	for _, transfer := range *db.TransferMap {
+		if transfer.Account_id == *accountID {
+			transferSlice = append(transferSlice, transfer)
+		}
+	}
 	/* for _, transferResponse := range *db.TransferMap {
 		match := true
 		for _, filter := range *filters {

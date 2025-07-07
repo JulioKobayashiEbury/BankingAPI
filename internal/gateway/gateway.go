@@ -1,11 +1,11 @@
 package gateway
 
 import (
-	"BankingAPI/internal/model"
+	"github.com/labstack/echo"
 )
 
 type Gateway interface {
-	Send(interface{}) *model.Erro
+	Send(interface{}) *echo.HTTPError
 }
 
 type GatewaysList struct {

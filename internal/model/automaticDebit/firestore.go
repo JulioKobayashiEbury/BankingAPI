@@ -9,6 +9,7 @@ import (
 	"BankingAPI/internal/model"
 
 	"cloud.google.com/go/firestore"
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,7 +27,7 @@ func NewAutoDebitFirestore(dbClient *firestore.Client) AutoDebitRepository {
 	}
 }
 
-func (db autoDebitFirestore) Create(ctx context.Context, request *AutomaticDebit) (*AutomaticDebit, *model.Erro) {
+func (db autoDebitFirestore) Create(ctx context.Context, request *AutomaticDebit) (*AutomaticDebit, *echo.HTTPError) {
 	entity := map[string]interface{}{
 		"account_id":      request.Account_id,
 		"user_id":         request.User_id,
@@ -40,40 +41,40 @@ func (db autoDebitFirestore) Create(ctx context.Context, request *AutomaticDebit
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError}
 	}
 	return db.Get(ctx, &docRef.ID)
 }
 
-func (db autoDebitFirestore) Delete(ctx context.Context, id *string) *model.Erro {
+func (db autoDebitFirestore) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	docRef := db.databaseClient.Collection(collection).Doc(*id)
 
 	if _, err := docRef.Delete(ctx); err != nil {
 		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError}
 	}
 	return nil
 }
 
-func (db autoDebitFirestore) Get(ctx context.Context, id *string) (*AutomaticDebit, *model.Erro) {
+func (db autoDebitFirestore) Get(ctx context.Context, id *string) (*AutomaticDebit, *echo.HTTPError) {
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return nil, &model.Erro{Err: errors.New("ID in collection: " + collection + " not found"), HttpCode: http.StatusBadRequest}
+		return nil, &echo.HTTPError{Internal: errors.New("ID in collection: " + collection + " not found"), Code: http.StatusBadRequest}
 	}
 	if docSnapshot == nil {
 		log.Error().Msg("Nil account from snapshot" + *id)
-		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: errors.New("Nil account from snapshot" + (*id)), Code: http.StatusInternalServerError}
 	}
 	autoDebitResponse := AutomaticDebit{}
 	if err := docSnapshot.DataTo(&autoDebitResponse); err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError}
 	}
 	autoDebitResponse.Debit_id = docSnapshot.Ref.ID
 	return &autoDebitResponse, nil
 }
 
-func (db autoDebitFirestore) Update(ctx context.Context, request *AutomaticDebit) *model.Erro {
+func (db autoDebitFirestore) Update(ctx context.Context, request *AutomaticDebit) *echo.HTTPError {
 	entity := map[string]interface{}{
 		"account_id":      request.Account_id,
 		"user_id":         request.User_id,
@@ -88,7 +89,7 @@ func (db autoDebitFirestore) Update(ctx context.Context, request *AutomaticDebit
 
 	if _, err := docRef.Set(ctx, entity); err != nil {
 		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	log.Info().Msg("Account: " + request.Debit_id + " has been updated")
@@ -96,12 +97,12 @@ func (db autoDebitFirestore) Update(ctx context.Context, request *AutomaticDebit
 	return nil
 }
 
-func (db autoDebitFirestore) GetAll(ctx context.Context) (*[]AutomaticDebit, *model.Erro) {
+func (db autoDebitFirestore) GetAll(ctx context.Context) (*[]AutomaticDebit, *echo.HTTPError) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
 	if err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 	autoebitResponseSlice := make([]AutomaticDebit, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
@@ -109,7 +110,7 @@ func (db autoDebitFirestore) GetAll(ctx context.Context) (*[]AutomaticDebit, *mo
 		autodebitReponse := AutomaticDebit{}
 		if err := docSnap.DataTo(&autodebitReponse); err != nil {
 			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+			return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 		}
 		autodebitReponse.Debit_id = docSnap.Ref.ID
 		// condicional para saber se a transferencia pertence ao account
@@ -118,12 +119,14 @@ func (db autoDebitFirestore) GetAll(ctx context.Context) (*[]AutomaticDebit, *mo
 	return &autoebitResponseSlice, nil
 }
 
-func (db autoDebitFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]AutomaticDebit, *model.Erro) {
-	if filters == nil || len(*filters) == 0 {
-		return nil, model.FilterNotSet
+func (db autoDebitFirestore) GetFilteredByAccountID(ctx context.Context, accountID *string) (*[]AutomaticDebit, *echo.HTTPError) {
+	if accountID == nil || len(*accountID) == 0 {
+		return nil, model.ErrFilterNotSet
 	}
 
 	query := db.databaseClient.Collection(collection).Query
+
+	query = query.Where("account_id", "==", *accountID)
 
 	/* for _, filter := range *filters {
 		token := model.TokenizeFilters(&filter)
@@ -135,13 +138,13 @@ func (db autoDebitFirestore) GetFilteredByID(ctx context.Context, filters *strin
 	*/
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 	autodebitResponseSlice := make([]AutomaticDebit, 0, len(allDocs))
 	for _, docSnap := range allDocs {
 		autodebitResponse := AutomaticDebit{}
 		if err := docSnap.DataTo(&autodebitResponse); err != nil {
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+			return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 		}
 		autodebitResponse.Debit_id = docSnap.Ref.ID
 

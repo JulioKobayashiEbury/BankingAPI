@@ -9,6 +9,7 @@ import (
 	"BankingAPI/internal/model"
 	"BankingAPI/internal/model/user"
 
+	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +24,7 @@ func TestUserCreate(t *testing.T) {
 		name          string
 		userRequest   *user.User
 		expectedUser  *user.User
-		expectedError *model.Erro
+		expectedError *echo.HTTPError
 	}
 	testCases := table{
 		{
@@ -51,7 +52,7 @@ func TestUserCreate(t *testing.T) {
 				Password: "edsonPass",
 			},
 			expectedUser:  nil,
-			expectedError: ErrorMissingCredentials,
+			expectedError: model.ErrMissingCredentials,
 		},
 		{
 			name: "Failed to create user with empty document",
@@ -62,7 +63,7 @@ func TestUserCreate(t *testing.T) {
 				Password: "edsonPass",
 			},
 			expectedUser:  nil,
-			expectedError: ErrorMissingCredentials,
+			expectedError: model.ErrMissingCredentials,
 		},
 		{
 			name: "Failed to create user with empty password",
@@ -73,7 +74,7 @@ func TestUserCreate(t *testing.T) {
 				Password: "",
 			},
 			expectedUser:  nil,
-			expectedError: ErrorMissingCredentials,
+			expectedError: model.ErrMissingCredentials,
 		},
 	}
 
@@ -108,7 +109,7 @@ func TestUserDelete(t *testing.T) {
 	type table []struct {
 		name          string
 		id            string
-		expectedError *model.Erro
+		expectedError *echo.HTTPError
 	}
 	testCases := table{
 		{
@@ -119,7 +120,7 @@ func TestUserDelete(t *testing.T) {
 		{
 			name:          "User not found",
 			id:            "2",
-			expectedError: model.IDnotFound,
+			expectedError: model.ErrIDnotFound,
 		},
 	}
 	for _, test := range testCases {
@@ -152,7 +153,7 @@ func TestUserGet(t *testing.T) {
 		name          string
 		id            string
 		expectedUser  *user.User
-		expectedError *model.Erro
+		expectedError *echo.HTTPError
 	}
 	testCases := table{
 		{
@@ -164,7 +165,7 @@ func TestUserGet(t *testing.T) {
 			name:          "User not found",
 			id:            "2",
 			expectedUser:  nil,
-			expectedError: model.IDnotFound,
+			expectedError: model.ErrIDnotFound,
 		},
 	}
 	for _, test := range testCases {
@@ -190,7 +191,7 @@ func TestUserUpdate(t *testing.T) {
 		name          string
 		userRequest   *user.User
 		expectedUser  *user.User
-		expectedError *model.Erro
+		expectedError *echo.HTTPError
 	}
 	testUser := &user.User{
 		User_id:  "1",
@@ -286,7 +287,7 @@ func TestUserGetAll(t *testing.T) {
 	type table []struct {
 		name          string
 		expectedUsers *[]user.User
-		expectedError *model.Erro
+		expectedError *echo.HTTPError
 	}
 	testCases := table{
 		{
@@ -297,7 +298,7 @@ func TestUserGetAll(t *testing.T) {
 		{
 			name:          "No users found",
 			expectedUsers: nil,
-			expectedError: model.IDnotFound,
+			expectedError: model.ErrIDnotFound,
 		},
 	}
 	for _, test := range testCases {
@@ -313,7 +314,7 @@ func TestUserGetAll(t *testing.T) {
 		if test.name != "No users found" {
 			for _, user := range users {
 				if err := userService.Delete(ctx, &user.User_id); err != nil {
-					fmt.Println(err.Err.Error())
+					fmt.Println(err.Error())
 				}
 			}
 		}

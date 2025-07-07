@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"BankingAPI/internal/model"
+	model "BankingAPI/internal/model"
 	"BankingAPI/internal/model/client"
 	"BankingAPI/internal/model/user"
 
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -23,10 +24,10 @@ func NewUserService(userDB user.UserRepository, clientDB client.ClientRepository
 	}
 }
 
-func (service userServiceImpl) Create(ctx context.Context, userRequest *user.User) (*user.User, *model.Erro) {
+func (service userServiceImpl) Create(ctx context.Context, userRequest *user.User) (*user.User, *echo.HTTPError) {
 	if userRequest.Name == "" || userRequest.Document == "" || userRequest.Password == "" {
 		log.Warn().Msg("Missing informations on creating user")
-		return nil, ErrorMissingCredentials
+		return nil, model.ErrMissingCredentials
 	}
 	userResponse, err := service.userDatabase.Create(ctx, userRequest)
 	if err != nil {
@@ -37,7 +38,7 @@ func (service userServiceImpl) Create(ctx context.Context, userRequest *user.Use
 	return userResponse, nil
 }
 
-func (service userServiceImpl) Delete(ctx context.Context, id *string) *model.Erro {
+func (service userServiceImpl) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if err := service.userDatabase.Delete(ctx, id); err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func (service userServiceImpl) Delete(ctx context.Context, id *string) *model.Er
 	return nil
 }
 
-func (service userServiceImpl) Get(ctx context.Context, id *string) (*user.User, *model.Erro) {
+func (service userServiceImpl) Get(ctx context.Context, id *string) (*user.User, *echo.HTTPError) {
 	userResponse, err := service.userDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func (service userServiceImpl) Get(ctx context.Context, id *string) (*user.User,
 	return userResponse, nil
 }
 
-func (service userServiceImpl) Update(ctx context.Context, userRequest *user.User) (*user.User, *model.Erro) {
+func (service userServiceImpl) Update(ctx context.Context, userRequest *user.User) (*user.User, *echo.HTTPError) {
 	userResponse, err := service.Get(ctx, &(userRequest.User_id))
 	if err != nil {
 		return nil, err
@@ -80,7 +81,7 @@ func (service userServiceImpl) Update(ctx context.Context, userRequest *user.Use
 	return service.Get(ctx, &userRequest.User_id)
 }
 
-func (service userServiceImpl) GetAll(ctx context.Context) (*[]user.User, *model.Erro) {
+func (service userServiceImpl) GetAll(ctx context.Context) (*[]user.User, *echo.HTTPError) {
 	users, err := service.userDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -88,12 +89,12 @@ func (service userServiceImpl) GetAll(ctx context.Context) (*[]user.User, *model
 	return users, nil
 }
 
-func (service userServiceImpl) Report(ctx context.Context, userId *string) (*user.UserReport, *model.Erro) {
+func (service userServiceImpl) Report(ctx context.Context, userId *string) (*user.UserReport, *echo.HTTPError) {
 	userInfo, err := service.Get(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
-	clients, err := service.clientDatabase.GetFilteredByID(ctx, userId)
+	clients, err := service.clientDatabase.GetFilteredByUserID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}

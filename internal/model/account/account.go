@@ -1,9 +1,16 @@
 package account
 
-import "BankingAPI/internal/model"
+import (
+	"context"
+
+	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
+)
 
 type AccountRepository interface {
 	model.Repository[Account]
+	GetFilteredByClientID(context.Context, *string) (*[]Account, *echo.HTTPError)
 }
 
 type Account struct {

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
 )
 
 var singleton *DepositRepository
@@ -23,7 +25,7 @@ func NewMockDepositRepository() DepositRepository {
 	return *singleton
 }
 
-func (d MockDepositRepository) Create(ctx context.Context, request *Deposit) (*Deposit, *model.Erro) {
+func (d MockDepositRepository) Create(ctx context.Context, request *Deposit) (*Deposit, *echo.HTTPError) {
 	/*
 		for {
 			depositID := randomstring.String(10)
@@ -38,33 +40,33 @@ func (d MockDepositRepository) Create(ctx context.Context, request *Deposit) (*D
 	return request, nil
 }
 
-func (d MockDepositRepository) Delete(ctx context.Context, id *string) *model.Erro {
+func (d MockDepositRepository) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if _, ok := (*d.DepositMap)[*id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	delete(*d.DepositMap, *id)
 	return nil
 }
 
-func (d MockDepositRepository) Get(ctx context.Context, id *string) (*Deposit, *model.Erro) {
+func (d MockDepositRepository) Get(ctx context.Context, id *string) (*Deposit, *echo.HTTPError) {
 	if deposit, ok := (*d.DepositMap)[*id]; !ok {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	} else {
 		return &deposit, nil
 	}
 }
 
-func (d MockDepositRepository) Update(ctx context.Context, request *Deposit) *model.Erro {
+func (d MockDepositRepository) Update(ctx context.Context, request *Deposit) *echo.HTTPError {
 	if _, ok := (*d.DepositMap)[request.Deposit_id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	(*d.DepositMap)[request.Deposit_id] = *request
 	return nil
 }
 
-func (d MockDepositRepository) GetAll(ctx context.Context) (*[]Deposit, *model.Erro) {
+func (d MockDepositRepository) GetAll(ctx context.Context) (*[]Deposit, *echo.HTTPError) {
 	if len(*d.DepositMap) == 0 {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	}
 	users := make([]Deposit, 0, len(*d.DepositMap))
 	for _, user := range *d.DepositMap {
@@ -73,11 +75,17 @@ func (d MockDepositRepository) GetAll(ctx context.Context) (*[]Deposit, *model.E
 	return &users, nil
 }
 
-func (db MockDepositRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]Deposit, *model.Erro) {
-	if filters == nil || len(*filters) == 0 {
-		return nil, model.FilterNotSet
+func (db MockDepositRepository) GetFilteredByAccountID(ctx context.Context, accountID *string) (*[]Deposit, *echo.HTTPError) {
+	if accountID == nil || len(*accountID) == 0 {
+		return nil, model.ErrFilterNotSet
 	}
 	depositSlice := make([]Deposit, 0, len(*db.DepositMap))
+
+	for _, deposit := range *db.DepositMap {
+		if deposit.Account_id == *accountID {
+			depositSlice = append(depositSlice, deposit)
+		}
+	}
 	/* for _, depositResponse := range *db.DepositMap {
 		match := true
 		for _, filter := range *filters {

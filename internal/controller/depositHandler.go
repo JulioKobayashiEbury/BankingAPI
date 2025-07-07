@@ -46,7 +46,7 @@ func (h depositHandlerImpl) PostDepositHandler(c echo.Context) error {
 
 	depositResponse, err := h.depositService.ProcessDeposit(c.Request().Context(), &newDepositInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, *depositResponse)
@@ -56,7 +56,7 @@ func (h depositHandlerImpl) DeleteDepositHandler(c echo.Context) error {
 	depositID := c.Param("deposit_id")
 
 	if err := h.depositService.Delete(c.Request().Context(), &depositID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Deposit deleted succesfully!"})
 }
@@ -66,7 +66,7 @@ func (h depositHandlerImpl) GetDepositHandler(c echo.Context) error {
 
 	depositInfo, err := h.depositService.Get(c.Request().Context(), &depositID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, *depositInfo)

@@ -13,6 +13,7 @@ import (
 	"BankingAPI/internal/model/transfer"
 	"BankingAPI/internal/model/withdrawal"
 
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -46,17 +47,17 @@ func NewAccountService(accountDB account.AccountRepository,
 	}
 }
 
-func (service accountServiceImpl) Create(ctx context.Context, accountRequest *account.Account) (*account.Account, *model.Erro) {
+func (service accountServiceImpl) Create(ctx context.Context, accountRequest *account.Account) (*account.Account, *echo.HTTPError) {
 	if accountRequest.User_id == "" || accountRequest.Client_id == "" {
 		log.Warn().Msg("Missing credentials on creating account")
-		return nil, ErrorMissingCredentials
+		return nil, model.ErrMissingCredentials
 	}
 	// verify if client and user exists, PERMISSION MUST BE of user
-	if _, err := service.userService.Get(ctx, &accountRequest.User_id); err == model.IDnotFound || err != nil {
+	if _, err := service.userService.Get(ctx, &accountRequest.User_id); err == model.ErrIDnotFound || err != nil {
 		return nil, err
 	}
 
-	if _, err := service.clientService.Get(ctx, &accountRequest.Client_id); err == model.IDnotFound || err != nil {
+	if _, err := service.clientService.Get(ctx, &accountRequest.Client_id); err == model.ErrIDnotFound || err != nil {
 		return nil, err
 	}
 
@@ -69,7 +70,7 @@ func (service accountServiceImpl) Create(ctx context.Context, accountRequest *ac
 	return accountResponse, nil
 }
 
-func (service accountServiceImpl) Get(ctx context.Context, accountID *string) (*account.Account, *model.Erro) {
+func (service accountServiceImpl) Get(ctx context.Context, accountID *string) (*account.Account, *echo.HTTPError) {
 	accountResponse, err := service.accountDatabase.Get(ctx, accountID)
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func (service accountServiceImpl) Get(ctx context.Context, accountID *string) (*
 	return accountResponse, nil
 }
 
-func (service accountServiceImpl) Update(ctx context.Context, accountRequest *account.Account) (*account.Account, *model.Erro) {
+func (service accountServiceImpl) Update(ctx context.Context, accountRequest *account.Account) (*account.Account, *echo.HTTPError) {
 	accountResponse, err := service.Get(ctx, &accountRequest.Account_id)
 	if err != nil {
 		return nil, err
@@ -87,7 +88,7 @@ func (service accountServiceImpl) Update(ctx context.Context, accountRequest *ac
 	// verifica valores que foram passados ou não
 	if accountRequest.Account_id == "" {
 		log.Warn().Msg("No account with id: 0 allowed")
-		return nil, &model.Erro{Err: errors.New("account id invalid"), HttpCode: http.StatusBadRequest}
+		return nil, &echo.HTTPError{Internal: errors.New("account id invalid"), Code: http.StatusBadRequest, Message: "account id invalid"}
 	}
 	if accountRequest.Agency_id != 0 {
 		accountResponse.Agency_id = accountRequest.Agency_id
@@ -103,7 +104,7 @@ func (service accountServiceImpl) Update(ctx context.Context, accountRequest *ac
 	}
 	if accountRequest.Status != "" {
 		if !(accountRequest.Status).IsValid() {
-			return nil, model.InvalidStatus
+			return nil, model.ErrInvalidStatus
 		}
 		accountResponse.Status = accountRequest.Status
 	}
@@ -116,7 +117,7 @@ func (service accountServiceImpl) Update(ctx context.Context, accountRequest *ac
 	return service.Get(ctx, &accountRequest.Account_id)
 }
 
-func (service accountServiceImpl) GetAll(ctx context.Context) (*[]account.Account, *model.Erro) {
+func (service accountServiceImpl) GetAll(ctx context.Context) (*[]account.Account, *echo.HTTPError) {
 	accountSlice, err := service.accountDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,7 @@ func (service accountServiceImpl) GetAll(ctx context.Context) (*[]account.Accoun
 	return accountSlice, nil
 }
 
-func (service accountServiceImpl) Delete(ctx context.Context, accountID *string) *model.Erro {
+func (service accountServiceImpl) Delete(ctx context.Context, accountID *string) *echo.HTTPError {
 	if err := service.accountDatabase.Delete(ctx, accountID); err != nil {
 		return err
 	}
@@ -133,7 +134,7 @@ func (service accountServiceImpl) Delete(ctx context.Context, accountID *string)
 }
 
 /*
-func (service accountServiceImpl) Status(accountID *string, status bool) *model.Erro {
+func (service accountServiceImpl) Status(accountID *string, status bool) *echo.HTTPError {
 	account, err := service.Get(accountID)
 	if err != nil {
 		return err
@@ -147,25 +148,25 @@ func (service accountServiceImpl) Status(accountID *string, status bool) *model.
 }
 */
 
-func (service accountServiceImpl) Report(ctx context.Context, accountID *string) (*account.AccountReport, *model.Erro) {
+func (service accountServiceImpl) Report(ctx context.Context, accountID *string) (*account.AccountReport, *echo.HTTPError) {
 	accountInfo, err := service.Get(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := service.transferDatabase.GetFilteredByID(ctx, accountID)
+	transfers, err := service.transferDatabase.GetFilteredByAccountID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	deposits, err := service.depositDatabase.GetFilteredByID(ctx, accountID)
+	deposits, err := service.depositDatabase.GetFilteredByAccountID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
-	withdrawals, err := service.withdrawalDatabase.GetFilteredByID(ctx, accountID)
+	withdrawals, err := service.withdrawalDatabase.GetFilteredByAccountID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
-	automaticDebits, err := service.autodebitDatabase.GetFilteredByID(ctx, accountID)
+	automaticDebits, err := service.autodebitDatabase.GetFilteredByAccountID(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}

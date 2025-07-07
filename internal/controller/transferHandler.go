@@ -50,7 +50,7 @@ func (h transferHandlerImpl) TransferPostHandler(c echo.Context) error {
 
 	transferResponse, err := h.transferService.ProcessNewTransfer(c.Request().Context(), &newTransferInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, *transferResponse)
@@ -60,7 +60,7 @@ func (h transferHandlerImpl) TransferGetHandler(c echo.Context) error {
 	transferID := c.Param("transfer_id")
 	transferResponse, err := h.transferService.Get(c.Request().Context(), &transferID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusOK, *transferResponse)
 }
@@ -68,7 +68,7 @@ func (h transferHandlerImpl) TransferGetHandler(c echo.Context) error {
 func (h transferHandlerImpl) TransferDeleteHandler(c echo.Context) error {
 	transferID := c.Param("transfer_id")
 	if err := h.transferService.Delete(c.Request().Context(), &transferID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Transfer Deleted!"})
 }
@@ -86,7 +86,7 @@ func (h transferHandlerImpl) ExternalTransferPostHandler(c echo.Context) error {
 
 	transferResponse, err := h.transferService.ProcessExternalTransfer(c.Request().Context(), &newTransferInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, *transferResponse)

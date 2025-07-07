@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
 )
 
 var singleton *AutoDebitRepository
@@ -23,7 +25,7 @@ func NewMockAutoDebitRepository() AutoDebitRepository {
 	return *singleton
 }
 
-func (db MockAutoDebitRepository) Create(ctx context.Context, request *AutomaticDebit) (*AutomaticDebit, *model.Erro) {
+func (db MockAutoDebitRepository) Create(ctx context.Context, request *AutomaticDebit) (*AutomaticDebit, *echo.HTTPError) {
 	/*
 		for {
 			transferID := randomstring.String(10)
@@ -38,33 +40,33 @@ func (db MockAutoDebitRepository) Create(ctx context.Context, request *Automatic
 	return request, nil
 }
 
-func (db MockAutoDebitRepository) Delete(ctx context.Context, id *string) *model.Erro {
+func (db MockAutoDebitRepository) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if _, ok := (*db.AutoDebitMap)[*id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	delete(*db.AutoDebitMap, *id)
 	return nil
 }
 
-func (db MockAutoDebitRepository) Get(ctx context.Context, id *string) (*AutomaticDebit, *model.Erro) {
+func (db MockAutoDebitRepository) Get(ctx context.Context, id *string) (*AutomaticDebit, *echo.HTTPError) {
 	if autoDebit, ok := (*db.AutoDebitMap)[*id]; !ok {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	} else {
 		return &autoDebit, nil
 	}
 }
 
-func (db MockAutoDebitRepository) Update(ctx context.Context, request *AutomaticDebit) *model.Erro {
+func (db MockAutoDebitRepository) Update(ctx context.Context, request *AutomaticDebit) *echo.HTTPError {
 	if _, ok := (*db.AutoDebitMap)[request.Debit_id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	(*db.AutoDebitMap)[request.Debit_id] = *request
 	return nil
 }
 
-func (db MockAutoDebitRepository) GetAll(ctx context.Context) (*[]AutomaticDebit, *model.Erro) {
+func (db MockAutoDebitRepository) GetAll(ctx context.Context) (*[]AutomaticDebit, *echo.HTTPError) {
 	if len(*db.AutoDebitMap) == 0 {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	}
 	autoDebits := make([]AutomaticDebit, 0, len(*db.AutoDebitMap))
 	for _, autoDebit := range *db.AutoDebitMap {
@@ -73,11 +75,17 @@ func (db MockAutoDebitRepository) GetAll(ctx context.Context) (*[]AutomaticDebit
 	return &autoDebits, nil
 }
 
-func (db MockAutoDebitRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]AutomaticDebit, *model.Erro) {
-	if filters == nil || len(*filters) == 0 {
-		return nil, model.FilterNotSet
+func (db MockAutoDebitRepository) GetFilteredByAccountID(ctx context.Context, accountID *string) (*[]AutomaticDebit, *echo.HTTPError) {
+	if accountID == nil || len(*accountID) == 0 {
+		return nil, model.ErrFilterNotSet
 	}
 	autodebitSlice := make([]AutomaticDebit, 0, len(*db.AutoDebitMap))
+
+	for _, autodebit := range *db.AutoDebitMap {
+		if autodebit.Account_id == *accountID {
+			autodebitSlice = append(autodebitSlice, autodebit)
+		}
+	}
 	/* for _, autodebit := range *db.AutoDebitMap {
 		match := true
 		for _, filter := range *filters {

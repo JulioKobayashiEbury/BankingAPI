@@ -50,7 +50,7 @@ func (h userHandlerImpl) UserPostHandler(c echo.Context) error {
 
 	userResponse, err := h.userService.Create(c.Request().Context(), &userInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusCreated, (*userResponse))
 }
@@ -68,7 +68,7 @@ func (h userHandlerImpl) UserPutHandler(c echo.Context) error {
 
 	userResponse, err := h.userService.Update(c.Request().Context(), &userInfo)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusOK, (*userResponse))
 }
@@ -78,7 +78,7 @@ func (h userHandlerImpl) UserGetHandler(c echo.Context) error {
 
 	userResponse, err := h.userService.Get(c.Request().Context(), &userID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, (*userResponse))
@@ -88,7 +88,7 @@ func (h userHandlerImpl) UserDeleteHandler(c echo.Context) error {
 	userID := c.Param("user_id")
 
 	if err := h.userService.Delete(c.Request().Context(), &userID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "User deleted"})
@@ -99,7 +99,7 @@ func (h userHandlerImpl) UserGetReportHandler(c echo.Context) error {
 
 	userReport, err := h.userService.Report(c.Request().Context(), &userID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 	return c.JSON(http.StatusOK, (*userReport))
 }

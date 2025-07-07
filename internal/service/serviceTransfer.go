@@ -10,6 +10,7 @@ import (
 
 	"BankingAPI/internal/model/transfer"
 
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -29,7 +30,7 @@ func NewTransferService(transferDB transfer.TransferRepository, accountServe Acc
 	}
 }
 
-func (service transferImpl) Create(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro) {
+func (service transferImpl) Create(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError) {
 	transferResponse, err := service.transferDatabase.Create(ctx, transferRequest)
 	if err != nil {
 		return nil, err
@@ -37,14 +38,14 @@ func (service transferImpl) Create(ctx context.Context, transferRequest *transfe
 	return transferResponse, nil
 }
 
-func (service transferImpl) Delete(ctx context.Context, id *string) *model.Erro {
+func (service transferImpl) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if err := service.transferDatabase.Delete(ctx, id); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (service transferImpl) Get(ctx context.Context, id *string) (*transfer.Transfer, *model.Erro) {
+func (service transferImpl) Get(ctx context.Context, id *string) (*transfer.Transfer, *echo.HTTPError) {
 	transferResponse, err := service.transferDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func (service transferImpl) Get(ctx context.Context, id *string) (*transfer.Tran
 	return transferResponse, nil
 }
 
-func (service transferImpl) GetAll(ctx context.Context) (*[]transfer.Transfer, *model.Erro) {
+func (service transferImpl) GetAll(ctx context.Context) (*[]transfer.Transfer, *echo.HTTPError) {
 	transfers, err := service.transferDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -61,21 +62,21 @@ func (service transferImpl) GetAll(ctx context.Context) (*[]transfer.Transfer, *
 	return transfers, nil
 }
 
-func (service transferImpl) ProcessNewTransfer(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro) {
+func (service transferImpl) ProcessNewTransfer(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError) {
 	if _, err := service.userService.Get(ctx, &transferRequest.User_to); err != nil {
-		return nil, &model.Erro{Err: errors.New("User for account to was not found!"), HttpCode: http.StatusBadRequest}
+		return nil, &echo.HTTPError{Internal: errors.New("user for account to was not found!"), Code: http.StatusBadRequest, Message: "user for account to was not found!"}
 	}
 
 	accountTo, err := service.accountService.Get(ctx, &transferRequest.Account_to)
-	if err == model.IDnotFound || err != nil {
+	if err == model.ErrIDnotFound || err != nil {
 		return nil, err
 	}
 	accountFrom, err := service.accountService.Get(ctx, &transferRequest.Account_id)
-	if err == model.IDnotFound || err != nil {
+	if err == model.ErrIDnotFound || err != nil {
 		return nil, err
 	}
 	if accountFrom.Status != "active" || accountTo.Status != "active" {
-		return nil, &model.Erro{Err: errors.New("one of the accounts is not active"), HttpCode: http.StatusBadRequest}
+		return nil, &echo.HTTPError{Internal: errors.New("one of the accounts is not active"), Code: http.StatusBadRequest, Message: "one of the accounts is not active"}
 	}
 
 	accountTo.Balance += transferRequest.Value
@@ -107,26 +108,26 @@ func (service transferImpl) ProcessNewTransfer(ctx context.Context, transferRequ
 	return transferResponse, nil
 }
 
-func (service transferImpl) ProcessExternalTransfer(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro) {
+func (service transferImpl) ProcessExternalTransfer(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError) {
 	_, err := service.accountService.Get(ctx, &transferRequest.Account_id)
 	if err != nil {
-		if err == model.IDnotFound {
+		if err == model.ErrIDnotFound {
 			return service.OutsideToInside(ctx, transferRequest)
 		}
 		return nil, err
 	}
 
 	if _, err := service.accountService.Get(ctx, &transferRequest.Account_to); err != nil {
-		if err == model.IDnotFound {
+		if err == model.ErrIDnotFound {
 			return service.InsideToOutside(ctx, transferRequest)
 		}
 		return nil, err
 	}
 
-	return nil, &model.Erro{Err: errors.New("Neither account to or account from are from this system!"), HttpCode: http.StatusBadRequest}
+	return nil, &echo.HTTPError{Internal: errors.New("Neither account to or account from are from this system!"), Code: http.StatusBadRequest, Message: "Neither account to or account from are from this system!"}
 }
 
-func (service transferImpl) InsideToOutside(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro) {
+func (service transferImpl) InsideToOutside(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError) {
 	if err := service.gateway.Send(transferRequest); err != nil {
 		return nil, err
 	}
@@ -146,10 +147,10 @@ func (service transferImpl) InsideToOutside(ctx context.Context, transferRequest
 	if _, err := service.accountService.Update(ctx, accountFrom); err != nil {
 		if err := service.transferDatabase.Delete(ctx, &transferResponse.Transfer_id); err != nil {
 			log.Error().Msg("could not delete trasnfer after account update failed " + transferResponse.Transfer_id)
-			return nil, &model.Erro{Err: errors.New("could not delete trasnfer after account update failed"), HttpCode: http.StatusInternalServerError}
+			return nil, &echo.HTTPError{Internal: errors.New("could not delete trasnfer after account update failed"), Code: http.StatusInternalServerError, Message: "could not delete trasnfer after account update failed"}
 		}
 		log.Error().Msg("Failed to complete transfer, update account failed!")
-		return nil, &model.Erro{Err: errors.New("Failed to complete transfer, update account failed!"), HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: errors.New("Failed to complete transfer, update account failed!"), Code: http.StatusInternalServerError, Message: "Failed to complete transfer, update account failed!"}
 	}
 
 	log.Info().Msg("External transfer is completed: " + transferResponse.Transfer_id)
@@ -157,7 +158,7 @@ func (service transferImpl) InsideToOutside(ctx context.Context, transferRequest
 	return transferResponse, nil
 }
 
-func (service transferImpl) OutsideToInside(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *model.Erro) {
+func (service transferImpl) OutsideToInside(ctx context.Context, transferRequest *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError) {
 	accountTo, err := service.accountService.Get(ctx, &transferRequest.Account_to)
 	if err != nil {
 		return nil, err
@@ -173,10 +174,10 @@ func (service transferImpl) OutsideToInside(ctx context.Context, transferRequest
 	if _, err := service.accountService.Update(ctx, accountTo); err != nil {
 		if err := service.transferDatabase.Delete(ctx, &transferResponse.Transfer_id); err != nil {
 			log.Error().Msg("could not delete trasnfer after account update failed " + transferResponse.Transfer_id)
-			return nil, &model.Erro{Err: errors.New("could not delete trasnfer after account update failed"), HttpCode: http.StatusInternalServerError}
+			return nil, &echo.HTTPError{Internal: errors.New("could not delete trasnfer after account update failed"), Code: http.StatusInternalServerError, Message: "could not delete trasnfer after account update failed"}
 		}
 		log.Error().Msg("Failed to complete transfer, update account failed!")
-		return nil, &model.Erro{Err: errors.New("Failed to complete transfer, update account failed!"), HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: errors.New("Failed to complete transfer, update account failed!"), Code: http.StatusInternalServerError, Message: "Failed to complete transfer, update account failed!"}
 	}
 
 	log.Info().Msg("External transfer is completed: " + transferResponse.Transfer_id)

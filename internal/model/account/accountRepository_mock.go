@@ -4,26 +4,21 @@ import (
 	"context"
 
 	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
 )
 
-var singleton *AccountRepository
-
 type MockAccountRepository struct {
-	AccountMap *map[string]Account
+	accountMap *map[string]Account
 }
 
-func NewMockAccountRepository() *AccountRepository {
-	if singleton != nil {
-		return singleton
+func NewMockAccountRepository() AccountRepository {
+	return &MockAccountRepository{
+		accountMap: &map[string]Account{},
 	}
-	accountMap := make(map[string]Account)
-	*singleton = MockAccountRepository{
-		AccountMap: &accountMap,
-	}
-	return singleton
 }
 
-func (db MockAccountRepository) Create(ctx context.Context, request *Account) (*Account, *model.Erro) {
+func (db MockAccountRepository) Create(ctx context.Context, request *Account) (*Account, *echo.HTTPError) {
 	/*
 		for {
 			transferID := randomstring.String(10)
@@ -34,50 +29,57 @@ func (db MockAccountRepository) Create(ctx context.Context, request *Account) (*
 			}
 		}
 	*/
-	(*db.AccountMap)[request.Account_id] = *request
+	(*db.accountMap)[request.Account_id] = *request
 	return request, nil
 }
 
-func (db MockAccountRepository) Delete(ctx context.Context, id *string) *model.Erro {
-	if _, ok := (*db.AccountMap)[*id]; !ok {
-		return model.IDnotFound
+func (db MockAccountRepository) Delete(ctx context.Context, id *string) *echo.HTTPError {
+	if _, ok := (*db.accountMap)[*id]; !ok {
+		return model.ErrIDnotFound
 	}
-	delete(*db.AccountMap, *id)
+	delete(*db.accountMap, *id)
 	return nil
 }
 
-func (db MockAccountRepository) Get(ctx context.Context, id *string) (*Account, *model.Erro) {
-	if account, ok := (*db.AccountMap)[*id]; !ok {
-		return nil, model.IDnotFound
+func (db MockAccountRepository) Get(ctx context.Context, id *string) (*Account, *echo.HTTPError) {
+	if account, ok := (*db.accountMap)[*id]; !ok {
+		return nil, model.ErrIDnotFound
 	} else {
 		return &account, nil
 	}
 }
 
-func (db MockAccountRepository) Update(ctx context.Context, request *Account) *model.Erro {
-	if _, ok := (*db.AccountMap)[request.Account_id]; !ok {
-		return model.IDnotFound
+func (db MockAccountRepository) Update(ctx context.Context, request *Account) *echo.HTTPError {
+	if _, ok := (*db.accountMap)[request.Account_id]; !ok {
+		return model.ErrIDnotFound
 	}
-	(*db.AccountMap)[request.Account_id] = *request
+	(*db.accountMap)[request.Account_id] = *request
 	return nil
 }
 
-func (db MockAccountRepository) GetAll(ctx context.Context) (*[]Account, *model.Erro) {
-	if len(*db.AccountMap) == 0 {
-		return nil, model.IDnotFound
+func (db MockAccountRepository) GetAll(ctx context.Context) (*[]Account, *echo.HTTPError) {
+	if len(*db.accountMap) == 0 {
+		return nil, model.ErrIDnotFound
 	}
-	accounts := make([]Account, 0, len(*db.AccountMap))
-	for _, account := range *db.AccountMap {
+	accounts := make([]Account, 0, len(*db.accountMap))
+	for _, account := range *db.accountMap {
 		accounts = append(accounts, account)
 	}
 	return &accounts, nil
 }
 
-func (db MockAccountRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]Account, *model.Erro) {
-	if filters == nil || len(*filters) == 0 {
-		return nil, model.FilterNotSet
+func (db MockAccountRepository) GetFilteredByClientID(ctx context.Context, clientID *string) (*[]Account, *echo.HTTPError) {
+	if clientID == nil || len(*clientID) == 0 {
+		return nil, model.ErrFilterNotSet
 	}
 
+	accountSlice := make([]Account, 0, len(*db.accountMap))
+
+	for _, account := range *db.accountMap {
+		if account.Client_id == *clientID {
+			accountSlice = append(accountSlice, account)
+		}
+	}
 	/* accountSlice := make([]Account, 0, len(*db.AccountMap))
 	for _, account := range *db.AccountMap {
 		match := true
@@ -109,5 +111,5 @@ func (db MockAccountRepository) GetFilteredByID(ctx context.Context, filters *st
 		}
 	}
 	*/
-	return nil, nil
+	return &accountSlice, nil
 }

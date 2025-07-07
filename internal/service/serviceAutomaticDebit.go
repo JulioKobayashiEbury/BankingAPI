@@ -14,6 +14,7 @@ import (
 	"BankingAPI/internal/model/withdrawal"
 
 	"github.com/go-co-op/gocron/v2"
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -34,7 +35,7 @@ func NewAutoDebit(autodebitDB automaticdebit.AutoDebitRepository, withdrawal Wit
 	}
 }
 
-func (service serviceAutoDebitImpl) Create(ctx context.Context, autodebitRequest *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
+func (service serviceAutoDebitImpl) Create(ctx context.Context, autodebitRequest *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *echo.HTTPError) {
 	automaticDebit, err := service.autoDebitFirestore.Create(ctx, autodebitRequest)
 	if err != nil {
 		return nil, err
@@ -42,14 +43,14 @@ func (service serviceAutoDebitImpl) Create(ctx context.Context, autodebitRequest
 	return automaticDebit, nil
 }
 
-func (service serviceAutoDebitImpl) Delete(ctx context.Context, id *string) *model.Erro {
+func (service serviceAutoDebitImpl) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if err := service.autoDebitFirestore.Delete(ctx, id); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (service serviceAutoDebitImpl) Get(ctx context.Context, id *string) (*automaticdebit.AutomaticDebit, *model.Erro) {
+func (service serviceAutoDebitImpl) Get(ctx context.Context, id *string) (*automaticdebit.AutomaticDebit, *echo.HTTPError) {
 	autodebit, err := service.autoDebitFirestore.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (service serviceAutoDebitImpl) Get(ctx context.Context, id *string) (*autom
 	return autodebit, nil
 }
 
-func (service serviceAutoDebitImpl) GetAll(ctx context.Context) (*[]automaticdebit.AutomaticDebit, *model.Erro) {
+func (service serviceAutoDebitImpl) GetAll(ctx context.Context) (*[]automaticdebit.AutomaticDebit, *echo.HTTPError) {
 	autodebits, err := service.autoDebitFirestore.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -65,10 +66,10 @@ func (service serviceAutoDebitImpl) GetAll(ctx context.Context) (*[]automaticdeb
 	return autodebits, nil
 }
 
-func (service serviceAutoDebitImpl) ProcessNewAutomaticDebit(ctx context.Context, autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro) {
+func (service serviceAutoDebitImpl) ProcessNewAutomaticDebit(ctx context.Context, autoDebit *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *echo.HTTPError) {
 	if !isValidDate(autoDebit.Expiration_date) {
 		log.Warn().Msg("Invalid date format")
-		return nil, &model.Erro{Err: errors.New("invalid date format"), HttpCode: http.StatusBadRequest}
+		return nil, &echo.HTTPError{Internal: errors.New("invalid date format"), Code: http.StatusBadRequest, Message: "invalid date format"}
 	}
 	autodebitResponse, err := service.autoDebitFirestore.Create(ctx, autoDebit)
 	if err != nil {
@@ -89,7 +90,7 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 	defer ctx.Done()
 	autoDebitList, err := service.GetAll(ctx)
 	if err != nil {
-		log.Error().Msg(err.Err.Error())
+		log.Error().Msg(err.Error())
 		return
 	}
 	for _, autoDebit := range *autoDebitList {
@@ -115,7 +116,7 @@ func (service serviceAutoDebitImpl) CheckAutomaticDebits() {
 				Withdrawal: autoDebit.Value,
 			})
 			if err != nil {
-				logger.Error().Msg(err.Err.Error())
+				logger.Error().Msg(err.Error())
 				return
 			}
 			logger.Info().Msg("Auto debit is logged as Withdrawal together with Account")

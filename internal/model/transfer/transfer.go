@@ -1,9 +1,16 @@
 package transfer
 
-import "BankingAPI/internal/model"
+import (
+	"context"
+
+	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
+)
 
 type TransferRepository interface {
 	model.Repository[Transfer]
+	GetFilteredByAccountID(context.Context, *string) (*[]Transfer, *echo.HTTPError)
 }
 
 type Transfer struct {

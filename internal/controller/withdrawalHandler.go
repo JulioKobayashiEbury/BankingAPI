@@ -46,7 +46,7 @@ func (h withdrawalHandlerImpl) PostWithdrawalHandler(c echo.Context) error {
 
 	withdrawalReponse, err := h.withdrawalService.ProcessWithdrawal(c.Request().Context(), &withdrawalInfo)
 	if err != nil {
-		c.JSON(err.HttpCode, err.Err.Error())
+		c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, *withdrawalReponse)
@@ -56,7 +56,7 @@ func (h withdrawalHandlerImpl) DeleteWithdrawalHandler(c echo.Context) error {
 	withdrawalID := c.Param("withdrawal_id")
 
 	if err := h.withdrawalService.Delete(c.Request().Context(), &withdrawalID); err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, model.StandartResponse{Message: "Withdrawal Deleted!"})
@@ -67,7 +67,7 @@ func (h withdrawalHandlerImpl) GetWithdrawalHandler(c echo.Context) error {
 
 	withdrawalResponse, err := h.withdrawalService.Get(c.Request().Context(), &withdrawalID)
 	if err != nil {
-		return c.JSON(err.HttpCode, err.Err.Error())
+		return c.JSON(err.Code, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, *withdrawalResponse)

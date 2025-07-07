@@ -2,10 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
-	"BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/model/client"
@@ -13,9 +10,9 @@ import (
 	"BankingAPI/internal/model/transfer"
 	"BankingAPI/internal/model/user"
 	"BankingAPI/internal/model/withdrawal"
-)
 
-var ErrorMissingCredentials = &model.Erro{Err: errors.New("missing credentials"), HttpCode: http.StatusBadRequest}
+	"github.com/labstack/echo"
+)
 
 type ServicesList struct {
 	UserService           UserService
@@ -29,68 +26,68 @@ type ServicesList struct {
 }
 
 type Authentication interface {
-	Authenticate(ctx context.Context, typeID *string, password *string) (bool, *model.Erro)
-	GenerateToken(ctx context.Context, typeID *string) (*string, *model.Erro)
+	Authenticate(ctx context.Context, typeID *string, password *string) (bool, *echo.HTTPError)
+	GenerateToken(ctx context.Context, typeID *string) (*string, *echo.HTTPError)
 }
 
 type UserService interface {
-	Create(context.Context, *user.User) (*user.User, *model.Erro)
-	Delete(context.Context, *string) *model.Erro
-	Get(context.Context, *string) (*user.User, *model.Erro)
-	Update(context.Context, *user.User) (*user.User, *model.Erro)
-	GetAll(context.Context) (*[]user.User, *model.Erro)
-	Report(context.Context, *string) (*user.UserReport, *model.Erro)
+	Create(context.Context, *user.User) (*user.User, *echo.HTTPError)
+	Delete(context.Context, *string) *echo.HTTPError
+	Get(context.Context, *string) (*user.User, *echo.HTTPError)
+	Update(context.Context, *user.User) (*user.User, *echo.HTTPError)
+	GetAll(context.Context) (*[]user.User, *echo.HTTPError)
+	Report(context.Context, *string) (*user.UserReport, *echo.HTTPError)
 }
 
 type ClientService interface {
-	Create(context.Context, *client.Client) (*client.Client, *model.Erro)
-	Delete(context.Context, *string) *model.Erro
-	Get(context.Context, *string) (*client.Client, *model.Erro)
-	Update(context.Context, *client.Client) (*client.Client, *model.Erro)
-	GetAll(context.Context) (*[]client.Client, *model.Erro)
-	Report(context.Context, *string) (*client.ClientReport, *model.Erro)
+	Create(context.Context, *client.Client) (*client.Client, *echo.HTTPError)
+	Delete(context.Context, *string) *echo.HTTPError
+	Get(context.Context, *string) (*client.Client, *echo.HTTPError)
+	Update(context.Context, *client.Client) (*client.Client, *echo.HTTPError)
+	GetAll(context.Context) (*[]client.Client, *echo.HTTPError)
+	Report(context.Context, *string) (*client.ClientReport, *echo.HTTPError)
 }
 
 type AccountService interface {
-	Create(context.Context, *account.Account) (*account.Account, *model.Erro)
-	Delete(context.Context, *string) *model.Erro
-	Get(context.Context, *string) (*account.Account, *model.Erro)
-	Update(context.Context, *account.Account) (*account.Account, *model.Erro)
-	GetAll(context.Context) (*[]account.Account, *model.Erro)
-	Report(context.Context, *string) (*account.AccountReport, *model.Erro)
+	Create(context.Context, *account.Account) (*account.Account, *echo.HTTPError)
+	Delete(context.Context, *string) *echo.HTTPError
+	Get(context.Context, *string) (*account.Account, *echo.HTTPError)
+	Update(context.Context, *account.Account) (*account.Account, *echo.HTTPError)
+	GetAll(context.Context) (*[]account.Account, *echo.HTTPError)
+	Report(context.Context, *string) (*account.AccountReport, *echo.HTTPError)
 }
 
 type WithdrawalService interface {
-	Create(context.Context, *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
-	Delete(context.Context, *string) *model.Erro
-	Get(context.Context, *string) (*withdrawal.Withdrawal, *model.Erro)
-	GetAll(context.Context) (*[]withdrawal.Withdrawal, *model.Erro)
-	ProcessWithdrawal(context.Context, *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro)
+	Create(context.Context, *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *echo.HTTPError)
+	Delete(context.Context, *string) *echo.HTTPError
+	Get(context.Context, *string) (*withdrawal.Withdrawal, *echo.HTTPError)
+	GetAll(context.Context) (*[]withdrawal.Withdrawal, *echo.HTTPError)
+	ProcessWithdrawal(context.Context, *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *echo.HTTPError)
 }
 
 type DepositService interface {
-	Create(context.Context, *deposit.Deposit) (*deposit.Deposit, *model.Erro)
-	Delete(context.Context, *string) *model.Erro
-	Get(context.Context, *string) (*deposit.Deposit, *model.Erro)
-	GetAll(context.Context) (*[]deposit.Deposit, *model.Erro)
-	ProcessDeposit(context.Context, *deposit.Deposit) (*deposit.Deposit, *model.Erro)
+	Create(context.Context, *deposit.Deposit) (*deposit.Deposit, *echo.HTTPError)
+	Delete(context.Context, *string) *echo.HTTPError
+	Get(context.Context, *string) (*deposit.Deposit, *echo.HTTPError)
+	GetAll(context.Context) (*[]deposit.Deposit, *echo.HTTPError)
+	ProcessDeposit(context.Context, *deposit.Deposit) (*deposit.Deposit, *echo.HTTPError)
 }
 
 type AutomaticDebitService interface {
-	Create(context.Context, *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
-	Delete(context.Context, *string) *model.Erro
-	Get(context.Context, *string) (*automaticdebit.AutomaticDebit, *model.Erro)
-	GetAll(context.Context) (*[]automaticdebit.AutomaticDebit, *model.Erro)
-	ProcessNewAutomaticDebit(context.Context, *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *model.Erro)
+	Create(context.Context, *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *echo.HTTPError)
+	Delete(context.Context, *string) *echo.HTTPError
+	Get(context.Context, *string) (*automaticdebit.AutomaticDebit, *echo.HTTPError)
+	GetAll(context.Context) (*[]automaticdebit.AutomaticDebit, *echo.HTTPError)
+	ProcessNewAutomaticDebit(context.Context, *automaticdebit.AutomaticDebit) (*automaticdebit.AutomaticDebit, *echo.HTTPError)
 	CheckAutomaticDebits()
 	Scheduled()
 }
 
 type TransferService interface {
-	Create(context.Context, *transfer.Transfer) (*transfer.Transfer, *model.Erro)
-	Delete(context.Context, *string) *model.Erro
-	Get(context.Context, *string) (*transfer.Transfer, *model.Erro)
-	GetAll(context.Context) (*[]transfer.Transfer, *model.Erro)
-	ProcessNewTransfer(context.Context, *transfer.Transfer) (*transfer.Transfer, *model.Erro)
-	ProcessExternalTransfer(context.Context, *transfer.Transfer) (*transfer.Transfer, *model.Erro)
+	Create(context.Context, *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError)
+	Delete(context.Context, *string) *echo.HTTPError
+	Get(context.Context, *string) (*transfer.Transfer, *echo.HTTPError)
+	GetAll(context.Context) (*[]transfer.Transfer, *echo.HTTPError)
+	ProcessNewTransfer(context.Context, *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError)
+	ProcessExternalTransfer(context.Context, *transfer.Transfer) (*transfer.Transfer, *echo.HTTPError)
 }

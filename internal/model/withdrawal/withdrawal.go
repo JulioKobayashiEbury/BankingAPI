@@ -1,9 +1,16 @@
 package withdrawal
 
-import "BankingAPI/internal/model"
+import (
+	"context"
+
+	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
+)
 
 type WithdrawalRepository interface {
 	model.Repository[Withdrawal]
+	GetFilteredByAccountID(context.Context, *string) (*[]Withdrawal, *echo.HTTPError)
 }
 type Withdrawal struct {
 	Withdrawal_id   string  `json:"withdrawal_id" xml:"withdrawal_id"`

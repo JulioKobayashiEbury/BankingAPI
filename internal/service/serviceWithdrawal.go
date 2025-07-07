@@ -5,10 +5,11 @@ import (
 	"errors"
 	"net/http"
 
-	model "BankingAPI/internal/model"
+	"BankingAPI/internal/model"
 	"BankingAPI/internal/model/account"
 	"BankingAPI/internal/model/withdrawal"
 
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
 
@@ -24,7 +25,7 @@ func NewWithdrawalService(withdrawalDB withdrawal.WithdrawalRepository, accountS
 	}
 }
 
-func (service withdrawalImpl) Create(ctx context.Context, withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
+func (service withdrawalImpl) Create(ctx context.Context, withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *echo.HTTPError) {
 	withdrawalResponse, err := service.withdrawalDatabase.Create(ctx, withdrawalRequest)
 	if err != nil {
 		return nil, err
@@ -32,7 +33,7 @@ func (service withdrawalImpl) Create(ctx context.Context, withdrawalRequest *wit
 	return withdrawalResponse, nil
 }
 
-func (service withdrawalImpl) Delete(ctx context.Context, id *string) *model.Erro {
+func (service withdrawalImpl) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	// modificar para dar rollback
 	withdrawalResponse, err := service.Get(ctx, id)
 	if err != nil {
@@ -57,7 +58,7 @@ func (service withdrawalImpl) Delete(ctx context.Context, id *string) *model.Err
 	return nil
 }
 
-func (service withdrawalImpl) Get(ctx context.Context, id *string) (*withdrawal.Withdrawal, *model.Erro) {
+func (service withdrawalImpl) Get(ctx context.Context, id *string) (*withdrawal.Withdrawal, *echo.HTTPError) {
 	withdrawalResponse, err := service.withdrawalDatabase.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -65,7 +66,7 @@ func (service withdrawalImpl) Get(ctx context.Context, id *string) (*withdrawal.
 	return withdrawalResponse, nil
 }
 
-func (service withdrawalImpl) GetAll(ctx context.Context) (*[]withdrawal.Withdrawal, *model.Erro) {
+func (service withdrawalImpl) GetAll(ctx context.Context) (*[]withdrawal.Withdrawal, *echo.HTTPError) {
 	withdrawals, err := service.withdrawalDatabase.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -73,7 +74,7 @@ func (service withdrawalImpl) GetAll(ctx context.Context) (*[]withdrawal.Withdra
 	return withdrawals, nil
 }
 
-func (service withdrawalImpl) ProcessWithdrawal(ctx context.Context, withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *model.Erro) {
+func (service withdrawalImpl) ProcessWithdrawal(ctx context.Context, withdrawalRequest *withdrawal.Withdrawal) (*withdrawal.Withdrawal, *echo.HTTPError) {
 	// monta update
 	accountResponse, err := service.accountService.Get(ctx, &withdrawalRequest.Account_id)
 	if err != nil {
@@ -104,19 +105,19 @@ func (service withdrawalImpl) ProcessWithdrawal(ctx context.Context, withdrawalR
 	return withdrawalResponse, nil
 }
 
-func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse *account.Account) (bool, *model.Erro) {
+func verifyWithdrawal(withdrawalRequest *withdrawal.Withdrawal, accountResponse *account.Account) (bool, *echo.HTTPError) {
 	if accountResponse.Status != "active" {
-		return false, &model.Erro{Err: errors.New("account is not active"), HttpCode: http.StatusBadRequest}
+		return false, model.ErrAccountNotActive
 	}
 	if accountResponse.User_id != withdrawalRequest.User_id {
-		return false, &model.Erro{Err: errors.New("user ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, model.ErrUserIDNotValid
 	}
 
 	if accountResponse.Agency_id != withdrawalRequest.Agency_id {
-		return false, &model.Erro{Err: errors.New("agency ID not valid"), HttpCode: http.StatusBadRequest}
+		return false, model.ErrAgencyIDNotValid
 	}
 	if accountResponse.Balance-withdrawalRequest.Withdrawal < 0.0 {
-		return false, &model.Erro{Err: errors.New("insuficcient funds"), HttpCode: http.StatusBadRequest}
+		return false, &echo.HTTPError{Internal: errors.New("insuficcient funds"), Code: http.StatusBadRequest, Message: "insuficcient funds"}
 	}
 	return true, nil
 }

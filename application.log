@@ -1,0 +1,53 @@
+{"level":"info","time":"2025-07-07T11:07:07.52198959-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-07T11:07:07.52239697-03:00","message":"Job ID for automatic debit checking: f60f0b02-719a-4e07-9a8a-2c0023d7becc"}
+{"level":"info","time":"2025-07-07T11:08:00.052093473-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-07-07T11:08:31.319959318-03:00","message":"Authenticated entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:08:52.102438285-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:08:52.10250061-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:08:52.102518698-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:09:12.366720203-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:09:12.366764919-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:10:00.00041365-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-07-07T11:10:00.947446957-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-07T11:10:04.369339799-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-07T11:10:04.369734065-03:00","message":"Job ID for automatic debit checking: a2b59cd1-70e5-4658-bbf1-3672c9db33dc"}
+{"level":"info","time":"2025-07-07T11:10:05.91610424-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:10:05.922474279-03:00","message":"Account returned: 21NCPAnUHFIqAUAgkAXY"}
+{"level":"info","time":"2025-07-07T11:10:10.465555418-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:10:10.465616128-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:10:10.46564206-03:00","message":"retrievced account from cache"}
+{"level":"info","time":"2025-07-07T11:10:10.465657789-03:00","message":"Account returned: 21NCPAnUHFIqAUAgkAXY"}
+{"level":"info","time":"2025-07-07T11:10:16.075924279-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:10:16.07600943-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:10:16.076047904-03:00","message":"retrievced account from cache"}
+{"level":"info","time":"2025-07-07T11:10:16.076066264-03:00","message":"Account returned: 21NCPAnUHFIqAUAgkAXY"}
+{"level":"info","time":"2025-07-07T11:10:41.419171987-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:10:41.419237896-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:10:41.42302716-03:00","message":"Account returned: CXP9yF0IP0Qrbvrxw34c"}
+{"level":"info","time":"2025-07-07T11:10:42.896035745-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:10:42.896116784-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:10:42.896141682-03:00","message":"retrievced account from cache"}
+{"level":"info","time":"2025-07-07T11:10:42.896163835-03:00","message":"Account returned: CXP9yF0IP0Qrbvrxw34c"}
+{"level":"info","time":"2025-07-07T11:10:44.276047559-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:10:44.276141652-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:10:44.276167178-03:00","message":"retrievced account from cache"}
+{"level":"info","time":"2025-07-07T11:10:44.276182619-03:00","message":"Account returned: CXP9yF0IP0Qrbvrxw34c"}
+{"level":"error","time":"2025-07-07T11:11:05.474714095-03:00","message":"authorization failed: code=401, message=token has invalid claims: token is expired"}
+{"level":"info","time":"2025-07-07T11:11:22.691091806-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:11:22.691188496-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:11:22.691208802-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:11:37.101807662-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:11:37.101873576-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:11:37.104694032-03:00","message":"Client returned: CayGudjVPsCPsadrrXBP"}
+{"level":"info","time":"2025-07-07T11:11:57.433803578-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:11:57.433879197-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:11:57.439475763-03:00","message":"Client returned: CayGudjVPsCPsadrrXBP"}
+{"level":"info","time":"2025-07-07T11:12:00.002044369-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-07-07T11:12:05.519247654-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:12:05.519308623-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:12:05.519485562-03:00","message":"retrievced account from cache"}
+{"level":"info","time":"2025-07-07T11:12:05.519514875-03:00","message":"Account returned: 21NCPAnUHFIqAUAgkAXY"}
+{"level":"info","time":"2025-07-07T11:12:11.490316728-03:00","message":"Authorized entrance: JLchha6UjojhLPA3rzTS"}
+{"level":"info","time":"2025-07-07T11:12:11.490401907-03:00","message":"retrieved user from cache"}
+{"level":"info","time":"2025-07-07T11:12:11.494944728-03:00","message":"Client returned: CayGudjVPsCPsadrrXBP"}
+{"level":"info","time":"2025-07-07T11:13:09.798768807-03:00","message":"Interruption signal received, terminating gracefully..."}

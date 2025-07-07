@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
 )
 
 var singleton *ClientRepository
@@ -23,7 +25,7 @@ func NewMockClientReposiory() ClientRepository {
 	return *singleton
 }
 
-func (db MockClientRepository) Create(ctx context.Context, request *Client) (*Client, *model.Erro) {
+func (db MockClientRepository) Create(ctx context.Context, request *Client) (*Client, *echo.HTTPError) {
 	/*
 		for {
 			clientID := randomstring.String(10)
@@ -38,32 +40,32 @@ func (db MockClientRepository) Create(ctx context.Context, request *Client) (*Cl
 	return request, nil
 }
 
-func (db MockClientRepository) Delete(ctx context.Context, id *string) *model.Erro {
+func (db MockClientRepository) Delete(ctx context.Context, id *string) *echo.HTTPError {
 	if _, ok := (*db.ClientMap)[*id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	delete(*db.ClientMap, *id)
 	return nil
 }
 
-func (db MockClientRepository) Get(ctx context.Context, id *string) (*Client, *model.Erro) {
+func (db MockClientRepository) Get(ctx context.Context, id *string) (*Client, *echo.HTTPError) {
 	if clientResponse, ok := (*db.ClientMap)[*id]; !ok {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	} else {
 		return &clientResponse, nil
 	}
 }
 
-func (db MockClientRepository) Update(ctx context.Context, request *Client) *model.Erro {
+func (db MockClientRepository) Update(ctx context.Context, request *Client) *echo.HTTPError {
 	if _, ok := (*db.ClientMap)[request.Client_id]; !ok {
-		return model.IDnotFound
+		return model.ErrIDnotFound
 	}
 	return nil
 }
 
-func (db MockClientRepository) GetAll(ctx context.Context) (*[]Client, *model.Erro) {
+func (db MockClientRepository) GetAll(ctx context.Context) (*[]Client, *echo.HTTPError) {
 	if len(*db.ClientMap) == 0 {
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	}
 	clients := make([]Client, 0, len(*db.ClientMap))
 	for _, client := range *db.ClientMap {
@@ -72,11 +74,17 @@ func (db MockClientRepository) GetAll(ctx context.Context) (*[]Client, *model.Er
 	return &clients, nil
 }
 
-func (db MockClientRepository) GetFilteredByID(ctx context.Context, filters *string) (*[]Client, *model.Erro) {
-	if filters == nil || len(*filters) == 0 {
-		return nil, model.FilterNotSet
+func (db MockClientRepository) GetFilteredByUserID(ctx context.Context, userID *string) (*[]Client, *echo.HTTPError) {
+	if userID == nil || len(*userID) == 0 {
+		return nil, model.ErrFilterNotSet
 	}
 	clientSlice := make([]Client, 0, len(*db.ClientMap))
+
+	for _, client := range *db.ClientMap {
+		if client.User_id == *userID {
+			clientSlice = append(clientSlice, client)
+		}
+	}
 	/* for _, clientResponse := range *db.ClientMap {
 		match := true
 		for _, filter := range *filters {

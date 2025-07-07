@@ -1,17 +1,12 @@
 package middleware
 
 import (
-	"errors"
-	"net/http"
-
 	"BankingAPI/internal/model"
 	"BankingAPI/internal/service"
 
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
-
-var NotAuthenticated = &model.Erro{Err: errors.New("authorization header is missing, please authenticate first"), HttpCode: http.StatusUnauthorized}
 
 type AuthMiddleware interface {
 	AuthorizeMiddleware(next echo.HandlerFunc) echo.HandlerFunc
@@ -34,24 +29,24 @@ func (h authMiddlewareImpl) AuthorizeMiddleware(next echo.HandlerFunc) echo.Hand
 			if c.Path() == "/auth/token" {
 				return next(c)
 			}
-			return c.JSON(NotAuthenticated.HttpCode, NotAuthenticated.Err.Error())
+			return c.JSON(model.ErrNotAuthenticated.Code, model.ErrNotAuthenticated.Error())
 		}
 		authorizationHeader := c.Request().Header.Get(echo.HeaderAuthorization)
 		if authorizationHeader == "" {
 			log.Warn().Msg("authorization header is missing")
-			return c.JSON(NotAuthenticated.HttpCode, NotAuthenticated.Err.Error())
+			return c.JSON(model.ErrNotAuthenticated.Code, model.ErrNotAuthenticated.Error())
 		}
 
 		claims, err := service.Authorize(&authorizationHeader)
 		if err != nil {
-			log.Error().Msg("authorization failed: " + err.Err.Error())
-			return c.JSON(err.HttpCode, err.Err.Error())
+			log.Error().Msg("authorization failed: " + err.Error())
+			return c.JSON(err.Code, err.Error())
 		}
 
 		userResponse, err := h.userService.Get(c.Request().Context(), &claims.Id)
 		if err != nil {
-			log.Error().Msg("failed to get user: " + err.Err.Error())
-			return c.JSON(err.HttpCode, err.Err.Error())
+			log.Error().Msg("failed to get user: " + err.Error())
+			return c.JSON(err.Code, err.Error())
 		}
 
 		if userResponse.Name == "admin" {
@@ -62,14 +57,14 @@ func (h authMiddlewareImpl) AuthorizeMiddleware(next echo.HandlerFunc) echo.Hand
 		if c.Param("user_id") != "" {
 			if c.Param("user_id") != claims.Id {
 				log.Error().Msg("user id doesn't match with claims id")
-				return c.JSON(http.StatusUnauthorized, model.StandartResponse{Message: "user id does not match with claims id"})
+				return c.JSON(model.ErrUserIDNotMatch.Code, model.ErrUserIDNotMatch.Internal)
 			}
 			return next(c)
 		}
 		if c.FormValue("user_id") != "" {
 			if c.FormValue("user_id") != claims.Id {
 				log.Error().Msg("user id doesn't match with claims id")
-				return c.JSON(http.StatusUnauthorized, model.StandartResponse{Message: "user id does not match with claims id"})
+				return c.JSON(model.ErrUserIDNotMatch.Code, model.ErrUserIDNotMatch.Internal)
 			}
 			return next(c)
 		}

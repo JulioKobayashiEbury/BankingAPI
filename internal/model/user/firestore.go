@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"BankingAPI/internal/model"
 
 	"cloud.google.com/go/firestore"
+	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,12 +22,15 @@ const (
 	cacheDuration = time.Minute * 30
 )
 
+var singleton *userFirestore
+
 type userFirestore struct {
 	databaseClient *firestore.Client
 	cache          map[string]User
 	mutex          *sync.Mutex
 }
 
+// torna o sistema em statefull
 func (db userFirestore) manageDataOnCache(dataID *string) {
 	var timeLimit int64 = time.Now().Unix() + int64(cacheDuration)
 	for {
@@ -37,7 +42,7 @@ func (db userFirestore) manageDataOnCache(dataID *string) {
 			}
 			ctx := context.Background()
 			for {
-				if err := db.Update(ctx, &user); err != nil {
+				if _, err := db.databaseClient.Collection(collection).Doc(*dataID).Set(ctx, &user); err != nil {
 					log.Error().Msg("error updating user on DB")
 					time.Sleep(time.Duration(1))
 					continue
@@ -53,14 +58,17 @@ func (db userFirestore) manageDataOnCache(dataID *string) {
 }
 
 func NewUserFireStore(dbClient *firestore.Client) UserRepository {
-	return userFirestore{
-		databaseClient: dbClient,
-		cache:          map[string]User{},
-		mutex:          &sync.Mutex{},
+	if singleton == nil {
+		singleton = &userFirestore{
+			databaseClient: dbClient,
+			cache:          map[string]User{},
+			mutex:          &sync.Mutex{},
+		}
 	}
+	return singleton
 }
 
-func (db userFirestore) Create(ctx context.Context, request *User) (*User, *model.Erro) {
+func (db userFirestore) Create(ctx context.Context, request *User) (*User, *echo.HTTPError) {
 	db.mutex.Lock()
 	db.cache[request.User_id] = *request
 	go db.manageDataOnCache(&request.User_id)
@@ -76,26 +84,32 @@ func (db userFirestore) Create(ctx context.Context, request *User) (*User, *mode
 	docRef, _, err := db.databaseClient.Collection(collection).Add(ctx, entity)
 	if err != nil {
 		log.Error().Msg(err.Error())
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 	return db.Get(ctx, &docRef.ID)
 }
 
-func (db userFirestore) Delete(ctx context.Context, id *string) *model.Erro {
+func (db userFirestore) Delete(ctx context.Context, id *string) *echo.HTTPError {
+	ch := make(chan *echo.HTTPError)
+
+	go func(ch chan *echo.HTTPError) {
+		docRef := db.databaseClient.Collection(collection).Doc(*id)
+
+		if _, err := docRef.Delete(ctx); err != nil {
+			log.Error().Msg(err.Error())
+			ch <- &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
+		}
+	}(ch)
+
 	db.mutex.Lock()
 	delete(db.cache, *id)
 	db.mutex.Unlock()
-
-	docRef := db.databaseClient.Collection(collection).Doc(*id)
-
-	if _, err := docRef.Delete(ctx); err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-	return nil
+	err := <-ch
+	close(ch)
+	return err
 }
 
-func (db userFirestore) Get(ctx context.Context, id *string) (*User, *model.Erro) {
+func (db userFirestore) Get(ctx context.Context, id *string) (*User, *echo.HTTPError) {
 	db.mutex.Lock()
 	if response, ok := db.cache[*id]; ok {
 		log.Info().Msg("retrieved user from cache")
@@ -107,15 +121,15 @@ func (db userFirestore) Get(ctx context.Context, id *string) (*User, *model.Erro
 	docSnapshot, err := db.databaseClient.Collection(collection).Doc(*id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		log.Warn().Msg("ID from collection: " + collection + " not found")
-		return nil, model.IDnotFound
+		return nil, model.ErrIDnotFound
 	}
 	if docSnapshot == nil {
 		log.Error().Msg("Nil account from snapshot" + *id)
-		return nil, &model.Erro{Err: errors.New("Nil account from snapshot" + (*id)), HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: errors.New("Nil account from snapshot" + (*id)), Code: http.StatusInternalServerError, Message: fmt.Sprint("Nil account from snapshot" + (*id))}
 	}
 	userResponse := User{}
 	if err := docSnapshot.DataTo(&userResponse); err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 	userResponse.User_id = docSnapshot.Ref.ID
 
@@ -127,40 +141,48 @@ func (db userFirestore) Get(ctx context.Context, id *string) (*User, *model.Erro
 	return &userResponse, nil
 }
 
-func (db userFirestore) Update(ctx context.Context, request *User) *model.Erro {
+func (db userFirestore) Update(ctx context.Context, request *User) *echo.HTTPError {
+	ch := make(chan *echo.HTTPError)
+
+	go func(errChan chan *echo.HTTPError) {
+		entity := map[string]interface{}{
+			"name":          request.Name,
+			"document":      request.Document,
+			"password":      request.Password,
+			"register_date": request.Register_date,
+		}
+
+		docRef := db.databaseClient.Collection(collection).Doc(request.User_id)
+		if _, err := docRef.Set(ctx, entity); err != nil {
+			db.mutex.Lock()
+			delete(db.cache, request.User_id)
+			db.mutex.Unlock()
+			log.Error().Msg(err.Error())
+			errChan <- &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
+		}
+
+		log.Info().Msg("user: " + request.User_id + "has been updated")
+
+		errChan <- nil
+	}(ch)
+
 	db.mutex.Lock()
 	if _, ok := db.cache[request.User_id]; ok {
 		db.cache[request.User_id] = *request
-
-		db.mutex.Unlock()
-		return nil
 	}
 	db.mutex.Unlock()
 
-	entity := map[string]interface{}{
-		"name":          request.Name,
-		"document":      request.Document,
-		"password":      request.Password,
-		"register_date": request.Register_date,
-	}
-
-	docRef := db.databaseClient.Collection(collection).Doc(request.User_id)
-	if _, err := docRef.Set(ctx, entity); err != nil {
-		log.Error().Msg(err.Error())
-		return &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
-	}
-
-	log.Info().Msg("user: " + request.User_id + "has been updated")
-
-	return nil
+	err := <-ch
+	close(ch)
+	return err
 }
 
-func (db userFirestore) GetAll(ctx context.Context) (*[]User, *model.Erro) {
+func (db userFirestore) GetAll(ctx context.Context) (*[]User, *echo.HTTPError) {
 	iterator := db.databaseClient.Collection(collection).Documents(ctx)
 
 	docSnapshots, err := iterator.GetAll()
 	if err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 	userResponseSlice := make([]User, 0, len(docSnapshots))
 	for index := 0; index < len(docSnapshots); index++ {
@@ -168,7 +190,7 @@ func (db userFirestore) GetAll(ctx context.Context) (*[]User, *model.Erro) {
 		userResponse := User{}
 		if err := docSnap.DataTo(&userResponse); err != nil {
 			log.Error().Msg(err.Error())
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+			return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 		}
 		userResponse.User_id = docSnap.Ref.ID
 		// condicional para saber se a transferencia pertence ao account
@@ -179,9 +201,9 @@ func (db userFirestore) GetAll(ctx context.Context) (*[]User, *model.Erro) {
 
 // "key,==.value"
 
-func (db userFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]User, *model.Erro) {
+func (db userFirestore) GetFilteredByID(ctx context.Context, filters *string) (*[]User, *echo.HTTPError) {
 	if filters == nil || len(*filters) == 0 {
-		return nil, model.FilterNotSet
+		return nil, model.ErrFilterNotSet
 	}
 
 	query := db.databaseClient.Collection(collection).Query
@@ -198,14 +220,14 @@ func (db userFirestore) GetFilteredByID(ctx context.Context, filters *string) (*
 
 	allDocs, err := query.Documents(ctx).GetAll()
 	if err != nil {
-		return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+		return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	userSlice := make([]User, 0, len(allDocs))
 	for _, docSnap := range allDocs {
 		userResponse := User{}
 		if err := docSnap.DataTo(&userResponse); err != nil {
-			return nil, &model.Erro{Err: err, HttpCode: http.StatusInternalServerError}
+			return nil, &echo.HTTPError{Internal: err, Code: http.StatusInternalServerError, Message: err.Error()}
 		}
 
 		userResponse.User_id = docSnap.Ref.ID

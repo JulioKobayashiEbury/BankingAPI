@@ -1,9 +1,16 @@
 package client
 
-import "BankingAPI/internal/model"
+import (
+	"context"
+
+	"BankingAPI/internal/model"
+
+	"github.com/labstack/echo"
+)
 
 type ClientRepository interface {
 	model.Repository[Client]
+	GetFilteredByUserID(context.Context, *string) (*[]Client, *echo.HTTPError)
 }
 type Client struct {
 	Client_id     string `json:"client_id" xml:"client_id"`

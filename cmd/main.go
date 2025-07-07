@@ -61,7 +61,7 @@ func createAdminUser(userService service.UserService) error {
 
 	allUsers, err := userService.GetAll(ctx)
 	if err != nil {
-		return err.Err
+		return err.Internal
 	}
 
 	for _, user := range *allUsers {
@@ -77,8 +77,8 @@ func createAdminUser(userService service.UserService) error {
 		Password: "admin",
 	})
 	if err != nil {
-		log.Error().Msg(err.Err.Error())
-		return err.Err
+		log.Error().Msg(err.Error())
+		return err.Internal
 	}
 	log.Info().Msg("Admin user created with ID: " + userResponse.User_id)
 	return nil
