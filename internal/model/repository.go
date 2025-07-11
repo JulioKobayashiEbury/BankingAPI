@@ -7,15 +7,7 @@ import (
 )
 
 const (
-	AccountsPath    = "accounts"
-	UsersPath       = "users"
-	ClientPath      = "clients"
-	TransfersPath   = "transfers"
-	AutoDebit       = "autodebit"
-	AutoDebitLog    = "autodebitlog"
-	DepositPath     = "deposits"
-	WithdrawalsPath = "withdrawals"
-	CacheDuration   = 2
+	CacheDuration = 2
 )
 
 type Repository[T any] interface {
