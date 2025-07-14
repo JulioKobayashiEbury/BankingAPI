@@ -29,12 +29,12 @@ func NewUserHandler(userServe service.UserService, authServe service.Authenticat
 	}
 }
 
-func AddUsersEndPoints(server *echo.Echo, h UserHandler) {
-	server.POST("/users", h.UserPostHandler)
-	server.GET("/users/:user_id", h.UserGetHandler)
-	server.GET("/users/:user_id/report", h.UserGetReportHandler)
-	server.DELETE("/users/:user_id", h.UserDeleteHandler)
-	server.PUT("/users/:user_id", h.UserPutHandler)
+func AddUsersEndPoints(group *echo.Group, h UserHandler) {
+	group.POST("/users", h.UserPostHandler)
+	group.GET("/users/:user_id", h.UserGetHandler)
+	group.GET("/users/:user_id/report", h.UserGetReportHandler)
+	group.DELETE("/users/:user_id", h.UserDeleteHandler)
+	group.PUT("/users/:user_id", h.UserPutHandler)
 }
 
 func (h userHandlerImpl) UserPostHandler(c echo.Context) error {

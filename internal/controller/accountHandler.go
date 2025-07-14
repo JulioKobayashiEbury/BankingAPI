@@ -29,12 +29,12 @@ func NewAccountHandler(accountServe service.AccountService) AccountHandler {
 	}
 }
 
-func AddAccountEndPoints(server *echo.Echo, h AccountHandler) {
-	server.GET("/accounts/:account_id", h.AccountGetHandler)
-	server.GET("/accounts/:account_id/report", h.AccountGetReportHandler)
-	server.POST("/accounts", h.AccountPostHandler)
-	server.DELETE("/accounts/:account_id", h.AccountDeleteHandler)
-	server.PUT("/accounts/:account_id", h.AccountPutHandler)
+func AddAccountEndPoints(group *echo.Group, h AccountHandler) {
+	group.GET("/accounts/:account_id", h.AccountGetHandler)
+	group.GET("/accounts/:account_id/report", h.AccountGetReportHandler)
+	group.POST("/accounts", h.AccountPostHandler)
+	group.DELETE("/accounts/:account_id", h.AccountDeleteHandler)
+	group.PUT("/accounts/:account_id", h.AccountPutHandler)
 }
 
 func (h accountHandlerImpl) AccountPostHandler(c echo.Context) error {

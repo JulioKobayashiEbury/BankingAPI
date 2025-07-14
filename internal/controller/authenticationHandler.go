@@ -34,22 +34,19 @@ func AddAuthenticationEndpoints(server *echo.Echo, authHandler AuthenticationHan
 }
 
 func (h authenticationHandlerImpl) PostAuthenticationHandler(c echo.Context) error {
-	var userAuthInfo authInfo
-	if err := c.Bind(&userAuthInfo); err != nil {
-		obj, ok := err.(*echo.HTTPError)
-		if !ok {
-			return c.JSON(http.StatusInternalServerError, "could not resolve error in bind function")
-		}
-		return c.JSON(obj.Code, obj.Internal.Error())
+	id := c.FormValue("user_id")
+	password := c.FormValue("password")
+	if id == "" || password == "" {
+		return c.JSON(http.StatusBadRequest, model.StandartResponse{Message: "user ID and password are required"})
 	}
-	if ok, err := h.authenticationService.Authenticate(c.Request().Context(), &userAuthInfo.User_Id, &userAuthInfo.Password); err != nil {
-		return c.JSON(err.Code, err.Error())
+	if ok, err := h.authenticationService.Authenticate(c.Request().Context(), &id, &password); err != nil {
+		return c.JSON(err.Code, err.Message)
 	} else {
 		if !ok {
-			log.Error().Msg("authentication failed for user: " + userAuthInfo.User_Id)
+			log.Error().Msg("authentication failed for user: " + id)
 			return c.JSON(http.StatusUnauthorized, model.StandartResponse{Message: "authentication failed"})
 		}
-		token, err := h.authenticationService.GenerateToken(c.Request().Context(), &userAuthInfo.User_Id)
+		token, err := h.authenticationService.GenerateToken(c.Request().Context(), &id)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, model.StandartResponse{Message: err.Error()})
 		}

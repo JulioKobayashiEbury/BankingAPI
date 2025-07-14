@@ -25,13 +25,7 @@ func NewUserAuthMiddleware(userServe service.UserService) AuthMiddleware {
 
 func (h authMiddlewareImpl) AuthorizeMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if c.Path() == "/docs/*" || c.Path() == "/swagger.yaml" {
-			next(c)
-		}
 		if c.Request().Header.Get(echo.HeaderAuthorization) == "" && c.FormValue("user_id") != "" {
-			if c.Path() == "/auth/token" {
-				return next(c)
-			}
 			return c.JSON(model.ErrNotAuthenticated.Code, model.ErrNotAuthenticated.Error())
 		}
 		authorizationHeader := c.Request().Header.Get(echo.HeaderAuthorization)

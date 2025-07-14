@@ -30,11 +30,11 @@ func NewTransferHandler(transferServe service.TransferService, accountServe serv
 	}
 }
 
-func AddTransferEndPoints(server *echo.Echo, h TransferHandler) {
-	server.POST("/transfers", h.TransferPostHandler)
-	server.POST("/external-transfers", h.TransferPostHandler)
-	server.GET("/transfers/:transfer_id", h.TransferGetHandler)
-	server.DELETE("/transfers/:transfer_id", h.TransferDeleteHandler)
+func AddTransferEndPoints(group *echo.Group, h TransferHandler) {
+	group.POST("/transfers", h.TransferPostHandler)
+	group.POST("/external-transfers", h.TransferPostHandler)
+	group.GET("/transfers/:transfer_id", h.TransferGetHandler)
+	group.DELETE("/transfers/:transfer_id", h.TransferDeleteHandler)
 }
 
 func (h transferHandlerImpl) TransferPostHandler(c echo.Context) error {

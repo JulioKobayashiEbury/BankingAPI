@@ -28,10 +28,10 @@ func NewWithdrawalHandler(withdrawalServe service.WithdrawalService, accontServe
 	}
 }
 
-func AddWithdrawalEndPoints(server *echo.Echo, h WithdrawalHandler) {
-	server.POST("/withdrawals", h.PostWithdrawalHandler)
-	server.GET("/withdrawals/:withdrawal_id", h.GetWithdrawalHandler)
-	server.DELETE("withdrawals/:withdrawal_id", h.DeleteWithdrawalHandler)
+func AddWithdrawalEndPoints(group *echo.Group, h WithdrawalHandler) {
+	group.POST("/withdrawals", h.PostWithdrawalHandler)
+	group.GET("/withdrawals/:withdrawal_id", h.GetWithdrawalHandler)
+	group.DELETE("withdrawals/:withdrawal_id", h.DeleteWithdrawalHandler)
 }
 
 func (h withdrawalHandlerImpl) PostWithdrawalHandler(c echo.Context) error {

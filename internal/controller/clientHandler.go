@@ -30,12 +30,12 @@ func NewClientHandler(clientService service.ClientService) ClientHandler {
 	}
 }
 
-func AddClientsEndPoints(server *echo.Echo, h ClientHandler) {
-	server.POST("/clients", h.ClientPostHandler)
-	server.GET("/clients/:client_id", h.ClientGetHandler)
-	server.GET("/clients/:client_id/report", h.ClientGetReportHandler)
-	server.DELETE("/clients/:client_id", h.ClientDeleteHandler)
-	server.PUT("/clients/:client_id", h.ClientPutHandler)
+func AddClientsEndPoints(group *echo.Group, h ClientHandler) {
+	group.POST("/clients", h.ClientPostHandler)
+	group.GET("/clients/:client_id", h.ClientGetHandler)
+	group.GET("/clients/:client_id/report", h.ClientGetReportHandler)
+	group.DELETE("/clients/:client_id", h.ClientDeleteHandler)
+	group.PUT("/clients/:client_id", h.ClientPutHandler)
 }
 
 func (h clientHandlerImpl) ClientPostHandler(c echo.Context) error {

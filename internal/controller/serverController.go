@@ -50,20 +50,22 @@ const (
 func Server(services *service.ServicesList) {
 	server := echo.New()
 
-	setupOpenApiDocs(server)
-
-	AddAccountEndPoints(server, NewAccountHandler(services.AccountService))
-	AddClientsEndPoints(server, NewClientHandler(services.ClientService))
-	AddUsersEndPoints(server, NewUserHandler(services.UserService, services.AuthenticationService))
-
 	middleware := middleware.NewUserAuthMiddleware(services.UserService)
-	server.Use(echo.MiddlewareFunc(middleware.AuthorizeMiddleware))
+	external := server.Group("/external")
+	internal := server.Group("/internal")
+	external.Use(echo.MiddlewareFunc(middleware.AuthorizeMiddleware))
+
+	setupOpenApiDocs(internal)
 
 	AddAuthenticationEndpoints(server, NewAuthenticationHandler(services.AuthenticationService))
-	AddTransferEndPoints(server, NewTransferHandler(services.TransferService, services.AccountService))
-	AddAutodebitEndPoints(server, NewAutodebitHandler(services.AutomaticdebitService, services.AccountService))
-	AddDepositsEndPoints(server, NewDeposithandler(services.DepositService, services.AccountService))
-	AddWithdrawalEndPoints(server, NewWithdrawalHandler(services.WithdrawalService, services.AccountService))
+
+	AddAccountEndPoints(external, NewAccountHandler(services.AccountService))
+	AddClientsEndPoints(external, NewClientHandler(services.ClientService))
+	AddUsersEndPoints(external, NewUserHandler(services.UserService, services.AuthenticationService))
+	AddTransferEndPoints(external, NewTransferHandler(services.TransferService, services.AccountService))
+	AddAutodebitEndPoints(external, NewAutodebitHandler(services.AutomaticdebitService, services.AccountService))
+	AddDepositsEndPoints(external, NewDeposithandler(services.DepositService, services.AccountService))
+	AddWithdrawalEndPoints(external, NewWithdrawalHandler(services.WithdrawalService, services.AccountService))
 
 	services.AutomaticdebitService.Scheduled()
 
@@ -77,16 +79,16 @@ func Server(services *service.ServicesList) {
 //go:embed docs/swagger.yaml
 var swagger []byte
 
-func setupOpenApiDocs(server *echo.Echo) {
-	server.GET("/swagger.yaml", func(c echo.Context) error {
+func setupOpenApiDocs(group *echo.Group) {
+	group.GET("/swagger.yaml", func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, "text/yaml; charset=utf-8")
 		c.Response().Header().Set(echo.HeaderContentDisposition, "inline")
 
 		return c.Blob(http.StatusOK, "text/yaml; charset=utf-8", swagger)
 	})
 
-	server.GET("/docs/*", echoSwagger.EchoWrapHandler(func(c *echoSwagger.Config) {
-		c.URLs = []string{"/swagger.yaml"}
+	group.GET("/docs/*", echoSwagger.EchoWrapHandler(func(c *echoSwagger.Config) {
+		c.URLs = []string{"/internal/swagger.yaml"}
 	}))
 }
 

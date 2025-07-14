@@ -28,10 +28,10 @@ func NewDeposithandler(depositServe service.DepositService, accountServe service
 	}
 }
 
-func AddDepositsEndPoints(server *echo.Echo, h DepositHandler) {
-	server.POST("/deposits", h.PostDepositHandler)
-	server.GET("/deposits/:deposit_id", h.GetDepositHandler)
-	server.DELETE("/deposits/:deposit_id", h.DeleteDepositHandler)
+func AddDepositsEndPoints(group *echo.Group, h DepositHandler) {
+	group.POST("/deposits", h.PostDepositHandler)
+	group.GET("/deposits/:deposit_id", h.GetDepositHandler)
+	group.DELETE("/deposits/:deposit_id", h.DeleteDepositHandler)
 }
 
 func (h depositHandlerImpl) PostDepositHandler(c echo.Context) error {

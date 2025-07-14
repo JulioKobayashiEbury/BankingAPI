@@ -29,10 +29,10 @@ func NewAutodebitHandler(automaticdebitServe service.AutomaticDebitService, acco
 	}
 }
 
-func AddAutodebitEndPoints(server *echo.Echo, h AutodebitHandler) {
-	server.POST("/autodebits", h.AutodebitPostHandler)
-	server.GET("/autodebits/:debit_id", h.AutodebitGetHandler)
-	server.DELETE("/autodebits/:debit_id", h.AutodebitDeleteHandler)
+func AddAutodebitEndPoints(group *echo.Group, h AutodebitHandler) {
+	group.POST("/autodebits", h.AutodebitPostHandler)
+	group.GET("/autodebits/:debit_id", h.AutodebitGetHandler)
+	group.DELETE("/autodebits/:debit_id", h.AutodebitDeleteHandler)
 }
 
 func (h autodebitHandlerImpl) AutodebitPostHandler(c echo.Context) error {
