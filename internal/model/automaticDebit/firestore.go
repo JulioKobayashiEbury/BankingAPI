@@ -9,7 +9,7 @@ import (
 	"BankingAPI/internal/model"
 
 	"cloud.google.com/go/firestore"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

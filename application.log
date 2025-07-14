@@ -51,3 +51,87 @@
 {"level":"info","time":"2025-07-07T11:12:11.490401907-03:00","message":"retrieved user from cache"}
 {"level":"info","time":"2025-07-07T11:12:11.494944728-03:00","message":"Client returned: CayGudjVPsCPsadrrXBP"}
 {"level":"info","time":"2025-07-07T11:13:09.798768807-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T15:46:34.773578216-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T15:46:34.77432343-03:00","message":"Job ID for automatic debit checking: cb01911b-a2b3-4467-8df5-6c9d7b2a6403"}
+{"level":"warn","time":"2025-07-11T15:46:53.696655292-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:46:53.802106703-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T15:47:25.223044908-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T15:47:27.445948787-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T15:47:27.446335694-03:00","message":"Job ID for automatic debit checking: cbc15513-f277-4299-9c7a-da62f94d3fd3"}
+{"level":"warn","time":"2025-07-11T15:47:29.757316686-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:47:29.874105609-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:47:30.736193049-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:47:30.838819574-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T15:48:00.028314765-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-07-11T15:48:01.910052783-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T15:48:15.331432988-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T15:48:15.331785216-03:00","message":"Job ID for automatic debit checking: 0667e6f0-734d-4acc-8d6c-fa87a40c2538"}
+{"level":"warn","time":"2025-07-11T15:48:17.678895982-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:48:17.943993899-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T15:48:32.851627352-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T15:48:33.704346441-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T15:48:33.704702107-03:00","message":"Job ID for automatic debit checking: 2b0400a1-87f9-41dd-b294-cf8914b50e6d"}
+{"level":"warn","time":"2025-07-11T15:48:36.78101882-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:48:36.888559872-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:48:51.656621901-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:48:54.052889849-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:48:54.113061476-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:48:54.433604688-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T15:49:40.152228486-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T15:50:47.472581058-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T15:50:47.472926561-03:00","message":"Job ID for automatic debit checking: b0925567-3e35-4778-9d65-fbbeed7db3b9"}
+{"level":"warn","time":"2025-07-11T15:50:50.583764239-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:50:50.639044568-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:50:50.956289556-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:50:59.359720359-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:50:59.405153033-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:50:59.70295407-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T15:51:26.495743953-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T15:51:29.2954414-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T15:51:29.295832765-03:00","message":"Job ID for automatic debit checking: 8f5695db-59a6-49cd-ac84-050f492950d1"}
+{"level":"warn","time":"2025-07-11T15:51:30.709289186-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:51:30.771813621-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T15:51:31.183490817-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T15:52:00.028187053-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-07-11T15:54:00.023451538-03:00","message":"Checking for auto debits..."}
+{"level":"info","time":"2025-07-11T15:54:52.018775495-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T16:02:53.693174946-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T16:02:53.693650113-03:00","message":"Job ID for automatic debit checking: df4a440d-0b84-495b-9493-adf66ae4fa62"}
+{"level":"warn","time":"2025-07-11T16:02:55.944212048-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:02:56.270219313-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:02:56.635968821-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:03:01.649448379-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:03:01.777255113-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:03:02.055550777-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T16:03:24.083931171-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T16:03:26.05328585-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T16:03:26.053784987-03:00","message":"Job ID for automatic debit checking: 39a43c77-3c1f-42d1-948a-3bada66fe1dc"}
+{"level":"warn","time":"2025-07-11T16:03:28.004660671-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:03:28.063919577-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:03:28.390041699-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T16:03:31.704813748-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T16:04:17.657882662-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T16:04:17.658572997-03:00","message":"Job ID for automatic debit checking: 90027af1-1417-4d93-80ab-61c334ffaac1"}
+{"level":"warn","time":"2025-07-11T16:04:20.808678642-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:20.86977249-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:21.20560519-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:25.563053374-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:25.605343246-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:25.920445162-03:00","message":"authorization header is missing"}
+{"level":"info","time":"2025-07-11T16:04:50.688653551-03:00","message":"Interruption signal received, terminating gracefully..."}
+{"level":"info","time":"2025-07-11T16:04:53.547740018-03:00","message":"Admin user already exists with ID: 7OWiXsvnVYuDAJ2w32cS"}
+{"level":"info","time":"2025-07-11T16:04:53.548254089-03:00","message":"Job ID for automatic debit checking: 753ceab7-c210-4104-babb-5e8671762767"}
+{"level":"warn","time":"2025-07-11T16:04:55.19070508-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:55.492481485-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:55.800303163-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:57.967564701-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:57.978928751-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.099769074-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.11612295-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.121627747-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.123947857-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.204477648-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.32163699-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.36685899-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.713492442-03:00","message":"authorization header is missing"}
+{"level":"warn","time":"2025-07-11T16:04:58.748911098-03:00","message":"authorization header is missing"}

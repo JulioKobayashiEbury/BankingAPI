@@ -7,7 +7,7 @@ import (
 	automaticdebit "BankingAPI/internal/model/automaticDebit"
 	"BankingAPI/internal/service"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 

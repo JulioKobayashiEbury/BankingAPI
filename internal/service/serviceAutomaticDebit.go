@@ -14,7 +14,7 @@ import (
 	"BankingAPI/internal/model/withdrawal"
 
 	"github.com/go-co-op/gocron/v2"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 

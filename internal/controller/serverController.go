@@ -10,6 +10,9 @@ return
 */
 
 import (
+	_ "embed"
+	"net/http"
+
 	"BankingAPI/internal/gateway"
 	"BankingAPI/internal/gateway/externaltransfer"
 	"BankingAPI/internal/middleware"
@@ -23,8 +26,9 @@ import (
 	"BankingAPI/internal/service"
 
 	"cloud.google.com/go/firestore"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 type RepositoryList struct {
@@ -46,6 +50,8 @@ const (
 func Server(services *service.ServicesList) {
 	server := echo.New()
 
+	setupOpenApiDocs(server)
+
 	AddAccountEndPoints(server, NewAccountHandler(services.AccountService))
 	AddClientsEndPoints(server, NewClientHandler(services.ClientService))
 	AddUsersEndPoints(server, NewUserHandler(services.UserService, services.AuthenticationService))
@@ -66,6 +72,22 @@ func Server(services *service.ServicesList) {
 		return
 	}
 	log.Info().Msg("Server started on port 25565")
+}
+
+//go:embed docs/swagger.yaml
+var swagger []byte
+
+func setupOpenApiDocs(server *echo.Echo) {
+	server.GET("/swagger.yaml", func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, "text/yaml; charset=utf-8")
+		c.Response().Header().Set(echo.HeaderContentDisposition, "inline")
+
+		return c.Blob(http.StatusOK, "text/yaml; charset=utf-8", swagger)
+	})
+
+	server.GET("/docs/*", echoSwagger.EchoWrapHandler(func(c *echoSwagger.Config) {
+		c.URLs = []string{"/swagger.yaml"}
+	}))
 }
 
 func InstantiateRepo(databaseClient *firestore.Client) *RepositoryList {

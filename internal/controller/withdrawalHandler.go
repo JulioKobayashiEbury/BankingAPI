@@ -7,7 +7,7 @@ import (
 	"BankingAPI/internal/model/withdrawal"
 	"BankingAPI/internal/service"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type WithdrawalHandler interface {

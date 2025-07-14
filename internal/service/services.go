@@ -11,7 +11,7 @@ import (
 	"BankingAPI/internal/model/user"
 	"BankingAPI/internal/model/withdrawal"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type ServicesList struct {

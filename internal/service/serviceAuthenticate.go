@@ -10,7 +10,7 @@ import (
 	"BankingAPI/internal/model/user"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
