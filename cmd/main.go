@@ -16,10 +16,17 @@ import (
 )
 
 func main() {
-	os.Setenv("FIRESTORE_EMULATOR_HOST", "127.0.0.1:8080")
-	os.Setenv("GOOGLE_CLOUD_PROJECT", "banking")
+	logFileName := os.Getenv("LOG_FILE")
+	if logFileName == "" {
+		log.Fatal().Msg("LOG_FILE environment variable not set")
+		return
+	}
+	if os.Getenv("FIRESTORE_EMULATOR_HOST") == "" {
+		log.Fatal().Msg("FIRESTORE_EMULATOR_HOST environment variable not set")
+		return
+	}
 
-	logFile, err := os.OpenFile("application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		panic(err)
 	}
@@ -32,6 +39,10 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	gcproject := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if gcproject == "" {
+		log.Fatal().Msg("GOOGLE_CLOUD_PROJECT environment variable not set")
+		return
+	}
 
 	ctx := context.Background()
 	defer ctx.Done()
